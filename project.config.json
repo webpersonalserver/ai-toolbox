@@ -2,7 +2,7 @@
   "appid": "wxb3265721f68a1847",
   "compileType": "miniprogram",
   "libVersion": "3.8.0",
-  "projectname": "ai-photo-tools",
+  "projectname": "ai-toolbox",
   "setting": {
     "es6": true,
     "enhance": true,

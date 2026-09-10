@@ -1,17 +1,17 @@
-# ai-photo-tools · AI 照片工具箱（微信小程序）
+# ai-toolbox · AI 工具箱（微信小程序）
 
-老照片修复 + AI 证件照 两大工具，个人开发者虚拟支付变现项目。
+工具类小程序矩阵（首批：老照片修复 + AI 证件照，后续可扩展简历优化、计算器等），个人开发者虚拟支付变现项目。
 
 ## 项目信息
 
 - **AppID**: wxb3265721f68a1847
 - **类型**: 微信小程序（原生框架）
-- **仓库**: https://github.com/webpersonalserver/ai-photo-tools
+- **仓库**: https://github.com/webpersonalserver/ai-toolbox
 
 ## 目录结构
 
 ```
-ai-photo-tools/
+ai-toolbox/
 ├── app.js / app.json / app.wxss   # 小程序入口与全局配置
 ├── project.config.json            # 开发者工具项目配置（含 AppID）
 ├── pages/
@@ -27,7 +27,7 @@ ai-photo-tools/
 ## 如何在微信开发者工具中打开
 
 1. 打开微信开发者工具 → 导入项目
-2. 目录选择本文件夹 `D:\WorkBuddy\Projects\ai-photo-tools`
+2. 目录选择本文件夹 `D:\WorkBuddy\Projects\ai-toolbox`
 3. AppID 已预填（wxb3265721f68a1847），直接确定即可预览
 
 ## 开发路线
