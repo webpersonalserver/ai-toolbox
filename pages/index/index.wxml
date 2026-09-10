@@ -1,0 +1,27 @@
+<!--pages/index/index.wxml — 首页-->
+<view class="container">
+  <view class="hero">
+    <view class="hero-title">AI 照片工具箱</view>
+    <view class="hero-sub">修复老照片 · 一键证件照</view>
+  </view>
+
+  <view
+    class="tool-card"
+    wx:for="{{tools}}"
+    wx:key="id"
+    data-url="{{item.url}}"
+    bindtap="goTool"
+  >
+    <view class="tool-icon">{{item.icon}}</view>
+    <view class="tool-info">
+      <view class="tool-title">
+        {{item.title}}
+        <text class="tool-tag">{{item.tag}}</text>
+      </view>
+      <view class="tool-desc">{{item.desc}}</view>
+    </view>
+    <view class="tool-arrow">›</view>
+  </view>
+
+  <view class="notice">新用户每次可免费体验，无水印需开通会员</view>
+</view>

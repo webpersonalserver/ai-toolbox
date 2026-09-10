@@ -1,0 +1,13 @@
+/* pages/mine/mine.wxss */
+.user-title { font-size: 32rpx; font-weight: 600; }
+.quota { color: #6B7280; margin-top: 12rpx; }
+.vip-card {
+  background: linear-gradient(135deg, #F59E0B, #F97316);
+  color: #fff;
+}
+.vip-title { font-size: 34rpx; font-weight: 700; }
+.vip-desc { font-size: 24rpx; opacity: 0.9; margin-top: 10rpx; }
+.menu-item {
+  display: flex; justify-content: space-between; align-items: center;
+}
+.arrow { color: #C7CAD1; font-size: 36rpx; }

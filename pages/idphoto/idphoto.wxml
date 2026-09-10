@@ -1,0 +1,56 @@
+<!--pages/idphoto/idphoto.wxml — AI 证件照-->
+<view class="container">
+  <!-- 上传区 -->
+  <view class="card">
+    <view class="upload-box" wx:if="{{!imagePath}}" bindtap="chooseImage">
+      <view class="upload-icon">🤳</view>
+      <view class="upload-text">拍摄或选择正面半身照</view>
+      <view class="upload-tip">纯色背景效果更佳</view>
+    </view>
+    <view class="image-wrap" wx:else>
+      <image class="preview-img" src="{{resultPath || imagePath}}" mode="aspectFit" />
+      <view class="re-choose" bindtap="chooseImage">重新选择</view>
+    </view>
+  </view>
+
+  <!-- 规格 -->
+  <view class="card">
+    <view class="section-title">选择规格</view>
+    <view class="spec-list">
+      <view
+        class="spec-item {{specIndex === index ? 'active' : ''}}"
+        wx:for="{{specs}}"
+        wx:key="id"
+        data-index="{{index}}"
+        bindtap="pickSpec"
+      >
+        <view class="spec-name">{{item.name}}</view>
+        <view class="spec-px">{{item.px}}</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 背景色 -->
+  <view class="card">
+    <view class="section-title">背景颜色</view>
+    <view class="bg-list">
+      <view
+        class="bg-item {{bgIndex === index ? 'active' : ''}}"
+        wx:for="{{bgColors}}"
+        wx:key="*this"
+        data-index="{{index}}"
+        bindtap="pickBg"
+      >
+        <view class="bg-color" style="background: {{item}};"></view>
+      </view>
+    </view>
+  </view>
+
+  <button class="btn-primary" disabled="{{processing || !imagePath}}" bindtap="startMake">
+    {{processing ? 'AI 生成中，约需 3~8 秒…' : '生成证件照'}}
+  </button>
+
+  <button wx:if="{{resultPath}}" class="btn-primary save-btn" bindtap="saveResult">
+    保存无水印高清版（会员）
+  </button>
+</view>

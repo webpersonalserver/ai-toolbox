@@ -1,0 +1,16 @@
+<!--pages/mine/mine.wxml — 我的-->
+<view class="container">
+  <view class="card user-card">
+    <view class="user-title">我的账户</view>
+    <view class="quota">剩余免费次数：{{freeQuota}} 次</view>
+  </view>
+
+  <view class="card vip-card" bindtap="buyMembership">
+    <view class="vip-title">开通会员</view>
+    <view class="vip-desc">9.9元/月 · 无水印 · 无限次生成 · 优先处理</view>
+  </view>
+
+  <view class="card menu-item" bindtap="about">
+    <text>关于我们</text><text class="arrow">›</text>
+  </view>
+</view>

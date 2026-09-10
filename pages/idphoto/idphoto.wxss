@@ -1,0 +1,35 @@
+/* pages/idphoto/idphoto.wxss */
+.upload-box {
+  border: 2rpx dashed #C7CAD1;
+  border-radius: 16rpx;
+  padding: 80rpx 0;
+  text-align: center;
+}
+.upload-icon { font-size: 64rpx; }
+.upload-text { color: #6B7280; font-size: 28rpx; margin-top: 12rpx; }
+.upload-tip  { color: #9CA3AF; font-size: 22rpx; margin-top: 8rpx; }
+.image-wrap { position: relative; text-align: center; }
+.preview-img { width: 100%; height: 500rpx; border-radius: 12rpx; }
+.re-choose {
+  position: absolute; right: 16rpx; bottom: 16rpx;
+  background: rgba(0,0,0,0.6); color: #fff;
+  font-size: 22rpx; padding: 8rpx 20rpx; border-radius: 24rpx;
+}
+.section-title { font-size: 30rpx; font-weight: 600; margin-bottom: 20rpx; }
+.spec-list { display: flex; flex-wrap: wrap; gap: 20rpx; }
+.spec-item {
+  border: 2rpx solid #E5E7EB; border-radius: 12rpx;
+  padding: 18rpx 30rpx; text-align: center;
+}
+.spec-item.active { border-color: #4F46E5; background: #EEF2FF; }
+.spec-name { font-size: 28rpx; font-weight: 500; }
+.spec-px { font-size: 20rpx; color: #9CA3AF; margin-top: 4rpx; }
+.bg-list { display: flex; gap: 30rpx; }
+.bg-item {
+  width: 90rpx; height: 90rpx; border-radius: 50%;
+  border: 4rpx solid transparent; padding: 6rpx;
+  display: flex; align-items: center; justify-content: center;
+}
+.bg-item.active { border-color: #4F46E5; }
+.bg-color { width: 100%; height: 100%; border-radius: 50%; border: 1rpx solid #E5E7EB; }
+.save-btn { margin-top: 24rpx; background: #059669; }

@@ -1,0 +1,69 @@
+/* pages/restore/restore.wxss */
+.upload-box {
+  border: 2rpx dashed #C7CAD1;
+  border-radius: 16rpx;
+  padding: 100rpx 0;
+  text-align: center;
+}
+.upload-icon {
+  font-size: 72rpx;
+  color: #C7CAD1;
+}
+.upload-text {
+  color: #9CA3AF;
+  font-size: 26rpx;
+  margin-top: 12rpx;
+}
+.image-wrap {
+  position: relative;
+  text-align: center;
+}
+.preview-img {
+  width: 100%;
+  height: 500rpx;
+  border-radius: 12rpx;
+}
+.re-choose {
+  position: absolute;
+  right: 16rpx;
+  bottom: 16rpx;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 22rpx;
+  padding: 8rpx 20rpx;
+  border-radius: 24rpx;
+}
+.option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20rpx 0;
+}
+.option-title {
+  font-size: 30rpx;
+  font-weight: 500;
+}
+.option-desc {
+  font-size: 22rpx;
+  color: #9CA3AF;
+  margin-top: 6rpx;
+}
+.checkbox {
+  width: 44rpx;
+  height: 44rpx;
+  border: 2rpx solid #D1D5DB;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 26rpx;
+}
+.checkbox.checked {
+  background: #4F46E5;
+  border-color: #4F46E5;
+}
+.save-btn {
+  margin-top: 24rpx;
+  background: #059669;
+}

@@ -1,0 +1,43 @@
+<!--pages/restore/restore.wxml — 老照片修复-->
+<view class="container">
+  <!-- 上传区 -->
+  <view class="card">
+    <view class="upload-box" wx:if="{{!imagePath}}" bindtap="chooseImage">
+      <view class="upload-icon">＋</view>
+      <view class="upload-text">点击选择或拍摄老照片</view>
+    </view>
+    <view class="image-wrap" wx:else>
+      <image class="preview-img" src="{{resultPath || imagePath}}" mode="aspectFit" bindtap="{{resultPath ? 'previewImage' : ''}}" />
+      <view class="re-choose" bindtap="chooseImage">重新选择</view>
+    </view>
+  </view>
+
+  <!-- 选项 -->
+  <view class="card">
+    <view class="option" bindtap="toggleEnhance">
+      <view>
+        <view class="option-title">清晰增强</view>
+        <view class="option-desc">去模糊、去划痕、提升分辨率</view>
+      </view>
+      <view class="checkbox {{enhance ? 'checked' : ''}}">{{enhance ? '✓' : ''}}</view>
+    </view>
+    <view class="option" bindtap="toggleColorize">
+      <view>
+        <view class="option-title">AI 智能上色</view>
+        <view class="option-desc">黑白照片自动还原自然色彩</view>
+      </view>
+      <view class="checkbox {{colorize ? 'checked' : ''}}">{{colorize ? '✓' : ''}}</view>
+    </view>
+  </view>
+
+  <button class="btn-primary" disabled="{{processing || !imagePath}}" bindtap="startRestore">
+    {{processing ? 'AI 修复中，约需 5~10 秒…' : '开始修复'}}
+  </button>
+
+  <!-- 保存 -->
+  <button
+    wx:if="{{resultPath}}"
+    class="btn-primary save-btn"
+    bindtap="saveResult"
+  >保存无水印高清图（会员）</button>
+</view>
