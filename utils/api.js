@@ -13,12 +13,24 @@ function uploadOriginal(filePath, prefix) {
  * 调用云函数，统一处理业务错误码
  */
 async function callPhoto(action, payload = {}) {
-  const res = await wx.cloud.callFunction({
-    name: 'photo',
-    data: { action, ...payload }
-  })
+  let res
+  try {
+    res = await wx.cloud.callFunction({
+      name: 'photo',
+      data: { action, ...payload }
+    })
+  } catch (err) {
+    // 调用层失败（函数不存在/网络/环境错误等），打印完整 errMsg 便于定位
+    console.error('[api] callFunction 调用失败 action=' + action, JSON.stringify(err, null, 2))
+    const msg = (err && (err.errMsg || err.message)) || '云函数调用失败'
+    const e = new Error(msg)
+    e.detail = err
+    throw e
+  }
   const r = res.result || {}
   if (r.code !== 0) {
+    // 云函数业务层失败，打印服务端返回
+    console.error('[api] 云函数业务错误 action=' + action, JSON.stringify(r))
     const err = new Error(r.msg || '处理失败，请重试')
     err.code = r.code
     throw err

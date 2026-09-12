@@ -43,8 +43,9 @@ Page({
       wx.showToast({ title: '修复完成', icon: 'success' })
     } catch (e) {
       this.setData({ processing: false })
+      console.error('[restore] 失败详情:', e)
       const msg = e.code === 40010 ? '免费次数已用完' : (e.message || '修复失败，请重试')
-      wx.showToast({ title: msg.slice(0, 20), icon: 'none' })
+      wx.showToast({ title: msg.slice(0, 30), icon: 'none', duration: 5000 })
     }
   },
 
