@@ -1,9 +1,11 @@
 // cloudfunctions/photo/config.js — 云函数配置
-// 敏感信息通过环境变量注入，不要写死在代码里
+// 优先级：云端环境变量 > config.local.js（本地隐私文件，不入库） > 默认值
+let local = {}
+try { local = require('./config.local') } catch (e) { /* 文件不存在时忽略 */ }
 module.exports = {
-  // 腾讯云凭据（部署时在云函数控制台"环境变量"中配置，或本地测试时写在 .env 里）
-  SECRET_ID: process.env.TENCENT_SECRET_ID || '',
-  SECRET_KEY: process.env.TENCENT_SECRET_KEY || '',
+  // 腾讯云凭据（部署时在云函数控制台"环境变量"中配置，或本地测试时写在 config.local.js 里）
+  SECRET_ID: process.env.TENCENT_SECRET_ID || local.TENCENT_SECRET_ID || '',
+  SECRET_KEY: process.env.TENCENT_SECRET_KEY || local.TENCENT_SECRET_KEY || '',
 
   // COS 存储桶（用户数据）
   BUCKET: process.env.COS_BUCKET || 'ai-toolbox-1257738513',
