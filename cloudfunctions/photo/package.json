@@ -1,0 +1,10 @@
+{
+  "name": "photo",
+  "version": "1.0.0",
+  "description": "ai-toolbox 云函数：老照片修复 + 证件照生成",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3",
+    "cos-nodejs-sdk-v5": "^2.14.0"
+  }
+}
