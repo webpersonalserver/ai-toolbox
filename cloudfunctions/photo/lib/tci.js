@@ -2,8 +2,8 @@
 // 基于 COS + 数据万象：上传原图 → 带签名的 CI 同步处理 → 结果存回 COS
 const config = require('../config')
 
-// Node 18+ 自带 fetch；部署云函数时运行时请选 Nodejs18.15 以上
-const fetch = global.fetch || (() => { throw new Error('云函数运行时需选择 Node.js 18 以上') })
+// 优先用 Node 18+ 内置 fetch，低版本运行时自动回退到 https 实现
+const fetch = global.fetch || require('./fetch-polyfill')
 
 /**
  * 上传图片 Buffer 到 COS

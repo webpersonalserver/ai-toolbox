@@ -58,7 +58,8 @@ async function uploadResult(buffer, key) {
 }
 
 exports.main = async (event) => {
-  const { wxContext } = cloud.getWXContext()
+  // getWXContext() 返回的就是上下文对象（含 OPENID/APPID/ENV 等）
+  const wxContext = cloud.getWXContext()
   const openid = wxContext.OPENID
   const { action } = event
 
