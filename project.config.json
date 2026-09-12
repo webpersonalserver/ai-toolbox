@@ -1,6 +1,7 @@
 {
   "appid": "wxb3265721f68a1847",
   "compileType": "miniprogram",
+  "cloudfunctionRoot": "cloudfunctions/",
   "libVersion": "3.8.0",
   "projectname": "ai-toolbox",
   "setting": {
