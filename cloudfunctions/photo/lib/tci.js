@@ -6,15 +6,33 @@ const config = require('../config')
 const fetch = global.fetch || require('./fetch-polyfill')
 
 /**
+ * COS SDK 返回的任务对象在不同版本下可能是 Promise、.promise() 任务、或者回调函数。
+ * 这层包装自动适配三种情况，避免 SDK 版本差异导致 .promise is not a function。
+ */
+function cosTaskToPromise(task) {
+  return new Promise((resolve, reject) => {
+    if (task && typeof task.then === 'function' && typeof task.promise !== 'function') {
+      task.then(resolve, reject)
+    } else if (task && typeof task.promise === 'function') {
+      task.promise().then(resolve, reject)
+    } else if (typeof task === 'function') {
+      task((err, data) => err ? reject(err) : resolve(data))
+    } else {
+      reject(new Error('COS SDK 返回了不可识别的任务对象'))
+    }
+  })
+}
+
+/**
  * 上传图片 Buffer 到 COS
  */
 async function uploadToCOS(cosClient, key, buffer) {
-  await cosClient.putObject({
+  await cosTaskToPromise(cosClient.putObject({
     Bucket: config.BUCKET,
     Region: config.REGION,
     Key: key,
     Body: buffer
-  }).promise()
+  }))
   return key
 }
 
@@ -22,12 +40,12 @@ async function uploadToCOS(cosClient, key, buffer) {
  * 从 COS 下载对象（用于把 CI 结果搬运到云存储）
  */
 async function getFromCOS(cosClient, key) {
-  const res = await cosClient.getObject({
+  const res = await cosTaskToPromise(cosClient.getObject({
     Bucket: config.BUCKET,
     Region: config.REGION,
     Key: key,
     DataType: 'arraybuffer'
-  }).promise()
+  }))
   return { buffer: Buffer.from(res.Body) }
 }
 
@@ -75,7 +93,7 @@ async function restorePhoto(cosClient, imageBuf, opts = {}) {
   if (outBuf.length < 100) throw new Error('CI 返回异常（结果过小），请检查数据万象是否开通')
 
   const outKey = `restore/result-${Date.now()}.jpg`
-  await cosClient.putObject({ Bucket: config.BUCKET, Region: config.REGION, Key: outKey, Body: outBuf }).promise()
+  await cosTaskToPromise(cosClient.putObject({ Bucket: config.BUCKET, Region: config.REGION, Key: outKey, Body: outBuf }))
   return outKey
 }
 
