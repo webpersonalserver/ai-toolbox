@@ -54,3 +54,12 @@
     保存无水印高清版（会员）
   </button>
 </view>
+
+<!-- 次数用完自动弹付费窗 -->
+<paywall
+  visible="{{paywallVisible}}"
+  used="{{quotaUsed}}"
+  free="{{quotaFree}}"
+  bind:close="onPaywallClose"
+  bind:purchased="onPaywallClose"
+/>

@@ -1,0 +1,29 @@
+<view class="mask" wx:if="{{visible}}" bindtap="close">
+  <view class="card" catchtap="noop">
+    <view class="title">免费次数已用完</view>
+    <view class="sub">本月已使用 {{used}}/{{free}} 次</view>
+
+    <view class="plans">
+      <view class="plan" bindtap="payOnce">
+        <view class="plan-name">单次</view>
+        <view class="plan-price">¥1.99</view>
+        <view class="plan-desc">立即解锁 1 次</view>
+      </view>
+
+      <view class="plan plan-featured" bindtap="payMonthly">
+        <view class="badge">推荐</view>
+        <view class="plan-name">包月会员</view>
+        <view class="plan-price">¥9.9</view>
+        <view class="plan-desc">本月无限次</view>
+      </view>
+
+      <view class="plan" bindtap="paySeason">
+        <view class="plan-name">包季</view>
+        <view class="plan-price">¥24.9</view>
+        <view class="plan-desc">约 ¥8.3/月 更划算</view>
+      </view>
+    </view>
+
+    <view class="close" bindtap="close">以后再说</view>
+  </view>
+</view>

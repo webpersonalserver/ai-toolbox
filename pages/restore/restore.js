@@ -8,7 +8,14 @@ Page({
     colorize: false,   // 黑白上色
     enhance: true,     // 清晰增强
     processing: false,
-    previewing: false
+    previewing: false,
+    quotaUsed: 0,
+    quotaFree: 3,
+    paywallVisible: false
+  },
+
+  onShow() {
+    this.refreshQuota()
   },
 
   // 选择照片
@@ -38,14 +45,20 @@ Page({
         colorize: this.data.colorize,
         enhance: this.data.enhance
       })
-      // TODO: 联调后按真实返回结构调整
       this.setData({ resultPath: res.resultUrl || '', processing: false })
+      this.refreshQuota()
       wx.showToast({ title: '修复完成', icon: 'success' })
     } catch (e) {
       this.setData({ processing: false })
       console.error('[restore] 失败详情:', e)
-      const msg = e.code === 40010 ? '免费次数已用完' : (e.message || '修复失败，请重试')
-      wx.showToast({ title: msg.slice(0, 30), icon: 'none', duration: 5000 })
+      if (e.code === 40010) {
+        // 免费次数用完 → 弹出付费窗
+        this.setData({ paywallVisible: true })
+        this.refreshQuota()
+      } else {
+        const msg = e.message || '修复失败，请重试'
+        wx.showToast({ title: msg.slice(0, 30), icon: 'none', duration: 5000 })
+      }
     }
   },
 
@@ -66,5 +79,16 @@ Page({
 
   previewImage() {
     wx.previewImage({ urls: [this.data.resultPath] })
+  },
+
+  async refreshQuota() {
+    try {
+      const q = await api.getQuota()
+      this.setData({ quotaUsed: q.used, quotaFree: q.free })
+    } catch (e) { /* 静默 */ }
+  },
+
+  onPaywallClose() {
+    this.setData({ paywallVisible: false })
   }
 })

@@ -1,16 +1,25 @@
-// pages/mine/mine.js — 我的（会员中心占位）
+// pages/mine/mine.js — 我的（会员中心）
+const api = require('../../utils/api')
+
 Page({
   data: {
-    freeQuota: 3,
-    membership: null  // { expireAt, plan } 未开通为 null
+    quotaUsed: 0,
+    quotaFree: 3,
+    isMember: false
   },
 
   onShow() {
-    const app = getApp()
-    this.setData({ freeQuota: app.globalData.freeQuota })
+    this.refreshQuota()
   },
 
-  // TODO: 接入微信虚拟支付 wx.requestVirtualPayment
+  async refreshQuota() {
+    try {
+      const q = await api.getQuota()
+      this.setData({ quotaUsed: q.used, quotaFree: q.free, isMember: q.isMember })
+    } catch (e) { /* 静默 */ }
+  },
+
+  // TODO: 接入微信虚拟支付 wx.requestVirtualPayment → 调云函数开通会员
   buyMembership() {
     wx.showModal({
       title: '会员开通',

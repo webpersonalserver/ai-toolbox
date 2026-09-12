@@ -10,8 +10,13 @@ Page({
     bgIndex: 0,
     imagePath: '',
     resultPath: '',
-    processing: false
+    processing: false,
+    quotaUsed: 0,
+    quotaFree: 3,
+    paywallVisible: false
   },
+
+  onShow() { this.refreshQuota() },
 
   chooseImage() {
     wx.chooseMedia({
@@ -40,11 +45,18 @@ Page({
         bgColor: this.data.bgColors[this.data.bgIndex]
       })
       this.setData({ resultPath: res.resultUrl || '', processing: false })
+      this.refreshQuota()
       wx.showToast({ title: '生成完成', icon: 'success' })
     } catch (e) {
       this.setData({ processing: false })
-      const msg = e.code === 40010 ? '免费次数已用完' : (e.message || '生成失败，请重试')
-      wx.showToast({ title: msg.slice(0, 20), icon: 'none' })
+      console.error('[idphoto] 失败详情:', e)
+      if (e.code === 40010) {
+        this.setData({ paywallVisible: true })
+        this.refreshQuota()
+      } else {
+        const msg = e.message || '生成失败，请重试'
+        wx.showToast({ title: msg.slice(0, 30), icon: 'none', duration: 5000 })
+      }
     }
   },
 
@@ -60,5 +72,14 @@ Page({
     } catch (e) {
       wx.showToast({ title: '保存失败，请重试', icon: 'none' })
     }
-  }
+  },
+
+  async refreshQuota() {
+    try {
+      const q = await api.getQuota()
+      this.setData({ quotaUsed: q.used, quotaFree: q.free })
+    } catch (e) { /* 静默 */ }
+  },
+
+  onPaywallClose() { this.setData({ paywallVisible: false }) }
 })
