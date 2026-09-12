@@ -1,4 +1,5 @@
 // cloudfunctions/photo/index.js — 入口
+// 流程：小程序上传原图到云存储 → 传 fileID 过来 → 云函数下载 → 传 COS → CI 处理 → 结果上传云存储 → 返回 fileID
 const cloud = require('wx-server-sdk')
 const COS = require('cos-nodejs-sdk-v5')
 const config = require('./config')
@@ -6,9 +7,6 @@ const tci = require('./lib/tci')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
-
-// 简易 fetch（Node 16+ 自带）
-const fetch = global.fetch || require('node-fetch')
 
 function getCosClient() {
   if (!config.SECRET_ID || !config.SECRET_KEY) {
@@ -24,23 +22,42 @@ async function checkAndUseQuota(openid) {
   const now = new Date()
   const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
   const coll = db.collection('quota')
-  let rec
+  let rec = null
   try {
-    rec = (await coll.where({ openid, month }).get()).data[0]
+    rec = (await coll.where({ openid, month }).get()).data[0] || null
   } catch (e) { /* 集合不存在时走创建 */ }
   if (!rec) {
-    await coll.add({ data: { openid, month, used: 0, isMember: false } })
-    rec = { openid, month, used: 0, isMember: false }
+    const added = await coll.add({ data: { openid, month, used: 0, isMember: false } })
+    rec = { _id: added._id, used: 0, isMember: false }
   }
   if (!rec.isMember && rec.used >= config.FREE_QUOTA) {
     // TODO: 接入虚拟支付后，此处引导用户看激励广告或购买会员
     throw new Error('QUOTA_EXCEEDED')
   }
-  await coll.doc(rec._id || (rec.openid + rec.month)).update({ data: { used: rec.used + 1 } }).catch(() => {})
+  await coll.doc(rec._id).update({ data: { used: rec.used + 1 } })
   return { used: rec.used + 1, isMember: rec.isMember }
 }
 
-exports.main = async (event, context) => {
+/**
+ * 从云存储下载用户上传的原图
+ */
+async function downloadOriginal(fileID) {
+  const res = await cloud.downloadFile({ fileID })
+  return res.fileContent // Buffer
+}
+
+/**
+ * 结果上传到云存储并返回 fileID
+ */
+async function uploadResult(buffer, key) {
+  const res = await cloud.uploadFile({
+    cloudPath: `results/${key}`,
+    fileContent: buffer
+  })
+  return res.fileID
+}
+
+exports.main = async (event) => {
   const { wxContext } = cloud.getWXContext()
   const openid = wxContext.OPENID
   const { action } = event
@@ -50,7 +67,10 @@ exports.main = async (event, context) => {
     if (action === 'quota') {
       const now = new Date()
       const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-      const rec = (await db.collection('quota').where({ openid, month }).get()).data[0]
+      let rec = null
+      try {
+        rec = (await db.collection('quota').where({ openid, month }).get()).data[0] || null
+      } catch (e) { /* 集合不存在 */ }
       return { code: 0, data: { used: rec ? rec.used : 0, free: config.FREE_QUOTA, isMember: rec ? rec.isMember : false } }
     }
 
@@ -58,20 +78,24 @@ exports.main = async (event, context) => {
 
     // 老照片修复
     if (action === 'restore') {
+      if (!event.fileID) throw new Error('缺少 fileID')
       await checkAndUseQuota(openid)
-      const buf = Buffer.from(event.imageBase64, 'base64')
+      const buf = await downloadOriginal(event.fileID)
       const outKey = await tci.restorePhoto(cosClient, buf, { colorize: !!event.colorize })
-      const url = `https://${config.BUCKET}.cos.${config.REGION}.myqcloud.com/${outKey}`
-      return { code: 0, data: { url, key: outKey } }
+      const { buffer: outBuf } = await tci.getFromCOS(cosClient, outKey)
+      const resultFileID = await uploadResult(outBuf, outKey)
+      return { code: 0, data: { fileID: resultFileID, key: outKey } }
     }
 
     // 证件照
     if (action === 'idphoto') {
+      if (!event.fileID) throw new Error('缺少 fileID')
       await checkAndUseQuota(openid)
-      const buf = Buffer.from(event.imageBase64, 'base64')
-      const outKey = await tci.makeIdPhoto(cosClient, buf, { bgColor: event.bgColor, spec: event.spec })
-      const url = `https://${config.BUCKET}.cos.${config.REGION}.myqcloud.com/${outKey}`
-      return { code: 0, data: { url, key: outKey } }
+      const buf = await downloadOriginal(event.fileID)
+      const outKey = await tci.makeIdPhoto(cosClient, buf, { bgColor: event.bgColor, spec: event.specId })
+      const { buffer: outBuf } = await tci.getFromCOS(cosClient, outKey)
+      const resultFileID = await uploadResult(outBuf, outKey)
+      return { code: 0, data: { fileID: resultFileID, key: outKey } }
     }
 
     return { code: 40001, msg: '未知 action: ' + action }

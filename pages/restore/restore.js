@@ -43,18 +43,24 @@ Page({
       wx.showToast({ title: '修复完成', icon: 'success' })
     } catch (e) {
       this.setData({ processing: false })
-      wx.showToast({ title: '修复失败，请重试', icon: 'none' })
+      const msg = e.code === 40010 ? '免费次数已用完' : (e.message || '修复失败，请重试')
+      wx.showToast({ title: msg.slice(0, 20), icon: 'none' })
     }
   },
 
   // 保存到相册
-  saveResult() {
+  async saveResult() {
     if (!this.data.resultPath) return
-    wx.saveImageToPhotosAlbum({
-      filePath: this.data.resultPath,
-      success: () => wx.showToast({ title: '已保存到相册', icon: 'success' }),
-      fail: () => wx.showToast({ title: '保存失败（需相册权限）', icon: 'none' })
-    })
+    try {
+      const localPath = await api.downloadToTemp(this.data.resultPath)
+      wx.saveImageToPhotosAlbum({
+        filePath: localPath,
+        success: () => wx.showToast({ title: '已保存到相册', icon: 'success' }),
+        fail: () => wx.showToast({ title: '保存失败（需相册权限）', icon: 'none' })
+      })
+    } catch (e) {
+      wx.showToast({ title: '保存失败，请重试', icon: 'none' })
+    }
   },
 
   previewImage() {

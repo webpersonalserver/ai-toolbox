@@ -1,66 +1,91 @@
-// utils/api.js — 后端接口封装（云函数 / 自建后端二选一）
-const config = require('./config')
+// utils/api.js — 后端接口封装（基于微信云开发）
+// 流程：原图上传云存储 → 调用云函数 photo（CI 处理）→ 结果回传云存储 → 临时链接展示
 
 /**
- * 通用请求封装
+ * 上传原图到云存储，返回 fileID
  */
-function request(path, data = {}, method = 'POST') {
-  return new Promise((resolve, reject) => {
-    wx.request({
-      url: config.API_BASE + path,
-      method,
-      data,
-      header: { 'content-type': 'application/json' },
-      success: (res) => {
-        if (res.statusCode === 200) resolve(res.data)
-        else reject(new Error('HTTP ' + res.statusCode))
-      },
-      fail: reject
-    })
+function uploadOriginal(filePath, prefix) {
+  const cloudPath = `${prefix}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`
+  return wx.cloud.uploadFile({ cloudPath, filePath }).then((res) => res.fileID)
+}
+
+/**
+ * 调用云函数，统一处理业务错误码
+ */
+async function callPhoto(action, payload = {}) {
+  const res = await wx.cloud.callFunction({
+    name: 'photo',
+    data: { action, ...payload }
   })
+  const r = res.result || {}
+  if (r.code !== 0) {
+    const err = new Error(r.msg || '处理失败，请重试')
+    err.code = r.code
+    throw err
+  }
+  return r.data
+}
+
+/**
+ * fileID → 临时 https 链接（用于 <image> 展示/下载）
+ */
+async function fileIDToUrl(fileID) {
+  const res = await wx.cloud.getTempFileURL({ fileList: [fileID] })
+  const f = res.fileList && res.fileList[0]
+  if (!f || !f.tempFileURL) throw new Error('获取结果链接失败')
+  return f.tempFileURL
 }
 
 /**
  * 老照片修复
  * @param {string} filePath 本地图片路径
  * @param {object} options  { colorize: 是否上色, enhance: 是否增强 }
- * TODO: 接入真实 AI 服务（腾讯云人像修复 / 阿里云人脸修复增强，约 0.1~0.2 元/次）
+ * @returns {Promise<{resultUrl: string, fileID: string}>}
  */
-function restorePhoto(filePath, options = {}) {
-  // 上传图片 → 服务端调 AI → 返回结果图 URL
-  return new Promise((resolve, reject) => {
-    wx.uploadFile({
-      url: config.API_BASE + '/photo/restore',
-      filePath,
-      name: 'file',
-      formData: options,
-      success: (res) => {
-        try { resolve(JSON.parse(res.data)) } catch (e) { reject(e) }
-      },
-      fail: reject
-    })
-  })
+async function restorePhoto(filePath, options = {}) {
+  const fileID = await uploadOriginal(filePath, 'uploads/restore')
+  const data = await callPhoto('restore', { fileID, colorize: !!options.colorize })
+  return { resultUrl: await fileIDToUrl(data.fileID), fileID: data.fileID }
 }
 
 /**
  * 证件照生成
  * @param {string} filePath 本地图片路径
  * @param {object} options  { specId: 规格, bgColor: 背景色 }
- * TODO: 接入真实 AI 服务（人像分割 + 背景合成，约 0.12~0.15 元/次）
+ * @returns {Promise<{resultUrl: string, fileID: string}>}
  */
-function makeIdPhoto(filePath, options = {}) {
+async function makeIdPhoto(filePath, options = {}) {
+  const fileID = await uploadOriginal(filePath, 'uploads/idphoto')
+  const data = await callPhoto('idphoto', {
+    fileID,
+    specId: options.specId,
+    bgColor: options.bgColor
+  })
+  return { resultUrl: await fileIDToUrl(data.fileID), fileID: data.fileID }
+}
+
+/**
+ * 查询用户当月免费额度
+ */
+async function getQuota() {
+  const data = await callPhoto('quota')
+  return data // { used, free, isMember }
+}
+
+/**
+ * 下载结果图到本地临时文件（保存相册前用）
+ */
+function downloadToTemp(url) {
   return new Promise((resolve, reject) => {
-    wx.uploadFile({
-      url: config.API_BASE + '/photo/idphoto',
-      filePath,
-      name: 'file',
-      formData: options,
+    wx.downloadFile({
+      url,
       success: (res) => {
-        try { resolve(JSON.parse(res.data)) } catch (e) { reject(e) }
+        if (res.statusCode === 200) resolve(res.tempFilePath)
+        else reject(new Error('下载失败 HTTP ' + res.statusCode))
       },
       fail: reject
     })
   })
 }
 
-module.exports = { request, restorePhoto, makeIdPhoto }
+module.exports = { request: null, restorePhoto, makeIdPhoto, getQuota, fileIDToUrl, downloadToTemp }
