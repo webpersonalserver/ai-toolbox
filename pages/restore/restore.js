@@ -11,6 +11,7 @@ Page({
     previewing: false,
     quotaUsed: 0,
     quotaFree: 3,
+    unlimited: false,
     paywallVisible: false
   },
 
@@ -84,7 +85,7 @@ Page({
   async refreshQuota() {
     try {
       const q = await api.getQuota()
-      this.setData({ quotaUsed: q.used, quotaFree: q.free })
+      this.setData({ quotaUsed: q.used, quotaFree: q.free, unlimited: !!q.unlimited })
     } catch (e) { /* 静默 */ }
   },
 

@@ -77,11 +77,20 @@ async function makeIdPhoto(filePath, options = {}) {
 }
 
 /**
- * 查询用户当月免费额度
+ * 查询用户当月免费额度与权益
+ * @returns {Promise<{used:number, free:number, isMember:boolean, unlimited:boolean, levelLabel:string, expireAt:string|null, openid:string}>}
  */
 async function getQuota() {
   const data = await callPhoto('quota')
-  return data // { used, free, isMember }
+  return data
+}
+
+/**
+ * 兑换码核销（白名单/会员开通）
+ * @param {string} code 兑换码
+ */
+async function redeemCode(code) {
+  return await callPhoto('redeem', { code })
 }
 
 /**
@@ -100,4 +109,4 @@ function downloadToTemp(url) {
   })
 }
 
-module.exports = { request: null, restorePhoto, makeIdPhoto, getQuota, fileIDToUrl, downloadToTemp }
+module.exports = { request: null, restorePhoto, makeIdPhoto, getQuota, redeemCode, fileIDToUrl, downloadToTemp }

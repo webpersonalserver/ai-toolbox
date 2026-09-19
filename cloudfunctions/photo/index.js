@@ -1,5 +1,10 @@
 // cloudfunctions/photo/index.js — 入口
 // 流程：小程序上传原图到云存储 → 传 fileID 过来 → 云函数下载 → 传 COS → CI 处理 → 结果上传云存储 → 返回 fileID
+//
+// 额度/白名单优先级：
+//   ① 环境变量 DEV_OPENIDS / DEV_UNLIMITED（联调临时用）
+//   ② members 集合（白名单 free / 会员 vip，支持到期时间）
+//   ③ 免费额度 FREE_QUOTA 次/月
 const cloud = require('wx-server-sdk')
 const COS = require('cos-nodejs-sdk-v5')
 const config = require('./config')
@@ -7,6 +12,7 @@ const tci = require('./lib/tci')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
+const _ = db.command
 
 function getCosClient() {
   if (!config.SECRET_ID || !config.SECRET_KEY) {
@@ -21,10 +27,43 @@ function currentMonth() {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
 }
 
-/** 是否处于联调测试模式（不校验额度） */
-function isDevUnlimited(openid) {
-  if (config.DEV_OPENIDS.length) return config.DEV_OPENIDS.includes(openid)
-  return config.DEV_UNLIMITED
+// ---------------------------------------------------------------------------
+// 白名单 / 会员
+// ---------------------------------------------------------------------------
+
+/**
+ * 查询账号权益
+ * @returns {{ unlimited: boolean, label: string, source: string|null, expireAt: Date|null }}
+ */
+async function getMembership(openid) {
+  // ① 环境变量临时白名单
+  if (config.DEV_OPENIDS.length) {
+    if (config.DEV_OPENIDS.includes(openid)) {
+      return { unlimited: true, label: '白名单', source: 'env', expireAt: null }
+    }
+  } else if (config.DEV_UNLIMITED) {
+    return { unlimited: true, label: '测试模式', source: 'env-all', expireAt: null }
+  }
+
+  // ② members 集合（白名单 / 会员）
+  try {
+    const rec = (await db.collection(config.MEMBERS_COLLECTION).where({ openid }).get()).data[0]
+    if (rec && rec.disabled !== true) {
+      const expireMs = rec.expireAt ? new Date(rec.expireAt).getTime() : 0
+      const valid = !rec.expireAt || expireMs > Date.now()
+      if (valid) {
+        const isVip = rec.level === 'vip'
+        return {
+          unlimited: true,
+          label: isVip ? '会员' : '免费白名单',
+          source: isVip ? 'vip' : 'free',
+          expireAt: rec.expireAt || null
+        }
+      }
+    }
+  } catch (e) { /* 集合不存在时忽略 */ }
+
+  return { unlimited: false, label: '', source: null, expireAt: null }
 }
 
 /** 读取（必要时创建）当月额度记录 */
@@ -48,9 +87,9 @@ async function getQuotaRecord(openid) {
  * 校验额度是否可用（只读，不扣减）
  * 关键点：扣减放在处理成功之后，避免「处理失败也吃掉次数」
  */
-async function assertQuotaAvailable(openid) {
-  if (isDevUnlimited(openid)) {
-    return { unlimited: true, rec: null, used: 0 }
+async function assertQuotaAvailable(openid, membership) {
+  if (membership.unlimited) {
+    return { unlimited: true, rec: null, used: 0, membership }
   }
   const rec = await getQuotaRecord(openid)
   if (!rec.isMember && rec.used >= config.FREE_QUOTA) {
@@ -59,18 +98,100 @@ async function assertQuotaAvailable(openid) {
     err.free = config.FREE_QUOTA
     throw err
   }
-  return { unlimited: false, rec, used: rec.used }
+  return { unlimited: false, rec, used: rec.used, membership }
 }
 
 /** 处理成功后扣减一次额度 */
 async function commitQuota(quota) {
-  if (quota.unlimited || !quota.rec) return { used: quota.used, free: config.FREE_QUOTA, isMember: false }
+  if (quota.unlimited || !quota.rec) {
+    return { used: quota.used, free: config.FREE_QUOTA, isMember: true, unlimited: true }
+  }
   const used = quota.rec.used + 1
   await db.collection('quota').doc(quota.rec._id).update({
     data: { used, updatedAt: new Date() }
   })
-  return { used, free: config.FREE_QUOTA, isMember: !!quota.rec.isMember }
+  return { used, free: config.FREE_QUOTA, isMember: !!quota.rec.isMember, unlimited: false }
 }
+
+// ---------------------------------------------------------------------------
+// 兑换码
+// ---------------------------------------------------------------------------
+
+/**
+ * 兑换码核销：给当前账号开通免费白名单/会员
+ * @returns {{ level: string, expireAt: Date|null, days: number }}
+ */
+async function redeemCode(openid, rawCode) {
+  const code = String(rawCode || '').trim().toUpperCase()
+  if (!code) throw new Error('请输入兑换码')
+
+  const codeColl = db.collection(config.REDEEM_COLLECTION)
+  let rec = null
+  try {
+    rec = (await codeColl.where({ code }).get()).data[0] || null
+  } catch (e) {
+    throw new Error('兑换功能未初始化：请先在云开发控制台创建 ' + config.REDEEM_COLLECTION + ' 集合')
+  }
+  if (!rec) throw new Error('兑换码无效')
+  if (rec.disabled === true) throw new Error('该兑换码已停用')
+  if (rec.expireAt && new Date(rec.expireAt).getTime() < Date.now()) throw new Error('该兑换码已过期')
+  const maxUses = Number(rec.maxUses || 1)
+  const usedCount = Number(rec.usedCount || 0)
+  if (usedCount >= maxUses) throw new Error('该兑换码已被使用完')
+
+  const days = Number(rec.days || 0)
+  const memberColl = db.collection(config.MEMBERS_COLLECTION)
+  let existing = null
+  try {
+    existing = (await memberColl.where({ openid }).get()).data[0] || null
+  } catch (e) { /* 集合不存在，下一步会创建 */ }
+
+  if (existing && Array.isArray(existing.redeemCodes) && existing.redeemCodes.indexOf(code) >= 0) {
+    throw new Error('这个兑换码你已经用过了')
+  }
+
+  // 已是永久有效 → 保持永久，不被限时码降级
+  const existingPermanent = existing && !existing.expireAt
+  let expireAt = null
+  if (!existingPermanent) {
+    if (days > 0) {
+      const baseMs = existing && existing.expireAt && new Date(existing.expireAt).getTime() > Date.now()
+        ? new Date(existing.expireAt).getTime()
+        : Date.now()
+      expireAt = new Date(baseMs + days * 86400000)
+    } else {
+      expireAt = null // 永久
+    }
+  }
+
+  const data = {
+    level: rec.level === 'vip' ? 'vip' : 'free',
+    expireAt,
+    note: rec.note || '',
+    updatedAt: new Date()
+  }
+
+  if (existing) {
+    await memberColl.doc(existing._id).update({
+      data: Object.assign({}, data, { redeemCodes: _.push(code) })
+    })
+  } else {
+    await memberColl.add({
+      data: Object.assign({ openid, redeemCodes: [code], createdAt: new Date() }, data)
+    })
+  }
+
+  // 核销计数（仅当记录了 maxUses 时才有意义）
+  try {
+    await codeColl.doc(rec._id).update({ data: { usedCount: _.inc(1) } })
+  } catch (e) { /* 忽略计数失败 */ }
+
+  return { level: data.level, expireAt, days }
+}
+
+// ---------------------------------------------------------------------------
+// 文件流转
+// ---------------------------------------------------------------------------
 
 /** 从云存储下载用户上传的原图 */
 async function downloadOriginal(fileID) {
@@ -87,6 +208,10 @@ async function uploadResult(buffer, key) {
   return res.fileID
 }
 
+// ---------------------------------------------------------------------------
+// 入口
+// ---------------------------------------------------------------------------
+
 exports.main = async (event) => {
   // getWXContext() 返回的就是上下文对象（含 OPENID/APPID/ENV 等）
   const wxContext = cloud.getWXContext()
@@ -94,8 +219,9 @@ exports.main = async (event) => {
   const { action } = event
 
   try {
-    // 查询额度（不扣减）
+    // 查询额度与权益（不扣减）
     if (action === 'quota') {
+      const membership = await getMembership(openid)
       const month = currentMonth()
       let rec = null
       try {
@@ -106,16 +232,28 @@ exports.main = async (event) => {
         data: {
           used: rec ? rec.used : 0,
           free: config.FREE_QUOTA,
-          isMember: rec ? !!rec.isMember : false,
-          unlimited: isDevUnlimited(openid),
-          openid // 便于把 openid 填进 DEV_OPENIDS 白名单
+          isMember: membership.unlimited || (rec ? !!rec.isMember : false),
+          unlimited: membership.unlimited,
+          levelLabel: membership.label,
+          levelSource: membership.source,
+          expireAt: membership.expireAt,
+          openid // 便于把 openid 填进 DEV_OPENIDS 白名单或 members 集合
         }
       }
     }
 
+    // 兑换码核销
+    if (action === 'redeem') {
+      const r = await redeemCode(openid, event.code)
+      return { code: 0, data: r }
+    }
+
     // 联调辅助：重置本人当月额度（仅测试模式可用）
     if (action === 'resetQuota') {
-      if (!isDevUnlimited(openid)) return { code: 40003, msg: '测试模式未开启，无法重置额度' }
+      const membership = await getMembership(openid)
+      if (!(membership.unlimited && membership.source && membership.source.indexOf('env') === 0)) {
+        return { code: 40003, msg: '测试模式未开启，无法重置额度' }
+      }
       const month = currentMonth()
       const coll = db.collection('quota')
       try {
@@ -125,12 +263,13 @@ exports.main = async (event) => {
       return { code: 0, data: { used: 0, free: config.FREE_QUOTA, isMember: false } }
     }
 
-    const cosClient = getCosClient()
+    const membership = await getMembership(openid)
 
     // 老照片修复
     if (action === 'restore') {
       if (!event.fileID) throw new Error('缺少 fileID')
-      const quota = await assertQuotaAvailable(openid)
+      const quota = await assertQuotaAvailable(openid, membership)
+      const cosClient = getCosClient()
       const buf = await downloadOriginal(event.fileID)
       const outKey = await tci.restorePhoto(cosClient, buf, { colorize: !!event.colorize })
       const { buffer: outBuf } = await tci.getFromCOS(cosClient, outKey)
@@ -142,7 +281,8 @@ exports.main = async (event) => {
     // 证件照
     if (action === 'idphoto') {
       if (!event.fileID) throw new Error('缺少 fileID')
-      const quota = await assertQuotaAvailable(openid)
+      const quota = await assertQuotaAvailable(openid, membership)
+      const cosClient = getCosClient()
       const buf = await downloadOriginal(event.fileID)
       const outKey = await tci.makeIdPhoto(cosClient, buf, {
         bgColor: event.bgColor,

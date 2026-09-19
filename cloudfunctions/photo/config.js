@@ -21,10 +21,22 @@ module.exports = {
   FREE_QUOTA: Number(process.env.FREE_QUOTA || 3), // 每用户每月免费次数
   MEMBER_MONTHLY: 9.9,                             // 会员价（展示用）
 
+  // ---------- 白名单 / 会员 ----------
+  // members 集合：每行一个账号，字段 { openid, level: 'free'|'vip', expireAt: Date|null, disabled: bool, note }
+  //   level='free'  → 免费白名单（不限次）
+  //   level='vip'   → 付费会员（不限次）
+  //   expireAt=null → 永久有效；填日期则到期自动失效
+  // 在云开发控制台「数据库」里手动加记录即可生效，无需改代码/重新部署。
+  MEMBERS_COLLECTION: process.env.MEMBERS_COLLECTION || 'members',
+
+  // redeem_codes 集合：兑换码，字段 { code, level, days, maxUses, usedCount, expireAt, disabled, note }
+  //   days=0 表示永久；maxUses 限制可使用次数
+  REDEEM_COLLECTION: process.env.REDEEM_COLLECTION || 'redeem_codes',
+
   // ---------- 联调测试开关（正式上线前务必关闭）----------
   // DEV_UNLIMITED=true  → 所有用户不校验免费额度
-  // DEV_OPENIDS=oXxx,oYyy → 仅这些 openid 不校验额度（更安全，推荐）
-  // 未配置任何一项时走正常额度逻辑。
+  // DEV_OPENIDS=oXxx,oYyy → 仅这些 openid 不校验额度（等价于临时白名单，无需建库）
+  // 两者都未配置时走「白名单/会员 → 免费额度」正常逻辑。
   DEV_UNLIMITED: String(process.env.DEV_UNLIMITED || '').toLowerCase() === 'true',
   DEV_OPENIDS,
 

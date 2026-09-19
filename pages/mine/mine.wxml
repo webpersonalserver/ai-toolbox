@@ -2,9 +2,18 @@
 <view class="container">
   <view class="card user-card">
     <view class="user-title">我的账户</view>
-    <view class="quota">
-      <text wx:if="{{isMember}}" class="member-tag">会员</text>
+
+    <!-- 白名单 / 会员：不限次 -->
+    <view wx:if="{{unlimited}}" class="quota">
+      <text class="member-tag">{{levelLabel || '会员'}}</text>
+      <text>不限次数使用</text>
+      <text wx:if="{{expireText}}" class="expire">{{expireText}}</text>
+    </view>
+
+    <!-- 普通用户：显示剩余免费次数 -->
+    <view wx:else class="quota">
       <text>本月已用 {{quotaUsed}} / {{quotaFree}} 次</text>
+      <text class="expire">剩余 {{quotaFree - quotaUsed}} 次</text>
     </view>
   </view>
 
@@ -12,6 +21,10 @@
     <view class="vip-title">开通会员</view>
     <view class="vip-desc">9.9元/月 · 无水印 · 无限次生成 · 优先处理</view>
     <view class="vip-cta">立即开通 ›</view>
+  </view>
+
+  <view class="card menu-item" bindtap="redeem">
+    <text>兑换码</text><text class="arrow">›</text>
   </view>
 
   <view class="card menu-item" bindtap="about">
