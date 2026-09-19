@@ -114,6 +114,13 @@ async function diagnose() {
 }
 
 /**
+ * 云端体检：真实调用一次上色/增强/抠图，看哪个接口挂（不消耗额度）
+ */
+async function probe() {
+  return await callPhoto('probe')
+}
+
+/**
  * 开发者口令激活：把当前微信永久加入免费白名单（不限次）
  * @param {string} pass
  */
@@ -137,4 +144,4 @@ function downloadToTemp(url) {
   })
 }
 
-module.exports = { request: null, restorePhoto, makeIdPhoto, getQuota, redeemCode, bindMember, diagnose, fileIDToUrl, downloadToTemp }
+module.exports = { request: null, restorePhoto, makeIdPhoto, getQuota, redeemCode, bindMember, diagnose, probe, fileIDToUrl, downloadToTemp }

@@ -345,6 +345,7 @@ module.exports = {
   uploadToCOS,
   getFromCOS,
   signedCiUrl,
+  ciProcess,
   // 导出内部函数便于本地测试
   _internal: { parseHexColor, alphaBBox, resizeRGBA, compositeOnColor }
 }

@@ -85,27 +85,40 @@ Page({
     })
   },
 
-  // 云端自检：看依赖装没装、密钥配没配
+  // 云端体检：依赖/配置 + 真实调用一次上色/增强/抠图，看哪一步挂
   devDiagnose() {
-    wx.showLoading({ title: '自检中', mask: true })
-    api.diagnose().then((d) => {
+    wx.showLoading({ title: '体检中', mask: true })
+    const safe = (p) => p.catch((e) => ({ __err: e.message || '调用失败' }))
+
+    Promise.all([safe(api.diagnose()), safe(api.probe())]).then((arr) => {
       wx.hideLoading()
-      const mods = d.modules || {}
-      const modText = Object.keys(mods).map((k) => `${k}: ${mods[k]}`).join('\n')
-      const summary = [
-        'Node ' + d.node,
-        '密钥 ' + d.secretId,
-        '桶 ' + d.bucket,
-        '环境 ' + d.envVersion + ' / ENV_FREE=' + d.envFree,
-        '免费额度 ' + d.freeQuota,
-        '',
-        modText
-      ].join('\n')
+      const d = arr[0]
+      const pr = arr[1]
+      const lines = []
+
+      if (d && !d.__err) {
+        const mods = d.modules || {}
+        lines.push('Node ' + d.node)
+        lines.push('密钥 ' + d.secretId)
+        lines.push('桶 ' + d.bucket)
+        lines.push('环境 ' + d.envVersion + ' / ENV_FREE=' + d.envFree)
+        lines.push('免费额度 ' + d.freeQuota)
+        lines.push('--- 依赖 ---')
+        Object.keys(mods).forEach((k) => lines.push(k + ': ' + mods[k]))
+      } else {
+        lines.push('自检失败：' + ((d && d.__err) || '未知'))
+      }
+
+      lines.push('--- 数据万象接口 ---')
+      if (pr && !pr.__err) {
+        Object.keys(pr).forEach((k) => lines.push(k + ' → ' + pr[k]))
+      } else {
+        lines.push('体检失败：' + ((pr && pr.__err) || '未知'))
+      }
+
+      const summary = lines.join('\n')
       wx.setClipboardData({ data: summary })
-      wx.showModal({ title: '云端自检（已复制）', content: summary, showCancel: false })
-    }).catch((e) => {
-      wx.hideLoading()
-      wx.showModal({ title: '自检失败', content: e.message || '云函数调用失败', showCancel: false })
+      wx.showModal({ title: '云端体检（已复制）', content: summary, showCancel: false })
     })
   },
 

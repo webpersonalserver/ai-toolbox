@@ -258,6 +258,30 @@ exports.main = async (event) => {
   const envVersion = event.env || 'release'
 
   try {
+    // 体检：在云端真实调用一次三个数据万象接口，看哪个挂（不扣额度、不写业务数据）
+    if (action === 'probe') {
+      const cosClient = getCosClient()
+      const buf = Buffer.from(require('./lib/test-image'), 'base64')
+      const key = `probe/in-${Date.now()}.jpg`
+      await tci.uploadToCOS(cosClient, key, buf)
+
+      const cases = [
+        ['上色 AIImageColoring', 'ci-process=AIImageColoring'],
+        ['增强 AIEnhanceImage', 'ci-process=AIEnhanceImage&denoise=4&sharpen=3'],
+        ['抠图 AIPortraitMatting', 'ci-process=AIPortraitMatting']
+      ]
+      const data = {}
+      for (const c of cases) {
+        try {
+          const out = await tci.ciProcess(cosClient, key, c[1])
+          data[c[0]] = 'ok（' + out.length + ' 字节）'
+        } catch (e) {
+          data[c[0]] = 'FAIL: ' + String(e.message).slice(0, 160)
+        }
+      }
+      return { code: 0, data }
+    }
+
     // 自检：返回云端运行环境、依赖安装情况、配置是否到位（无副作用，不消耗额度）
     if (action === 'diagnose') {
       const mods = {}
