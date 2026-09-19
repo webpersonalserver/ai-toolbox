@@ -5,6 +5,8 @@
   "main": "index.js",
   "dependencies": {
     "wx-server-sdk": "~2.6.3",
-    "cos-nodejs-sdk-v5": "^2.14.0"
+    "cos-nodejs-sdk-v5": "^2.14.0",
+    "pngjs": "^6.0.0",
+    "jpeg-js": "^0.4.4"
   }
 }
