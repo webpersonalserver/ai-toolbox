@@ -260,6 +260,7 @@ exports.main = async (event) => {
   try {
     // 体检：在云端真实调用一次三个数据万象接口，看哪个挂（不扣额度、不写业务数据）
     if (action === 'probe') {
+      const startedAt = Date.now()
       const cosClient = getCosClient()
       const buf = Buffer.from(require('./lib/test-image'), 'base64')
       const key = `probe/in-${Date.now()}.jpg`
@@ -272,14 +273,16 @@ exports.main = async (event) => {
       ]
       const data = {}
       for (const c of cases) {
+        const t0 = Date.now()
         try {
           const out = await tci.ciProcess(cosClient, key, c[1])
-          data[c[0]] = 'ok（' + out.length + ' 字节）'
+          data[c[0]] = `ok（${out.length} 字节 / ${Date.now() - t0}ms）`
         } catch (e) {
-          data[c[0]] = 'FAIL: ' + String(e.message).slice(0, 160)
+          data[c[0]] = `FAIL(${Date.now() - t0}ms): ` + String(e.message).slice(0, 160)
         }
       }
-      return { code: 0, data }
+      const total = Date.now() - startedAt
+      return { code: 0, data, total }
     }
 
     // 自检：返回云端运行环境、依赖安装情况、配置是否到位（无副作用，不消耗额度）

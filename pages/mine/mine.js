@@ -111,7 +111,10 @@ Page({
 
       lines.push('--- 数据万象接口 ---')
       if (pr && !pr.__err) {
-        Object.keys(pr).forEach((k) => lines.push(k + ' → ' + pr[k]))
+        Object.keys(pr).forEach((k) => {
+          if (k !== 'total') lines.push(k + ' → ' + pr[k])
+        })
+        if (pr.total) lines.push('合计耗时 ' + pr.total + 'ms')
       } else {
         lines.push('体检失败：' + ((pr && pr.__err) || '未知'))
       }
