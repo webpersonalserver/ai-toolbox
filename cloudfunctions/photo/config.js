@@ -52,6 +52,7 @@ module.exports = {
   DEV_OPENIDS,
 
   // ---------- 证件照规格（像素，与小程序 utils/config.js 的 id 对应）----------
+  // ---------- 证件照构图（像素示意：295×413 为一寸）----------
   ID_SPECS: {
     one_inch:  { w: 295, h: 413, name: '一寸' },
     two_inch:  { w: 413, h: 579, name: '二寸' },
@@ -60,6 +61,17 @@ module.exports = {
   },
   ID_SPEC_DEFAULT: 'one_inch',
 
-  // 人像在画布中的目标高度占比（0.9 = 上下各留约 5% 留白）
-  PORTRAIT_HEIGHT_RATIO: Number(process.env.PORTRAIT_HEIGHT_RATIO || 0.9)
+  // 统一底片比例（宽/高）：所有规格都先用这一个比例做人脸居中裁剪。
+  // 这样"同一张照片换尺寸"= 同一份人像等比缩放，而不是每个尺寸重新裁剪一遍，
+  // 否则不同规格裁出来的构图（肩宽、留白）会不一致。
+  ID_BASE_RATIO: Number(process.env.ID_BASE_RATIO || 0.78),
+
+  // 人像在画布中的位置：头顶留白 8%、肩宽最多占 92%、人像高度不低于 72%
+  // （低于 72% 说明原图人像过宽，改为撑满高度、两侧裁掉肩膀）
+  ID_TOP_RATIO: Number(process.env.ID_TOP_RATIO || 0.08),
+  ID_WIDTH_RATIO: Number(process.env.ID_WIDTH_RATIO || 0.92),
+  ID_MIN_HEIGHT_RATIO: Number(process.env.ID_MIN_HEIGHT_RATIO || 0.72),
+
+  // 抠图输入的最大边长：过大会明显增加数据万象失败/超时概率（实测 933×1200 偶发返回原图）
+  ID_MATTE_MAX_SIDE: Number(process.env.ID_MATTE_MAX_SIDE || 1000)
 }

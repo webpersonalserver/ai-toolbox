@@ -506,7 +506,41 @@ function compositeOnColor(portrait, pw, ph, cw, ch, ox, oy, bg) {
 }
 
 /**
- * 证件照：人像抠图（CI）→ 换成指定底色 → 按规格裁剪缩放（纯 JS）
+ * 人像抠图（带重试）
+ * 数据万象偶发返回"未抠图的原图"（无透明背景），直接合成会得到一张原图塞进画布的废片，
+ * 所以每次都校验透明像素占比，不合格就重试。
+ */
+async function matteWithRetry(cosClient, key, times = 2) {
+  let lastErr = null
+  for (let i = 0; i < times; i++) {
+    try {
+      const buf = await ciProcess(cosClient, key, 'ci-process=AIPortraitMatting')
+      const img = decodePng(buf)
+      let transparent = 0
+      for (let j = 3; j < img.data.length; j += 4) if (img.data[j] < 16) transparent++
+      const ratio = transparent / (img.width * img.height)
+      if (ratio > 0.01) return { buf, img, transparentRatio: ratio }
+      lastErr = new Error('人像抠图未生效（结果无透明背景）')
+      console.error(`[tci] 第 ${i + 1} 次抠图未生效，透明像素占比 ${(ratio * 100).toFixed(2)}%`)
+    } catch (e) {
+      lastErr = e
+      console.error(`[tci] 第 ${i + 1} 次抠图失败:`, e.message)
+    }
+    await new Promise((r) => setTimeout(r, 300))
+  }
+  if (lastErr && /403/.test(lastErr.message)) {
+    throw new Error('人像抠图无权限：请给子账号补授权（COS 数据读写 + 数据万象），或确认存储桶已绑定数据万象')
+  }
+  throw lastErr || new Error('人像抠图失败')
+}
+
+/**
+ * 证件照：统一底片 → 人像抠图 → 换底色 → 按规格等比合成（纯 JS）
+ *
+ * 关键点：所有规格共用同一张"底片"（固定比例的人脸居中裁剪），
+ * 换尺寸 = 同一份人像等比缩放 + 重新留白，而不是每个尺寸重新裁剪一遍。
+ * 这样同一张照片在一寸/二寸/小二寸下的构图才是一致的。
+ *
  * @param {Buffer} imageBuf 原图
  * @param {object} opts { bgColor: '#FFFFFF', spec: 'one_inch' }
  * @returns {Promise<string>} 结果图 Key
@@ -515,13 +549,14 @@ async function makeIdPhoto(cosClient, imageBuf, opts = {}) {
   const spec = config.ID_SPECS[opts.spec] || config.ID_SPECS[config.ID_SPEC_DEFAULT]
   const bg = parseHexColor(opts.bgColor)
 
-  // 0) 预处理：人脸智能裁剪
-  //    按目标比例把人脸居中裁出来（去掉多余的身体/背景），构图才符合证件照规范。
-  //    旧逻辑只按 alpha 包围盒缩放，全身照会缩成"头很小"，这是效果差的主因。
+  // 0) 统一底片：按固定比例做一次人脸居中裁剪（与规格无关）
+  //    原图过小才放大到 600 保证抠图精度，过大则压到上限避免抠图失败。
   let workBuf = imageBuf
   if (opts.faceCrop !== false) {
-    const workH = Math.min(1200, spec.h * 3)              // 处理尺寸：规格高的 3 倍（上限 1200）
-    const workW = Math.round(workH * spec.w / spec.h)
+    const dim = imageSize(imageBuf)
+    const maxSide = config.ID_MATTE_MAX_SIDE || 1000
+    const workH = dim.h > 0 ? Math.min(maxSide, Math.max(600, dim.h)) : maxSide
+    const workW = Math.round(workH * (config.ID_BASE_RATIO || 0.78))
     const rawKey = `idphoto/raw-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`
     await uploadToCOS(cosClient, rawKey, imageBuf)
     try {
@@ -537,55 +572,44 @@ async function makeIdPhoto(cosClient, imageBuf, opts = {}) {
   const inKey = `idphoto/in-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`
   await uploadToCOS(cosClient, inKey, workBuf)
 
-  // 1) 人像抠图，返回透明背景 PNG（数据万象 AIPortraitMatting）
-  let matted
-  try {
-    matted = await ciProcess(cosClient, inKey, 'ci-process=AIPortraitMatting')
-  } catch (e) {
-    if (/403/.test(e.message)) {
-      throw new Error('人像抠图无权限：请给子账号补授权（COS 数据读写 + 数据万象），或确认存储桶已绑定数据万象')
-    }
-    throw e
-  }
-
-  // 2) 解码 PNG
-  let png
-  try {
-    png = decodePng(matted)
-  } catch (e) {
-    throw new Error('人像抠图结果解析失败（返回可能不是 PNG）：' + e.message)
-  }
+  // 1) 人像抠图（带重试），返回透明背景 PNG
+  const { img: png } = await matteWithRetry(cosClient, inKey)
   const { width: sw, height: sh, data: src } = png
 
-  // 3) 裁掉透明边，取人像实际包围盒
+  // 2) 裁掉透明边，取人像实际包围盒
   const box = alphaBBox(src, sw, sh)
   if (!box) throw new Error('未识别人像：抠图结果中没有可见主体，请换一张清晰的正面照')
-  // 透明像素占比过低说明抠图可能没生效（返回了原图）
-  let transparent = 0
-  for (let i = 3; i < src.length; i += 4) if (src[i] < 16) transparent++
-  if (transparent / (sw * sh) < 0.01) {
-    throw new Error('人像抠图未生效（结果无透明背景），请确认数据万象人像抠图已开通')
-  }
   const cropped = cropRGBA(src, sw, box)
 
-  // 4) 等比缩放：人像高度占画布 PORTRAIT_HEIGHT_RATIO，上下留白符合证件照规范
+  // 3) 等比缩放到目标画布
+  //    规则：头顶留白固定 8%；人像先按肩宽 92% 缩放，超出可用高度就按高度收，
+  //    人像过矮（原图人像很宽）则撑到 72% 高度、两侧肩膀裁掉——全程保持宽高比，绝不拉伸。
   const cw = spec.w
   const ch = spec.h
-  let targetH = Math.round(ch * config.PORTRAIT_HEIGHT_RATIO)
-  let targetW = Math.round((box.w / box.h) * targetH)
-  const maxW = Math.round(cw * 0.96)
-  if (targetW > maxW) {
-    targetW = maxW
-    targetH = Math.round((box.h / box.w) * targetW)
+  const topPx = Math.round(ch * (config.ID_TOP_RATIO || 0.08))
+  const bottomPx = Math.round(ch * 0.02)
+  const usableH = Math.max(1, ch - topPx - bottomPx)
+  const boxRatio = box.w / box.h
+
+  let targetW = Math.round(cw * (config.ID_WIDTH_RATIO || 0.92))
+  let targetH = Math.round(targetW / boxRatio)
+  if (targetH > usableH) {
+    targetH = usableH
+    targetW = Math.round(targetH * boxRatio)
+  }
+  const minH = Math.round(ch * (config.ID_MIN_HEIGHT_RATIO || 0.72))
+  if (targetH < minH) {
+    targetH = Math.min(usableH, minH)
+    targetW = Math.round(targetH * boxRatio)
   }
 
-  // 4.5) 边缘羽化：去掉抠图硬边和白边，换底后过渡更自然
+  // 4) 边缘羽化：去掉抠图硬边和白边，换底后过渡更自然
   const feathered = featherAlpha(cropped, box.w, box.h)
   const scaled = resizeRGBA(feathered, box.w, box.h, targetW, targetH)
 
-  // 5) 居中合成到纯色底
+  // 5) 水平居中、顶部对齐合成到纯色底（targetW 超出画布时两侧自然裁掉）
   const ox = Math.round((cw - targetW) / 2)
-  const oy = Math.round((ch - targetH) / 2)
+  const oy = topPx
   const composed = compositeOnColor(scaled, targetW, targetH, cw, ch, ox, oy, bg)
 
   // 6) 输出 JPG（证件照上传系统普遍要求 JPG）
