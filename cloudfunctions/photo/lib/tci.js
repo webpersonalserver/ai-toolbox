@@ -535,11 +535,63 @@ async function matteWithRetry(cosClient, key, times = 2) {
 }
 
 /**
+ * 从抠图 alpha 遮罩估计头部几何（用于按"头"而不是"整个人"定构图）：
+ *   topY      头顶 y
+ *   shoulderY 肩线 y（行宽首次显著变宽处，约为下巴/脖子下沿）
+ *   headH     头顶→肩线高度
+ *   headW     头部区域最大行宽（含头发）
+ *   headCx    头部区域水平质心（水平居中应以头为准，而不是含手臂的整个人）
+ * 返回 null 表示识别失败（调用方回退旧构图逻辑）。
+ */
+function measureHead(rgba, w, h) {
+  const TH = 32
+  const rowW = new Int32Array(h)
+  for (let y = 0; y < h; y++) {
+    let cnt = 0
+    const base = y * w
+    for (let x = 0; x < w; x++) if (rgba[(base + x) * 4 + 3] > TH) cnt++
+    rowW[y] = cnt
+  }
+  let top = -1
+  for (let y = 0; y < h; y++) if (rowW[y] > 0) { top = y; break }
+  if (top < 0 || h - top < 20) return null
+
+  // 头宽基准：头顶往下 12% 区域行宽的中位数（头发最窄段附近）
+  const probeEnd = Math.min(h, top + Math.max(8, Math.round(h * 0.12)))
+  const samples = []
+  for (let y = top; y < probeEnd; y++) if (rowW[y] > 0) samples.push(rowW[y])
+  if (samples.length < 3) return null
+  samples.sort((a, b) => a - b)
+  const base = samples[Math.floor(samples.length / 2)] || 1
+
+  // 肩线：行宽首次超过基准 1.5 倍（限定在人像上部 70% 内找，找不到当失败处理）
+  const searchEnd = top + Math.round((h - top) * 0.7)
+  let shoulderY = -1
+  for (let y = probeEnd; y < Math.min(searchEnd, h); y++) {
+    if (rowW[y] > base * 1.5) { shoulderY = y; break }
+  }
+  if (shoulderY < 0) return null
+
+  let headW = 0, sum = 0, cnt = 0
+  for (let y = top; y < shoulderY; y++) {
+    if (rowW[y] > headW) headW = rowW[y]
+    const b2 = y * w
+    for (let x = 0; x < w; x++) if (rgba[(b2 + x) * 4 + 3] > TH) { sum += x; cnt++ }
+  }
+  if (headW < 4 || !cnt) return null
+  return { topY: top, shoulderY, headH: shoulderY - top, headW, headCx: sum / cnt }
+}
+
+/**
  * 证件照：统一底片 → 人像抠图 → 换底色 → 按规格等比合成（纯 JS）
  *
- * 关键点：所有规格共用同一张"底片"（固定比例的人脸居中裁剪），
+ * 关键点一：所有规格共用同一张"底片"（固定比例的人脸居中裁剪），
  * 换尺寸 = 同一份人像等比缩放 + 重新留白，而不是每个尺寸重新裁剪一遍。
- * 这样同一张照片在一寸/二寸/小二寸下的构图才是一致的。
+ *
+ * 关键点二：构图以"头部"为标尺，不是以"整个人"的包围盒。
+ *   旧逻辑按整人包围盒缩放，躯干越长肩膀越宽，头被挤得顶满画面（用户实测反馈）。
+ *   新逻辑先从遮罩测出头顶/肩线/头宽，按「头高占画布 60%、头宽 ≤ 画布 50%」缩放，
+ *   头顶留白固定 10%，水平按头部质心居中。识别失败才回退旧的包围盒逻辑。
  *
  * @param {Buffer} imageBuf 原图
  * @param {object} opts { bgColor: '#FFFFFF', spec: 'one_inch' }
@@ -581,35 +633,52 @@ async function makeIdPhoto(cosClient, imageBuf, opts = {}) {
   if (!box) throw new Error('未识别人像：抠图结果中没有可见主体，请换一张清晰的正面照')
   const cropped = cropRGBA(src, sw, box)
 
-  // 3) 等比缩放到目标画布
-  //    规则：头顶留白固定 8%；人像先按肩宽 92% 缩放，超出可用高度就按高度收，
-  //    人像过矮（原图人像很宽）则撑到 72% 高度、两侧肩膀裁掉——全程保持宽高比，绝不拉伸。
+  // 3) 以头部为标尺的等比缩放与定位
+  //    标准证件照构图：头顶留白 10%，头（头顶→肩线）高约占画布 60%，头宽 ≤ 画布 50%。
+  //    识别不到头部（罕见姿势/识别失败）时回退：肩宽 92% 缩放 + 顶部对齐。
   const cw = spec.w
   const ch = spec.h
-  const topPx = Math.round(ch * (config.ID_TOP_RATIO || 0.08))
-  const bottomPx = Math.round(ch * 0.02)
-  const usableH = Math.max(1, ch - topPx - bottomPx)
-  const boxRatio = box.w / box.h
+  const head = opts.headCompose === false ? null : measureHead(cropped, box.w, box.h)
 
-  let targetW = Math.round(cw * (config.ID_WIDTH_RATIO || 0.92))
-  let targetH = Math.round(targetW / boxRatio)
-  if (targetH > usableH) {
-    targetH = usableH
-    targetW = Math.round(targetH * boxRatio)
-  }
-  const minH = Math.round(ch * (config.ID_MIN_HEIGHT_RATIO || 0.72))
-  if (targetH < minH) {
-    targetH = Math.min(usableH, minH)
-    targetW = Math.round(targetH * boxRatio)
+  let targetW, targetH, ox, oy
+  if (head && head.headH >= 10) {
+    const sH = (ch * (config.ID_HEAD_HEIGHT_RATIO || 0.60)) / head.headH
+    const sW = (cw * (config.ID_HEAD_WIDTH_RATIO || 0.50)) / head.headW
+    const s = Math.min(sH, sW)
+    targetW = Math.round(box.w * s)
+    targetH = Math.round(box.h * s)
+    // 头顶固定留白；水平按头部质心居中（而不是含手臂的整个人包围盒）
+    oy = Math.round(ch * (config.ID_TOP_RATIO || 0.10))
+    ox = Math.round(cw / 2 - head.headCx * s)
+    console.log(`[tci] 头部构图: 头高 ${head.headH}px→占画布 ${(head.headH * s / ch * 100).toFixed(1)}%, ` +
+      `头宽 ${head.headW}px→占画布 ${(head.headW * s / cw * 100).toFixed(1)}%, 缩放 ${s.toFixed(3)}`)
+  } else {
+    console.log('[tci] 头部识别失败，回退包围盒构图')
+    const topPx = Math.round(ch * (config.ID_TOP_RATIO || 0.10))
+    const bottomPx = Math.round(ch * 0.02)
+    const usableH = Math.max(1, ch - topPx - bottomPx)
+    const boxRatio = box.w / box.h
+
+    targetW = Math.round(cw * (config.ID_WIDTH_RATIO || 0.92))
+    targetH = Math.round(targetW / boxRatio)
+    if (targetH > usableH) {
+      targetH = usableH
+      targetW = Math.round(targetH * boxRatio)
+    }
+    const minH = Math.round(ch * (config.ID_MIN_HEIGHT_RATIO || 0.72))
+    if (targetH < minH) {
+      targetH = Math.min(usableH, minH)
+      targetW = Math.round(targetH * boxRatio)
+    }
+    ox = Math.round((cw - targetW) / 2)
+    oy = topPx
   }
 
   // 4) 边缘羽化：去掉抠图硬边和白边，换底后过渡更自然
   const feathered = featherAlpha(cropped, box.w, box.h)
   const scaled = resizeRGBA(feathered, box.w, box.h, targetW, targetH)
 
-  // 5) 水平居中、顶部对齐合成到纯色底（targetW 超出画布时两侧自然裁掉）
-  const ox = Math.round((cw - targetW) / 2)
-  const oy = topPx
+  // 5) 合成到纯色底（targetW/targetH 超出画布的部分自然裁掉）
   const composed = compositeOnColor(scaled, targetW, targetH, cw, ch, ox, oy, bg)
 
   // 6) 输出 JPG（证件照上传系统普遍要求 JPG）
@@ -630,6 +699,7 @@ module.exports = {
   // 导出内部函数便于本地测试
   _internal: {
     parseHexColor, alphaBBox, resizeRGBA, compositeOnColor, featherAlpha, deSepia,
-    imageSize, whiteBalance, measureSaturation, applySatGain, enhanceColor, decodeAny, encodeJpeg
+    imageSize, whiteBalance, measureSaturation, applySatGain, enhanceColor, decodeAny, encodeJpeg,
+    measureHead
   }
 }

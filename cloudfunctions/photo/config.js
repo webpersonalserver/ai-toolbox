@@ -66,9 +66,13 @@ module.exports = {
   // 否则不同规格裁出来的构图（肩宽、留白）会不一致。
   ID_BASE_RATIO: Number(process.env.ID_BASE_RATIO || 0.78),
 
-  // 人像在画布中的位置：头顶留白 8%、肩宽最多占 92%、人像高度不低于 72%
-  // （低于 72% 说明原图人像过宽，改为撑满高度、两侧裁掉肩膀）
-  ID_TOP_RATIO: Number(process.env.ID_TOP_RATIO || 0.08),
+  // 人像在画布中的构图（以"头部"为标尺，非整人包围盒），对齐标准证件照规范：
+  //   头部（发际→下巴）占画面高约 2/3；脸宽约占画面宽 50%~60%；头顶留白约 10%
+  //   headW/headH 测量含头发/含脖颈，因此标尺取 60%/62%（换算后正好落在规范区间）
+  //   头部识别失败时回退旧逻辑：肩宽最多 92%、人像高度不低于 72%
+  ID_TOP_RATIO: Number(process.env.ID_TOP_RATIO || 0.10),
+  ID_HEAD_HEIGHT_RATIO: Number(process.env.ID_HEAD_HEIGHT_RATIO || 0.62),
+  ID_HEAD_WIDTH_RATIO: Number(process.env.ID_HEAD_WIDTH_RATIO || 0.60),
   ID_WIDTH_RATIO: Number(process.env.ID_WIDTH_RATIO || 0.92),
   ID_MIN_HEIGHT_RATIO: Number(process.env.ID_MIN_HEIGHT_RATIO || 0.72),
 
