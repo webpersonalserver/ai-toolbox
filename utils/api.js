@@ -69,7 +69,7 @@ async function fileIDToUrl(fileID) {
  */
 async function restorePhoto(filePath, options = {}) {
   const fileID = await uploadOriginal(filePath, 'uploads/restore')
-  const data = await callPhoto('restore', { fileID, colorize: !!options.colorize })
+  const data = await callPhoto('restore', { fileID, colorize: !!options.colorize, hd: !!options.hd })
   return { resultUrl: await fileIDToUrl(data.fileID), fileID: data.fileID }
 }
 

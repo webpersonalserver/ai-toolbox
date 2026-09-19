@@ -91,20 +91,100 @@ async function ciProcess(cosClient, key, query) {
 // 老照片修复
 // ---------------------------------------------------------------------------
 
+/** alpha 边缘羽化（3x3 均值，只模糊 alpha），消除抠图硬边/白边 */
+function featherAlpha(rgba, w, h) {
+  const a = new Uint8Array(w * h)
+  for (let i = 0; i < w * h; i++) a[i] = rgba[i * 4 + 3]
+  const out = Buffer.from(rgba)
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      let s = 0, n = 0
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          const yy = y + dy, xx = x + dx
+          if (yy < 0 || yy >= h || xx < 0 || xx >= w) continue
+          s += a[yy * w + xx]; n++
+        }
+      }
+      out[(y * w + x) * 4 + 3] = Math.round(s / n)
+    }
+  }
+  return out
+}
+
 /**
- * 老照片修复：综合增强（降噪+细节+人脸增强）
+ * 泛黄/褪色老照片先转灰度：AIImageColoring 对 sepia 色调很敏感，
+ * 直接上色会偏蓝紫。判定：整图平均 (R-B) > 12 视为泛黄，转灰度后重编码 JPG。
+ * @returns {Buffer|null} null = 无需处理
+ */
+function deSepia(buf) {
+  let img = null
+  let isPng = false
+  try {
+    if (buf[0] === 0x89 && buf[1] === 0x50) { img = PNG.sync.read(buf); isPng = true } // PNG
+    else { img = jpeg.decode(buf, { useTArray: true }) }                               // JPEG
+  } catch (e) { return null }
+  if (!img || !img.data) return null
+  const d = img.data
+  const px = img.width * img.height
+  if (px > 6000000) return null // 超大图跳过，避免云函数超时
+
+  let sum = 0, n = 0
+  const stride = 4 * Math.max(1, Math.floor(px / 20000))
+  for (let i = 0; i < d.length; i += stride) { sum += d[i] - d[i + 2]; n++ }
+  const avgRB = n ? sum / n : 0
+  if (avgRB < 12) return null // 不泛黄，保留原色彩
+
+  for (let i = 0; i < d.length; i += 4) {
+    const g = Math.round(0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2])
+    d[i] = d[i + 1] = d[i + 2] = g
+  }
+  if (isPng) {
+    return PNG.sync.write({ width: img.width, height: img.height, data: Buffer.from(d) })
+  }
+  return Buffer.from(jpeg.encode({ data: Buffer.from(d), width: img.width, height: img.height }, 95).data)
+}
+
+/**
+ * 老照片修复
+ * 标准链：去色偏 →（上色）→ 增强（降噪+锐化）
+ * 高清链：去色偏 → 降噪 → 超分 2x →（上色）→ 锐化
+ *   先降噪再超分，避免把噪点一起放大；最后单独锐化补回细节。
  * @param {Buffer} imageBuf 原图
- * @param {object} opts { colorize: bool 是否上色 }
+ * @param {object} opts { colorize: 是否上色, hd: 是否走超分高清链 }
  * @returns {string} 结果图的 COS 对象 Key
  */
 async function restorePhoto(cosClient, imageBuf, opts = {}) {
+  // 0) 去色偏（泛黄老照转灰度，上色更准）
+  let srcBuf = imageBuf
+  if (opts.deSepia !== false) {
+    try {
+      const g = deSepia(imageBuf)
+      if (g) srcBuf = g
+    } catch (e) { /* 失败就用原图 */ }
+  }
+
   const inKey = `restore/in-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`
-  await uploadToCOS(cosClient, inKey, imageBuf)
+  await uploadToCOS(cosClient, inKey, srcBuf)
 
   let curKey = inKey
+  const hd = !!opts.hd
 
-  // 第一步（可选）：黑白照上色 —— 独立接口 AIImageColoring
-  // 文档：https://cloud.tencent.com/document/api/460/83794
+  // 高清链第一步：先把噪点压掉，再超分（超分会放大噪点）
+  if (hd) {
+    try {
+      const denoised = await ciProcess(cosClient, curKey, 'ci-process=AIEnhanceImage&denoise=5&sharpen=0')
+      curKey = `restore/dn-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`
+      await uploadToCOS(cosClient, curKey, denoised)
+    } catch (e) {
+      console.error('[tci] 降噪失败，继续走超分:', e.message)
+    }
+    const sr = await ciProcess(cosClient, curKey, 'ci-process=AISuperResolution&magnify=2')
+    curKey = `restore/sr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`
+    await uploadToCOS(cosClient, curKey, sr)
+  }
+
+  // 上色（可选）—— 独立接口 AIImageColoring
   if (opts.colorize) {
     try {
       const colored = await ciProcess(cosClient, curKey, 'ci-process=AIImageColoring')
@@ -112,14 +192,16 @@ async function restorePhoto(cosClient, imageBuf, opts = {}) {
       await uploadToCOS(cosClient, colorKey, colored)
       curKey = colorKey
     } catch (e) {
-      // 上色失败不阻断主流程：回退到仅增强（例如未开通该能力时）
+      // 上色失败不阻断主流程：回退到仅增强
       console.error('[tci] AIImageColoring 失败，回退为仅增强:', e.message)
     }
   }
 
-  // 第二步：综合增强（降噪+锐化，人脸增强内置）
-  // 文档：https://cloud.tencent.com/document/product/436/83792
-  const outBuf = await ciProcess(cosClient, curKey, 'ci-process=AIEnhanceImage&denoise=4&sharpen=3')
+  // 最后一步：增强（高清链已经降过噪，这里只锐化；标准链降噪+锐化一起做）
+  const q = hd
+    ? 'ci-process=AIEnhanceImage&denoise=0&sharpen=4'
+    : 'ci-process=AIEnhanceImage&denoise=5&sharpen=4'
+  const outBuf = await ciProcess(cosClient, curKey, q)
   if (outBuf.length < 100) throw new Error('CI 返回异常（结果过小），请检查数据万象是否开通')
 
   const outKey = `restore/result-${Date.now()}.jpg`
@@ -279,8 +361,27 @@ async function makeIdPhoto(cosClient, imageBuf, opts = {}) {
   const spec = config.ID_SPECS[opts.spec] || config.ID_SPECS[config.ID_SPEC_DEFAULT]
   const bg = parseHexColor(opts.bgColor)
 
+  // 0) 预处理：人脸智能裁剪
+  //    按目标比例把人脸居中裁出来（去掉多余的身体/背景），构图才符合证件照规范。
+  //    旧逻辑只按 alpha 包围盒缩放，全身照会缩成"头很小"，这是效果差的主因。
+  let workBuf = imageBuf
+  if (opts.faceCrop !== false) {
+    const workH = Math.min(1200, spec.h * 3)              // 处理尺寸：规格高的 3 倍（上限 1200）
+    const workW = Math.round(workH * spec.w / spec.h)
+    const rawKey = `idphoto/raw-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`
+    await uploadToCOS(cosClient, rawKey, imageBuf)
+    try {
+      workBuf = await ciProcess(cosClient, rawKey,
+        `imageMogr2/thumbnail/x${workH}/gravity/face/crop/${workW}x${workH}`)
+    } catch (e) {
+      // 未开通人脸智能裁剪 / 无人脸 → 回退原图
+      console.error('[tci] 人脸智能裁剪不可用，回退原图:', e.message)
+      workBuf = imageBuf
+    }
+  }
+
   const inKey = `idphoto/in-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`
-  await uploadToCOS(cosClient, inKey, imageBuf)
+  await uploadToCOS(cosClient, inKey, workBuf)
 
   // 1) 人像抠图，返回透明背景 PNG（数据万象 AIPortraitMatting）
   let matted
@@ -313,7 +414,7 @@ async function makeIdPhoto(cosClient, imageBuf, opts = {}) {
   }
   const cropped = cropRGBA(src, sw, box)
 
-  // 4) 等比缩放到画布高度的 PORTRAIT_HEIGHT_RATIO，并保证不超出画布宽度
+  // 4) 等比缩放：人像高度占画布 PORTRAIT_HEIGHT_RATIO，上下留白符合证件照规范
   const cw = spec.w
   const ch = spec.h
   let targetH = Math.round(ch * config.PORTRAIT_HEIGHT_RATIO)
@@ -324,7 +425,9 @@ async function makeIdPhoto(cosClient, imageBuf, opts = {}) {
     targetH = Math.round((box.h / box.w) * targetW)
   }
 
-  const scaled = resizeRGBA(cropped, box.w, box.h, targetW, targetH)
+  // 4.5) 边缘羽化：去掉抠图硬边和白边，换底后过渡更自然
+  const feathered = featherAlpha(cropped, box.w, box.h)
+  const scaled = resizeRGBA(feathered, box.w, box.h, targetW, targetH)
 
   // 5) 居中合成到纯色底
   const ox = Math.round((cw - targetW) / 2)
@@ -347,5 +450,5 @@ module.exports = {
   signedCiUrl,
   ciProcess,
   // 导出内部函数便于本地测试
-  _internal: { parseHexColor, alphaBBox, resizeRGBA, compositeOnColor }
+  _internal: { parseHexColor, alphaBBox, resizeRGBA, compositeOnColor, featherAlpha, deSepia }
 }

@@ -7,6 +7,7 @@ Page({
     resultPath: '',
     colorize: false,   // 黑白上色
     enhance: true,     // 清晰增强
+    hd: false,         // 高清模式（超分 2x，更慢但更清晰）
     processing: false,
     previewing: false,
     quotaUsed: 0,
@@ -33,6 +34,7 @@ Page({
 
   toggleColorize() { this.setData({ colorize: !this.data.colorize }) },
   toggleEnhance()  { this.setData({ enhance: !this.data.enhance }) },
+  toggleHd()       { this.setData({ hd: !this.data.hd }) },
 
   // 开始修复
   async startRestore() {
@@ -44,7 +46,8 @@ Page({
     try {
       const res = await api.restorePhoto(this.data.imagePath, {
         colorize: this.data.colorize,
-        enhance: this.data.enhance
+        enhance: this.data.enhance,
+        hd: this.data.hd
       })
       this.setData({ resultPath: res.resultUrl || '', processing: false })
       this.refreshQuota()

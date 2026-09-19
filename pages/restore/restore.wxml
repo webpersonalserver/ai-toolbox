@@ -17,7 +17,7 @@
     <view class="option" bindtap="toggleEnhance">
       <view>
         <view class="option-title">清晰增强</view>
-        <view class="option-desc">去模糊、去划痕、提升分辨率</view>
+        <view class="option-desc">去噪、去模糊、提升细节</view>
       </view>
       <view class="checkbox {{enhance ? 'checked' : ''}}">{{enhance ? '✓' : ''}}</view>
     </view>
@@ -27,6 +27,13 @@
         <view class="option-desc">黑白照片自动还原自然色彩</view>
       </view>
       <view class="checkbox {{colorize ? 'checked' : ''}}">{{colorize ? '✓' : ''}}</view>
+    </view>
+    <view class="option" bindtap="toggleHd">
+      <view>
+        <view class="option-title">高清模式（超分 2 倍）</view>
+        <view class="option-desc">先降噪再放大重建细节，慢 3~5 秒但更清晰</view>
+      </view>
+      <view class="checkbox {{hd ? 'checked' : ''}}">{{hd ? '✓' : ''}}</view>
     </view>
   </view>
 

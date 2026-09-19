@@ -373,7 +373,10 @@ exports.main = async (event) => {
       const quota = await assertQuotaAvailable(openid, membership)
       const cosClient = getCosClient()
       const buf = await downloadOriginal(event.fileID)
-      const outKey = await tci.restorePhoto(cosClient, buf, { colorize: !!event.colorize })
+      const outKey = await tci.restorePhoto(cosClient, buf, {
+        colorize: !!event.colorize,
+        hd: !!event.hd // 高清模式：降噪→超分 2x→上色→锐化（更慢、更清晰）
+      })
       const { buffer: outBuf } = await tci.getFromCOS(cosClient, outKey)
       const resultFileID = await uploadResult(outBuf, outKey)
       const quotaAfter = await commitQuota(quota)
