@@ -24,14 +24,14 @@
     <view class="option" bindtap="toggleColorize">
       <view>
         <view class="option-title">AI 智能上色</view>
-        <view class="option-desc">黑白照片自动还原自然色彩</view>
+        <view class="option-desc">黑白照片还原色彩，自动校正泛黄与色偏</view>
       </view>
       <view class="checkbox {{colorize ? 'checked' : ''}}">{{colorize ? '✓' : ''}}</view>
     </view>
     <view class="option" bindtap="toggleHd">
       <view>
-        <view class="option-title">高清模式（超分 2 倍）</view>
-        <view class="option-desc">先降噪再放大重建细节，慢 3~5 秒但更清晰</view>
+        <view class="option-title">高清模式（分辨率翻倍）</view>
+        <view class="option-desc">2 倍超分重建再清晰化，约多 4 秒，适合小尺寸老照片</view>
       </view>
       <view class="checkbox {{hd ? 'checked' : ''}}">{{hd ? '✓' : ''}}</view>
     </view>

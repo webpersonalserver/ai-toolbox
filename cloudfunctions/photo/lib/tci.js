@@ -88,7 +88,7 @@ async function ciProcess(cosClient, key, query) {
 }
 
 // ---------------------------------------------------------------------------
-// 老照片修复
+// 老照片修复：清晰度 + 色彩还原
 // ---------------------------------------------------------------------------
 
 /** alpha 边缘羽化（3x3 均值，只模糊 alpha），消除抠图硬边/白边 */
@@ -145,16 +145,151 @@ function deSepia(buf) {
   return Buffer.from(jpeg.encode({ data: Buffer.from(d), width: img.width, height: img.height }, 95).data)
 }
 
+/** 只解析图片头拿宽高，避免全量解码（用于决定超分倍率） */
+function imageSize(buf) {
+  try {
+    if (buf[0] === 0x89 && buf[1] === 0x50) {           // PNG: IHDR
+      return { w: buf.readUInt32BE(16), h: buf.readUInt32BE(20) }
+    }
+    if (buf[0] === 0xff && buf[1] === 0xd8) {            // JPEG: 找 SOFn
+      let i = 2
+      while (i < buf.length - 9) {
+        if (buf[i] !== 0xff) { i++; continue }
+        const m = buf[i + 1]
+        if (m >= 0xc0 && m <= 0xcf && m !== 0xc4 && m !== 0xc8 && m !== 0xcc) {
+          return { h: buf.readUInt16BE(i + 5), w: buf.readUInt16BE(i + 7) }
+        }
+        i += 2 + buf.readUInt16BE(i + 2)
+      }
+    }
+  } catch (e) { /* 解析失败走默认 */ }
+  return { w: 0, h: 0 }
+}
+
+/** 解码任意 JPEG/PNG → { data(RGBA), w, h } */
+function decodeAny(buf) {
+  if (buf[0] === 0x89 && buf[1] === 0x50) {
+    const p = decodePng(buf)
+    return { data: Buffer.from(p.data), w: p.width, h: p.height }
+  }
+  const j = jpeg.decode(buf, { useTArray: true })
+  return { data: Buffer.from(j.data), w: j.width, h: j.height }
+}
+
+/** 编码为 JPEG */
+function encodeJpeg(img, quality = 94) {
+  return Buffer.from(jpeg.encode({ data: img.data, width: img.w, height: img.h }, quality).data)
+}
+
+/**
+ * 灰世界白平衡：把三通道均值拉到同一灰点，纠正色偏。
+ * 修正幅度做限幅（默认 ±18%），避免大面积单色画面把整图带歪。
+ */
+function whiteBalance(img, limit = 0.18) {
+  const d = img.data
+  let sr = 0, sg = 0, sb = 0, n = 0
+  for (let i = 0; i < d.length; i += 4 * 11) { sr += d[i]; sg += d[i + 1]; sb += d[i + 2]; n++ }
+  const mr = sr / (n || 1), mg = sg / (n || 1), mb = sb / (n || 1)
+  const gray = (mr + mg + mb) / 3
+  const clamp = (v) => Math.max(1 - limit, Math.min(1 + limit, v))
+  const kr = clamp(gray / (mr || 1)), kg = clamp(gray / (mg || 1)), kb = clamp(gray / (mb || 1))
+  if (Math.abs(kr - 1) < 0.005 && Math.abs(kg - 1) < 0.005 && Math.abs(kb - 1) < 0.005) return img
+
+  const lr = new Uint8Array(256), lg = new Uint8Array(256), lb = new Uint8Array(256)
+  for (let i = 0; i < 256; i++) {
+    lr[i] = Math.min(255, Math.round(i * kr))
+    lg[i] = Math.min(255, Math.round(i * kg))
+    lb[i] = Math.min(255, Math.round(i * kb))
+  }
+  const data = Buffer.from(d)
+  for (let i = 0; i < data.length; i += 4) {
+    data[i] = lr[data[i]]; data[i + 1] = lg[data[i + 1]]; data[i + 2] = lb[data[i + 2]]
+  }
+  return { data, w: img.w, h: img.h }
+}
+
+/** 平均饱和度（HSV 的 S，百分比 0-100） */
+function measureSaturation(img) {
+  const d = img.data
+  let sum = 0, n = 0
+  for (let i = 0; i < d.length; i += 4 * 7) {
+    const mx = Math.max(d[i], d[i + 1], d[i + 2])
+    const mn = Math.min(d[i], d[i + 1], d[i + 2])
+    sum += mx === 0 ? 0 : (mx - mn) / mx * 100
+    n++
+  }
+  return n ? sum / n : 0
+}
+
+/**
+ * 饱和度增益（保持亮度不变）：C' = Y + (C - Y) * gain
+ * 只放大彩度，不动亮度，所以不会整体变亮/变暗。
+ */
+function applySatGain(img, gain) {
+  if (gain <= 1.001) return img
+  const d = Buffer.from(img.data)
+  for (let i = 0; i < d.length; i += 4) {
+    const y = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]
+    const r = y + (d[i] - y) * gain
+    const g = y + (d[i + 1] - y) * gain
+    const b = y + (d[i + 2] - y) * gain
+    d[i] = r < 0 ? 0 : r > 255 ? 255 : r
+    d[i + 1] = g < 0 ? 0 : g > 255 ? 255 : g
+    d[i + 2] = b < 0 ? 0 : b > 255 ? 255 : b
+  }
+  return { data: d, w: img.w, h: img.h }
+}
+
+/**
+ * 色彩还原后处理：白平衡去色偏 + 自适应饱和度拉到"现代照片"水平。
+ *
+ * 为什么自适应：实测同一条链路上，480px 图上色后平均饱和度只有 8%，
+ * 960px 上色后有 16%——固定增益会要么没变化、要么过饱和。
+ * 所以先量当前饱和度，再算达到目标值所需的增益。
+ *
+ * @param {Buffer} buf 已上色/已增强的图
+ * @param {object} opt { targetSat: 目标饱和度%, maxGain: 增益上限, maxPixels: 超过则跳过 }
+ * @returns {Buffer} 处理后的 JPEG
+ */
+function enhanceColor(buf, opt = {}) {
+  const targetSat = opt.targetSat == null ? 24 : opt.targetSat
+  const maxGain = opt.maxGain == null ? 3.2 : opt.maxGain
+  const maxPixels = opt.maxPixels || 2200000   // 约 1500x1500，超过就跳过本地处理避免云函数超时
+  try {
+    const img = decodeAny(buf)
+    if (img.w * img.h > maxPixels) return buf
+    let cur = whiteBalance(img)
+    const sat = measureSaturation(cur)
+    // 灰度图（没上色）饱和度为 0，增益无意义，只做白平衡
+    const gain = sat < 0.5 ? 1 : Math.min(maxGain, Math.max(1, targetSat / sat))
+    cur = applySatGain(cur, gain)
+    return encodeJpeg(cur, 94)
+  } catch (e) {
+    console.error('[tci] 色彩还原失败，返回原图:', e.message)
+    return buf
+  }
+}
+
 /**
  * 老照片修复
- * 标准链：去色偏 →（上色）→ 增强（降噪+锐化）
- * 高清链：去色偏 → 降噪 → 超分 2x →（上色）→ 锐化
- *   先降噪再超分，避免把噪点一起放大；最后单独锐化补回细节。
+ *
+ * 清晰度链（实测结论，别随意调顺序）：
+ *   降噪 → 超分 → 上色 → 锐化 → 色彩还原
+ *  · 必须先降噪再超分，否则噪点会被一起放大
+ *  · magnify=1 = 官方"清晰度增强"（不改分辨率），实测锐度提升最大（拉普拉斯能量 25→41）
+ *  · magnify=2 = 分辨率翻倍，高清模式才走；放大后再跑一次 magnify=1 补锐度
+ *  · 实测 4x 锐度反而不如 1x、耗时翻倍，故不使用
+ *
  * @param {Buffer} imageBuf 原图
- * @param {object} opts { colorize: 是否上色, hd: 是否走超分高清链 }
- * @returns {string} 结果图的 COS 对象 Key
+ * @param {object} opts { colorize: 是否上色, hd: 高清模式(分辨率翻倍), enhance: 清晰增强 }
+ * @returns {Promise<string>} 结果图 COS Key
  */
 async function restorePhoto(cosClient, imageBuf, opts = {}) {
+  const colorize = !!opts.colorize
+  const hd = !!opts.hd
+  const enhance = opts.enhance !== false
+  const t0 = Date.now()
+
   // 0) 去色偏（泛黄老照转灰度，上色更准）
   let srcBuf = imageBuf
   if (opts.deSepia !== false) {
@@ -166,26 +301,35 @@ async function restorePhoto(cosClient, imageBuf, opts = {}) {
 
   const inKey = `restore/in-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`
   await uploadToCOS(cosClient, inKey, srcBuf)
-
   let curKey = inKey
-  const hd = !!opts.hd
 
-  // 高清链第一步：先把噪点压掉，再超分（超分会放大噪点）
-  if (hd) {
+  if (enhance) {
+    // 1) 降噪（超分前必须先把噪点压掉）
     try {
       const denoised = await ciProcess(cosClient, curKey, 'ci-process=AIEnhanceImage&denoise=5&sharpen=0')
       curKey = `restore/dn-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`
       await uploadToCOS(cosClient, curKey, denoised)
     } catch (e) {
-      console.error('[tci] 降噪失败，继续走超分:', e.message)
+      console.error('[tci] 降噪失败，继续:', e.message)
     }
-    const sr = await ciProcess(cosClient, curKey, 'ci-process=AISuperResolution&magnify=2')
-    curKey = `restore/sr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`
-    await uploadToCOS(cosClient, curKey, sr)
+
+    // 2) 超分：高清模式先放大到 2 倍，再统一做一次清晰度增强
+    const dim = imageSize(srcBuf)
+    const longSide = Math.max(dim.w, dim.h)
+    const plan = hd && longSide > 0 && longSide < 1400 ? [2, 1] : [1]
+    for (const m of plan) {
+      try {
+        const sr = await ciProcess(cosClient, curKey, `ci-process=AISuperResolution&magnify=${m}`)
+        curKey = `restore/sr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`
+        await uploadToCOS(cosClient, curKey, sr)
+      } catch (e) {
+        console.error(`[tci] 超分 magnify=${m} 失败，跳过:`, e.message)
+      }
+    }
   }
 
-  // 上色（可选）—— 独立接口 AIImageColoring
-  if (opts.colorize) {
+  // 3) 上色（可选）—— 独立接口 AIImageColoring
+  if (colorize) {
     try {
       const colored = await ciProcess(cosClient, curKey, 'ci-process=AIImageColoring')
       const colorKey = `restore/mid-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.png`
@@ -197,13 +341,23 @@ async function restorePhoto(cosClient, imageBuf, opts = {}) {
     }
   }
 
-  // 最后一步：增强（高清链已经降过噪，这里只锐化；标准链降噪+锐化一起做）
-  const q = hd
-    ? 'ci-process=AIEnhanceImage&denoise=0&sharpen=4'
-    : 'ci-process=AIEnhanceImage&denoise=5&sharpen=4'
-  const outBuf = await ciProcess(cosClient, curKey, q)
+  // 4) 锐化（收尾补细节；此时已是干净大图，只锐化不再降噪）
+  let outBuf
+  if (enhance) {
+    outBuf = await ciProcess(cosClient, curKey, 'ci-process=AIEnhanceImage&denoise=0&sharpen=4')
+  } else {
+    outBuf = (await getFromCOS(cosClient, curKey)).buffer
+  }
   if (outBuf.length < 100) throw new Error('CI 返回异常（结果过小），请检查数据万象是否开通')
 
+  // 5) 色彩还原：白平衡去色偏 + 自适应饱和度（让色彩接近现代照片）
+  //    仅对上色结果生效；不上色时白平衡对灰度图无副作用，也保留（纠正残留色偏）
+  outBuf = enhanceColor(outBuf, {
+    targetSat: opts.targetSat == null ? (colorize ? 24 : 0) : opts.targetSat,
+    maxGain: opts.maxGain || 3.2
+  })
+
+  console.log('[tci] restorePhoto 总耗时', Date.now() - t0, 'ms，输出', outBuf.length, '字节')
   const outKey = `restore/result-${Date.now()}.jpg`
   await uploadToCOS(cosClient, outKey, outBuf)
   return outKey
@@ -450,5 +604,8 @@ module.exports = {
   signedCiUrl,
   ciProcess,
   // 导出内部函数便于本地测试
-  _internal: { parseHexColor, alphaBBox, resizeRGBA, compositeOnColor, featherAlpha, deSepia }
+  _internal: {
+    parseHexColor, alphaBBox, resizeRGBA, compositeOnColor, featherAlpha, deSepia,
+    imageSize, whiteBalance, measureSaturation, applySatGain, enhanceColor, decodeAny, encodeJpeg
+  }
 }
