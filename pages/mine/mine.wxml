@@ -1,7 +1,7 @@
 <!--pages/mine/mine.wxml — 我的-->
 <view class="container">
   <view class="card user-card">
-    <view class="user-title">我的账户</view>
+    <view class="user-title" bindtap="onTitleTap">我的账户</view>
 
     <!-- 白名单 / 会员：不限次 -->
     <view wx:if="{{unlimited}}" class="quota">
@@ -17,7 +17,7 @@
     </view>
   </view>
 
-  <view class="card vip-card" bindtap="buyMembership">
+  <view wx:if="{{!unlimited}}" class="card vip-card" bindtap="buyMembership">
     <view class="vip-title">开通会员</view>
     <view class="vip-desc">9.9元/月 · 无水印 · 无限次生成 · 优先处理</view>
     <view class="vip-cta">立即开通 ›</view>
@@ -26,6 +26,20 @@
   <view class="card menu-item" bindtap="redeem">
     <text>兑换码</text><text class="arrow">›</text>
   </view>
+
+  <!-- 开发者模式：连点「我的账户」5 次出现 -->
+  <block wx:if="{{showDev}}">
+    <view class="card menu-item" bindtap="devActivate">
+      <text>开发者口令激活（永久免额度）</text><text class="arrow">›</text>
+    </view>
+    <view class="card menu-item" bindtap="copyOpenid">
+      <text>复制我的 openid</text><text class="arrow">›</text>
+    </view>
+    <view class="dev-tip">
+      <text wx:if="{{openid}}">openid：{{openid}}\n</text>
+      <text>运行环境：{{env}}（develop/trial 自动免额度）</text>
+    </view>
+  </block>
 
   <view class="card menu-item" bindtap="about">
     <text>关于我们</text><text class="arrow">›</text>

@@ -17,3 +17,7 @@
   display: flex; justify-content: space-between; align-items: center;
 }
 .arrow { color: #C7CAD1; font-size: 36rpx; }
+.dev-tip {
+  font-size: 22rpx; color: #9CA3AF; padding: 16rpx 32rpx;
+  line-height: 1.6; word-break: break-all;
+}

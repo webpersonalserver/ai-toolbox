@@ -8,7 +8,12 @@ Page({
     isMember: false,
     unlimited: false,
     levelLabel: '',
-    expireText: ''
+    expireText: '',
+    openid: '',
+    env: '',
+    showDev: false,   // 连点标题 5 次唤出的开发者入口
+    tapCount: 0,
+    tapTimer: null
   },
 
   onShow() {
@@ -24,7 +29,9 @@ Page({
         isMember: !!q.isMember,
         unlimited: !!q.unlimited,
         levelLabel: q.levelLabel || (q.isMember ? '会员' : ''),
-        expireText: this.formatExpire(q.expireAt)
+        expireText: this.formatExpire(q.expireAt),
+        openid: q.openid || '',
+        env: q.env || ''
       })
     } catch (e) { /* 静默 */ }
   },
@@ -35,6 +42,56 @@ Page({
     const d = new Date(expireAt)
     if (isNaN(d.getTime())) return ''
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} 到期`
+  },
+
+  // 连点「我的账户」5 次 → 唤出开发者入口（自测/给体验成员开白名单用）
+  onTitleTap() {
+    if (this.data.showDev) return
+    if (this.data.tapTimer) clearTimeout(this.data.tapTimer)
+    const n = this.data.tapCount + 1
+    if (n >= 5) {
+      this.setData({ tapCount: 0, showDev: true })
+      wx.showToast({ title: '开发者模式已开启', icon: 'none' })
+      return
+    }
+    this.setData({
+      tapCount: n,
+      tapTimer: setTimeout(() => this.setData({ tapCount: 0 }), 2000)
+    })
+  },
+
+  // 开发者口令：输入正确即把当前微信永久加入免费白名单（不限次）
+  devActivate() {
+    wx.showModal({
+      title: '开发者口令',
+      content: '输入口令后，当前微信将永久免额度',
+      editable: true,
+      placeholderText: '请输入口令',
+      success: async (res) => {
+        if (!res.confirm) return
+        const pass = (res.content || '').trim()
+        if (!pass) return
+        wx.showLoading({ title: '激活中', mask: true })
+        try {
+          await api.bindMember(pass)
+          wx.hideLoading()
+          await this.refreshQuota()
+          wx.showModal({ title: '激活成功', content: '当前微信已永久免额度（不限次数）', showCancel: false })
+        } catch (e) {
+          wx.hideLoading()
+          wx.showModal({ title: '激活失败', content: e.message || '请检查口令后重试', showCancel: false })
+        }
+      }
+    })
+  },
+
+  copyOpenid() {
+    const id = this.data.openid
+    if (!id) {
+      wx.showToast({ title: '未获取到 openid', icon: 'none' })
+      return
+    }
+    wx.setClipboardData({ data: id })
   },
 
   // 兑换码核销：输入白名单/会员兑换码

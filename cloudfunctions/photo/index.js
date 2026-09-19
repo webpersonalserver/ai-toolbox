@@ -33,9 +33,21 @@ function currentMonth() {
 
 /**
  * 查询账号权益
+ * @param {string} openid
+ * @param {string} envVersion develop | trial | release（由小程序端 wx.getAccountInfoSync 传入）
  * @returns {{ unlimited: boolean, label: string, source: string|null, expireAt: Date|null }}
  */
-async function getMembership(openid) {
+async function getMembership(openid, envVersion) {
+  // ⓪ 开发版 / 体验版：开发者与体验成员自动不限次（无需任何配置）
+  if (config.ENV_FREE && (envVersion === 'develop' || envVersion === 'trial')) {
+    return {
+      unlimited: true,
+      label: envVersion === 'develop' ? '开发者' : '体验成员',
+      source: 'env-version',
+      expireAt: null
+    }
+  }
+
   // ① 环境变量临时白名单
   if (config.DEV_OPENIDS.length) {
     if (config.DEV_OPENIDS.includes(openid)) {
@@ -189,6 +201,31 @@ async function redeemCode(openid, rawCode) {
   return { level: data.level, expireAt, days }
 }
 
+/**
+ * 把某个 openid 永久写入免费白名单（level=free、不限次、永久有效）
+ * @returns {{ level: string, expireAt: null, note: string }}
+ */
+async function grantFreeMember(openid, note) {
+  const coll = db.collection(config.MEMBERS_COLLECTION)
+  let existing = null
+  try {
+    existing = (await coll.where({ openid }).get()).data[0] || null
+  } catch (e) {
+    throw new Error('白名单未初始化：请先在云开发控制台创建 ' + config.MEMBERS_COLLECTION + ' 集合')
+  }
+
+  if (existing) {
+    await coll.doc(existing._id).update({
+      data: { level: 'free', expireAt: null, disabled: false, note: note || '', updatedAt: new Date() }
+    })
+  } else {
+    await coll.add({
+      data: { openid, level: 'free', expireAt: null, disabled: false, note: note || '', createdAt: new Date() }
+    })
+  }
+  return { level: 'free', expireAt: null, note: note || '' }
+}
+
 // ---------------------------------------------------------------------------
 // 文件流转
 // ---------------------------------------------------------------------------
@@ -217,11 +254,13 @@ exports.main = async (event) => {
   const wxContext = cloud.getWXContext()
   const openid = wxContext.OPENID
   const { action } = event
+  // 小程序运行环境：develop（开发版）/ trial（体验版）/ release（正式版）
+  const envVersion = event.env || 'release'
 
   try {
     // 查询额度与权益（不扣减）
     if (action === 'quota') {
-      const membership = await getMembership(openid)
+      const membership = await getMembership(openid, envVersion)
       const month = currentMonth()
       let rec = null
       try {
@@ -237,6 +276,7 @@ exports.main = async (event) => {
           levelLabel: membership.label,
           levelSource: membership.source,
           expireAt: membership.expireAt,
+          env: envVersion, // develop / trial / release
           openid // 便于把 openid 填进 DEV_OPENIDS 白名单或 members 集合
         }
       }
@@ -248,9 +288,19 @@ exports.main = async (event) => {
       return { code: 0, data: r }
     }
 
+    // 开发者口令：把当前微信永久加入免费白名单（自己人免额度用）
+    if (action === 'bindMember') {
+      if (!config.DEV_PASS) return { code: 40004, msg: '未配置开发者口令（DEV_PASS）' }
+      if (String(event.pass || '').trim() !== config.DEV_PASS) {
+        return { code: 40005, msg: '口令不正确' }
+      }
+      const info = await grantFreeMember(openid, event.note || '开发者口令')
+      return { code: 0, data: info }
+    }
+
     // 联调辅助：重置本人当月额度（仅测试模式可用）
     if (action === 'resetQuota') {
-      const membership = await getMembership(openid)
+      const membership = await getMembership(openid, envVersion)
       if (!(membership.unlimited && membership.source && membership.source.indexOf('env') === 0)) {
         return { code: 40003, msg: '测试模式未开启，无法重置额度' }
       }
@@ -263,7 +313,7 @@ exports.main = async (event) => {
       return { code: 0, data: { used: 0, free: config.FREE_QUOTA, isMember: false } }
     }
 
-    const membership = await getMembership(openid)
+    const membership = await getMembership(openid, envVersion)
 
     // 老照片修复
     if (action === 'restore') {

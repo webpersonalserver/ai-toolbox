@@ -10,6 +10,19 @@ function uploadOriginal(filePath, prefix) {
 }
 
 /**
+ * 当前小程序运行环境：develop（开发版）/ trial（体验版）/ release（正式版）
+ * 云函数据此判断是不是开发者 / 体验成员，从而免额度
+ */
+function envVersion() {
+  try {
+    const info = wx.getAccountInfoSync && wx.getAccountInfoSync()
+    return (info && info.miniProgram && info.miniProgram.envVersion) || 'release'
+  } catch (e) {
+    return 'release'
+  }
+}
+
+/**
  * 调用云函数，统一处理业务错误码
  */
 async function callPhoto(action, payload = {}) {
@@ -17,7 +30,7 @@ async function callPhoto(action, payload = {}) {
   try {
     res = await wx.cloud.callFunction({
       name: 'photo',
-      data: { action, ...payload }
+      data: { action, ...payload, env: envVersion() }
     })
   } catch (err) {
     // 调用层失败（函数不存在/网络/环境错误等），打印完整 errMsg 便于定位
@@ -94,6 +107,14 @@ async function redeemCode(code) {
 }
 
 /**
+ * 开发者口令激活：把当前微信永久加入免费白名单（不限次）
+ * @param {string} pass
+ */
+async function bindMember(pass) {
+  return await callPhoto('bindMember', { pass })
+}
+
+/**
  * 下载结果图到本地临时文件（保存相册前用）
  */
 function downloadToTemp(url) {
@@ -109,4 +130,4 @@ function downloadToTemp(url) {
   })
 }
 
-module.exports = { request: null, restorePhoto, makeIdPhoto, getQuota, redeemCode, fileIDToUrl, downloadToTemp }
+module.exports = { request: null, restorePhoto, makeIdPhoto, getQuota, redeemCode, bindMember, fileIDToUrl, downloadToTemp }

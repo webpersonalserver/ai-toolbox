@@ -33,6 +33,17 @@ module.exports = {
   //   days=0 表示永久；maxUses 限制可使用次数
   REDEEM_COLLECTION: process.env.REDEEM_COLLECTION || 'redeem_codes',
 
+  // ---------- 开发者 / 体验成员 免额度 ----------
+  // ① 开发版 + 体验版自动不限次：小程序后台的「开发者」和「体验成员」才能打开
+  //    develop / trial 版本，所以这两类成员天然免额度，无需任何配置。
+  //    正式上线后不想保留，把云函数环境变量 ENV_FREE 设为 false 即可。
+  ENV_FREE: String(process.env.ENV_FREE || 'true').toLowerCase() === 'true',
+
+  // ② 开发者口令：在「我的」页连点标题 5 次唤出入口令框，输入正确即把当前
+  //    微信永久写入 members 白名单（level=free、不限次、永久有效）。
+  //    建议在云函数环境变量里改成自己的口令；DEV_PASS 留空则关闭该功能。
+  DEV_PASS: process.env.DEV_PASS || 'aitool2026',
+
   // ---------- 联调测试开关（正式上线前务必关闭）----------
   // DEV_UNLIMITED=true  → 所有用户不校验免费额度
   // DEV_OPENIDS=oXxx,oYyy → 仅这些 openid 不校验额度（等价于临时白名单，无需建库）
