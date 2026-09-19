@@ -258,6 +258,31 @@ exports.main = async (event) => {
   const envVersion = event.env || 'release'
 
   try {
+    // 自检：返回云端运行环境、依赖安装情况、配置是否到位（无副作用，不消耗额度）
+    if (action === 'diagnose') {
+      const mods = {}
+      const list = ['pngjs', 'jpeg-js', 'cos-nodejs-sdk-v5', 'wx-server-sdk']
+      for (const m of list) {
+        try { require(m); mods[m] = 'ok' } catch (e) { mods[m] = 'FAIL: ' + e.message }
+      }
+      return {
+        code: 0,
+        data: {
+          node: process.version,
+          modules: mods,
+          secretId: config.SECRET_ID ? config.SECRET_ID.slice(0, 8) + '...' : '(未配置)',
+          bucket: config.BUCKET + ' / ' + config.REGION,
+          freeQuota: config.FREE_QUOTA,
+          envFree: config.ENV_FREE,
+          devUnlimited: config.DEV_UNLIMITED,
+          devPassSet: !!config.DEV_PASS,
+          envVersion,
+          openid,
+          time: new Date().toISOString()
+        }
+      }
+    }
+
     // 查询额度与权益（不扣减）
     if (action === 'quota') {
       const membership = await getMembership(openid, envVersion)

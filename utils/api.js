@@ -107,6 +107,13 @@ async function redeemCode(code) {
 }
 
 /**
+ * 云端自检：依赖/配置/环境（无副作用，不消耗额度）
+ */
+async function diagnose() {
+  return await callPhoto('diagnose')
+}
+
+/**
  * 开发者口令激活：把当前微信永久加入免费白名单（不限次）
  * @param {string} pass
  */
@@ -130,4 +137,4 @@ function downloadToTemp(url) {
   })
 }
 
-module.exports = { request: null, restorePhoto, makeIdPhoto, getQuota, redeemCode, bindMember, fileIDToUrl, downloadToTemp }
+module.exports = { request: null, restorePhoto, makeIdPhoto, getQuota, redeemCode, bindMember, diagnose, fileIDToUrl, downloadToTemp }

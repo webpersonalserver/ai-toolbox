@@ -85,6 +85,30 @@ Page({
     })
   },
 
+  // 云端自检：看依赖装没装、密钥配没配
+  devDiagnose() {
+    wx.showLoading({ title: '自检中', mask: true })
+    api.diagnose().then((d) => {
+      wx.hideLoading()
+      const mods = d.modules || {}
+      const modText = Object.keys(mods).map((k) => `${k}: ${mods[k]}`).join('\n')
+      const summary = [
+        'Node ' + d.node,
+        '密钥 ' + d.secretId,
+        '桶 ' + d.bucket,
+        '环境 ' + d.envVersion + ' / ENV_FREE=' + d.envFree,
+        '免费额度 ' + d.freeQuota,
+        '',
+        modText
+      ].join('\n')
+      wx.setClipboardData({ data: summary })
+      wx.showModal({ title: '云端自检（已复制）', content: summary, showCancel: false })
+    }).catch((e) => {
+      wx.hideLoading()
+      wx.showModal({ title: '自检失败', content: e.message || '云函数调用失败', showCancel: false })
+    })
+  },
+
   copyOpenid() {
     const id = this.data.openid
     if (!id) {

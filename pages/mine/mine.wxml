@@ -32,6 +32,9 @@
     <view class="card menu-item" bindtap="devActivate">
       <text>开发者口令激活（永久免额度）</text><text class="arrow">›</text>
     </view>
+    <view class="card menu-item" bindtap="devDiagnose">
+      <text>云端自检（依赖/配置）</text><text class="arrow">›</text>
+    </view>
     <view class="card menu-item" bindtap="copyOpenid">
       <text>复制我的 openid</text><text class="arrow">›</text>
     </view>
