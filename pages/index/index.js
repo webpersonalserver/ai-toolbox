@@ -17,6 +17,14 @@ Page({
         icon: '🪪',
         url: '/pages/idphoto/idphoto',
         tag: '刚需'
+      },
+      {
+        id: 'ledger',
+        title: '牌局记账',
+        desc: '打牌不用现金 · 散场自动算账',
+        icon: '🀄',
+        url: '/pages/ledger/ledger',
+        tag: '新品'
       }
     ]
   },

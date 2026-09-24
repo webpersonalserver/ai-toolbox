@@ -1,0 +1,42 @@
+<!--pages/ledger/create.wxml — 创建房间-->
+<view class="page">
+  <view class="card">
+    <view class="label">房间名（可不填）</view>
+    <input
+      class="input"
+      placeholder="例如：周五血战麻将局"
+      value="{{roomName}}"
+      bindinput="onNameInput"
+      maxlength="20"
+    />
+  </view>
+
+  <view class="card">
+    <view class="row-between">
+      <view class="label">上桌的人</view>
+      <view class="quick">
+        <text class="quick-btn" data-n="3" bindtap="setCount">3人</text>
+        <text class="quick-btn" data-n="4" bindtap="setCount">4人</text>
+        <text class="quick-btn" data-n="5" bindtap="setCount">5人</text>
+      </view>
+    </view>
+
+    <view class="member-row" wx:for="{{members}}" wx:key="index">
+      <view class="avatar">{{item ? item.slice(0,1) : index + 1}}</view>
+      <input
+        class="input member-input"
+        placeholder="玩家{{index + 1}}"
+        value="{{item}}"
+        data-index="{{index}}"
+        bindinput="onMemberInput"
+        maxlength="8"
+      />
+      <view class="del" data-index="{{index}}" bindtap="removeMember">×</view>
+    </view>
+
+    <view class="add-member" bindtap="addMember">＋ 再加一个人</view>
+  </view>
+
+  <view class="submit" bindtap="submit">创建房间</view>
+  <view class="hint">不填名字也能开局，系统会自动叫「玩家1、玩家2…」</view>
+</view>

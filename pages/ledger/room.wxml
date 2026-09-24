@@ -1,0 +1,124 @@
+<!--pages/ledger/room.wxml — 房间：余额 + 记账 + 结算-->
+<view class="page" wx:if="{{room}}">
+
+  <!-- 房间信息 -->
+  <view class="card room-head">
+    <view class="head-left">
+      <view class="room-name">{{room.name}}</view>
+      <view class="room-code" bindtap="copyCode">房号 {{room.code}} · 点我复制</view>
+    </view>
+    <view class="head-right">
+      <button class="mini-btn" open-type="share">邀请</button>
+      <view wx:if="{{room.status === 'closed'}}" class="mini-btn warn" bindtap="reopen">重开</view>
+    </view>
+  </view>
+
+  <!-- 成员余额 -->
+  <view class="members">
+    <view
+      class="member {{item.cls}} {{pickA === item.id ? 'picked' : ''}} {{pickB === item.id ? 'picked-b' : ''}}"
+      wx:for="{{room.members}}"
+      wx:key="id"
+      data-id="{{item.id}}"
+      bindtap="pickMember"
+      bindlongpress="renameMember"
+    >
+      <view class="m-name">{{item.name}}</view>
+      <view class="m-bal">{{item.balText}}</view>
+      <view class="m-tag" wx:if="{{pickA === item.id}}">收</view>
+      <view class="m-tag pay" wx:if="{{pickB === item.id}}">炮</view>
+    </view>
+    <view class="member add" bindtap="addMember">
+      <view class="m-name">＋</view>
+      <view class="m-bal">加人</view>
+    </view>
+  </view>
+
+  <view class="total-line">
+    <text wx:if="{{room.total === 0}}">当前收支平衡</text>
+    <text wx:else class="warn-text">未平账 {{room.total > 0 ? '+' : ''}}{{room.total}} 元</text>
+  </view>
+
+  <!-- 记账 -->
+  <view class="card panel">
+    <view class="modes">
+      <view
+        class="mode {{mode === item.id ? 'on' : ''}}"
+        wx:for="{{modes}}"
+        wx:key="id"
+        data-mode="{{item.id}}"
+        bindtap="switchMode"
+      >{{item.name}}</view>
+    </view>
+    <view class="mode-tip">{{modeTip}}</view>
+
+    <view class="dir-row" wx:if="{{mode === 'single'}}">
+      <view class="dir {{direction === 1 ? 'dir-plus on' : ''}}" data-dir="1" bindtap="toggleDirection">收钱 +</view>
+      <view class="dir {{direction === -1 ? 'dir-minus on' : ''}}" data-dir="-1" bindtap="toggleDirection">付钱 −</view>
+    </view>
+
+    <view class="amount-row">
+      <text class="amount-label">{{mode === 'zimo' ? '每家' : '金额'}}</text>
+      <input
+        class="amount-input"
+        type="number"
+        placeholder="0"
+        value="{{amount}}"
+        bindinput="onAmountInput"
+      />
+      <text class="amount-unit">元</text>
+    </view>
+    <view class="quick">
+      <view class="quick-btn" wx:for="{{quick}}" wx:key="*this" data-v="{{item}}" bindtap="setAmount">{{item}}</view>
+    </view>
+
+    <view class="actions">
+      <view class="btn primary" bindtap="confirm">记一笔</view>
+      <view class="btn" bindtap="undo">撤销</view>
+    </view>
+  </view>
+
+  <view class="foot-row">
+    <view class="foot-btn" bindtap="toggleRecords">{{showRecords ? '收起流水' : '查看流水'}}</view>
+    <view class="foot-btn accent" bindtap="openSettle">散场结算</view>
+  </view>
+
+  <!-- 流水 -->
+  <view class="card" wx:if="{{showRecords}}">
+    <view class="card-title">记账明细（最近 30 条）</view>
+    <view class="rec-row {{item.undone ? 'undone' : ''}}" wx:for="{{records}}" wx:key="id">
+      <text class="rec-time">{{item.time}}</text>
+      <view class="rec-items">
+        <text class="rec-item" wx:for="{{item.items}}" wx:for-item="it" wx:key="name">
+          {{it.name}} {{it.text}}
+        </text>
+      </view>
+      <text class="rec-flag" wx:if="{{item.undone}}">已撤销</text>
+    </view>
+    <view class="empty" wx:if="{{!records.length}}">还没有记录</view>
+  </view>
+
+  <!-- 结算面板 -->
+  <view class="mask" wx:if="{{showSettle}}" bindtap="closeSettle">
+    <view class="settle" catchtap="noop">
+      <view class="settle-title">散场结算</view>
+      <view class="settle-sub">按这个清单转钱，笔数最少</view>
+
+      <view class="plan-row" wx:for="{{plan}}" wx:key="index">
+        <text class="p-from">{{item.from}}</text>
+        <text class="p-arrow">给</text>
+        <text class="p-to">{{item.to}}</text>
+        <text class="p-amt">{{item.amount}} 元</text>
+      </view>
+
+      <view class="plan-done" wx:if="{{!plan.length}}">大家互不相欠，可以直接散场</view>
+
+      <view class="balance-check" wx:if="{{room.total !== 0}}">
+        注意：账面还没平（{{room.total > 0 ? '+' : ''}}{{room.total}} 元），可能有笔账漏记了
+      </view>
+
+      <view class="settle-btn" bindtap="finishSettle">钱已结清，标记完成</view>
+      <view class="settle-close" bindtap="closeSettle">再看看</view>
+    </view>
+  </view>
+</view>

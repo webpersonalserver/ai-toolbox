@@ -3,6 +3,9 @@
     "pages/index/index",
     "pages/restore/restore",
     "pages/idphoto/idphoto",
+    "pages/ledger/ledger",
+    "pages/ledger/create",
+    "pages/ledger/room",
     "pages/mine/mine"
   ],
   "window": {

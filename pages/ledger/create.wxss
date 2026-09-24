@@ -1,0 +1,16 @@
+.page { padding: 24rpx 28rpx 60rpx; }
+.card { background: #FFFFFF; border-radius: 20rpx; padding: 28rpx; margin-bottom: 20rpx; }
+.label { font-size: 27rpx; color: #6B7280; margin-bottom: 16rpx; }
+.row-between { display: flex; align-items: center; justify-content: space-between; }
+.quick { display: flex; gap: 12rpx; }
+.quick-btn { font-size: 24rpx; color: #4F46E5; background: #EEEDFE; padding: 8rpx 20rpx; border-radius: 999rpx; }
+
+.input { background: #F3F4F8; border-radius: 14rpx; padding: 20rpx; font-size: 30rpx; }
+.member-row { display: flex; align-items: center; gap: 16rpx; margin-bottom: 16rpx; }
+.member-input { flex: 1; }
+.avatar { width: 60rpx; height: 60rpx; border-radius: 50%; background: #EEEDFE; color: #534AB7; display: flex; align-items: center; justify-content: center; font-size: 26rpx; }
+.del { color: #C7CAD1; font-size: 34rpx; width: 40rpx; text-align: center; }
+.add-member { text-align: center; color: #4F46E5; font-size: 27rpx; padding: 16rpx 0; }
+
+.submit { background: #4F46E5; color: #FFFFFF; text-align: center; padding: 28rpx; border-radius: 16rpx; font-size: 32rpx; }
+.hint { text-align: center; font-size: 23rpx; color: #9AA0AA; margin-top: 20rpx; }

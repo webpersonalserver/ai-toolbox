@@ -1,0 +1,42 @@
+<!--pages/ledger/ledger.wxml — 牌局记账入口-->
+<view class="page">
+  <view class="hero">
+    <view class="hero-title">牌局记账</view>
+    <view class="hero-sub">建房 → 点人 → 填钱 → 散场自动算账</view>
+  </view>
+
+  <view class="card main-action" bindtap="goCreate">
+    <view class="ma-title">创建房间</view>
+    <view class="ma-desc">自己开一桌，生成房号分享给牌友</view>
+    <view class="ma-arrow">›</view>
+  </view>
+
+  <view class="card join-card">
+    <view class="join-title">加入房间</view>
+    <view class="join-row">
+      <input
+        class="code-input"
+        type="number"
+        placeholder="输入 6 位房号"
+        value="{{code}}"
+        bindinput="onCodeInput"
+        maxlength="8"
+      />
+      <view class="join-btn" bindtap="join">进入</view>
+    </view>
+  </view>
+
+  <view class="section-title" wx:if="{{recent.length}}">最近的牌局</view>
+  <view class="card recent-item" wx:for="{{recent}}" wx:key="roomId" data-id="{{item.roomId}}" bindtap="openRoom">
+    <view class="recent-main">
+      <view class="recent-name">{{item.name}}</view>
+      <view class="recent-meta">房号 {{item.code}}<text wx:if="{{item.status === 'closed'}}" class="closed-tag">已结算</text></view>
+    </view>
+    <view class="recent-del" catchtap="removeRecent" data-id="{{item.roomId}}">×</view>
+  </view>
+
+  <view class="tips">
+    <view class="tip-row">打完一把，选人、点「收」或「付」，填个整数就行</view>
+    <view class="tip-row">记错了点「撤销」，散场点「结算」，自动算出谁该给谁多少</view>
+  </view>
+</view>
