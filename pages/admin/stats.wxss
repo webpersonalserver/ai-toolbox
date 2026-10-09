@@ -1,0 +1,89 @@
+.admin__overview {
+  margin-bottom: var(--space-lg);
+  text-align: center;
+}
+
+.admin__rate {
+  color: var(--color-primary);
+  font-size: 88rpx;
+  font-weight: 800;
+}
+
+.admin__rate-label {
+  color: var(--color-ink-soft);
+  font-size: var(--font-sm);
+}
+
+.admin__metrics {
+  display: flex;
+  margin-top: var(--space-lg);
+  padding-top: var(--space-md);
+  border-top: 2rpx solid var(--color-border);
+}
+
+.admin__metric {
+  flex: 1;
+}
+
+.admin__metric-value {
+  font-size: var(--font-xl);
+  font-weight: 800;
+}
+
+.admin__metric-label {
+  color: var(--color-ink-soft);
+  font-size: var(--font-sm);
+}
+
+.admin__section-title {
+  margin: var(--space-md) 0;
+  color: var(--color-ink-soft);
+  font-size: var(--font-sm);
+  font-weight: 600;
+}
+
+.admin__list {
+  margin-bottom: var(--space-lg);
+}
+
+.admin__empty,
+.admin__hint {
+  color: var(--color-ink-faint);
+  font-size: var(--font-sm);
+  text-align: center;
+}
+
+.admin__hint {
+  margin-top: var(--space-sm);
+}
+
+.admin__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) 0;
+  border-bottom: 2rpx solid var(--color-border);
+  font-size: var(--font-sm);
+}
+
+.admin__row--head {
+  color: var(--color-ink-faint);
+}
+
+.admin__row-main {
+  font-weight: 700;
+}
+
+.admin__row-side {
+  color: var(--color-ink-soft);
+}
+
+.admin__cell {
+  flex: 1;
+  text-align: center;
+}
+
+.admin__cell:first-child {
+  flex: 1.4;
+  text-align: left;
+}

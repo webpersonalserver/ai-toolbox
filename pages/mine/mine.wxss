@@ -110,6 +110,27 @@
 }
 
 
+.mine__admin {
+  margin-top: var(--space-lg);
+}
+
+.mine__admin-title {
+  font-weight: 700;
+}
+
+.mine__admin-desc {
+  color: var(--color-ink-soft);
+  font-size: var(--font-sm);
+}
+
+.mine__openid {
+  margin-top: var(--space-xl);
+  color: var(--color-ink-faint);
+  font-size: 20rpx;
+  text-align: center;
+  word-break: break-all;
+}
+
 .mine__rules {
   margin-top: var(--space-lg);
   padding-top: var(--space-md);

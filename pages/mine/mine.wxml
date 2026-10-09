@@ -47,4 +47,11 @@
       <view wx:for="{{ruleLines}}" wx:key="index" class="mine__rule">· {{item}}</view>
     </view>
   </view>
+
+  <view wx:if="{{isAdmin}}" class="card mine__admin" bindtap="openAdminStats">
+    <view class="mine__admin-title">数据统计</view>
+    <view class="mine__admin-desc">通关率、最近通关、每日趋势 ›</view>
+  </view>
+
+  <view class="mine__openid" bindlongpress="copyOpenid">用户编号：{{openid}}（长按复制）</view>
 </view>

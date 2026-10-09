@@ -2,10 +2,13 @@
   <view class="card levels__header">
     <view class="levels__title-row">
       <view class="chip">{{titleName}}</view>
-      <view class="levels__book" bindtap="openBook">成语本 ›</view>
+      <view class="levels__links">
+        <text class="levels__link" bindtap="openLeaderboard">排行榜 ›</text>
+        <text class="levels__link" bindtap="openBook">成语本 ›</text>
+      </view>
     </view>
     <view class="levels__summary">
-      <text wx:if="{{allSolved}}">恭喜全部通关！新关卡即将上线</text>
+      <text wx:if="{{allSolved}}">你已通关全部 {{total}} 关，更多挑战敬请期待</text>
       <text wx:else>已通过 {{solvedCount}} / {{total}} 关 · {{titleProgressText}}</text>
     </view>
     <button wx:if="{{pendingChests > 0}}" class="btn btn--primary levels__chest" loading="{{openingChests}}" bindtap="handleOpenChests">

@@ -3,6 +3,7 @@ const { ERROR_CODES, BusinessError, throwIfFailed } = require('../lib/response')
 const { loadRules } = require('../lib/rules')
 const { countLevels } = require('../lib/level-count')
 const { RESCUE_STATUS, closeOpenRescue } = require('../lib/rescue-store')
+const { isAllCleared, syncProgressAfterSolve } = require('../lib/completion')
 const { ITEM_TYPES, changeItemsInTransaction } = require('../lib/items')
 const { ITEM_LOG_REASONS, writeItemLogs } = require('../lib/item-log')
 const { throwInsufficientItem } = require('../lib/item-next-step')
@@ -89,6 +90,7 @@ const levelList = async ({ openid }) => {
     total,
     currentLevel: Math.min(progress.currentLevel, total),
     solved: progress.solved,
+    allCleared: isAllCleared(progress.solved.length, total),
     rescueNotices,
     achievement: describeAchievement(progress, rules)
   }
@@ -96,7 +98,11 @@ const levelList = async ({ openid }) => {
 
 const summary = async ({ openid }) => {
   const [rules, total, progress] = await Promise.all([loadRules(), countIdiomLevels(), getProgress(openid, GAME_TYPE)])
-  return { total, achievement: describeAchievement(progress, rules) }
+  return {
+    total,
+    allCleared: isAllCleared(progress.solved.length, total),
+    achievement: describeAchievement(progress, rules)
+  }
 }
 
 const claimMilestones = async ({ openid }) => {
@@ -240,11 +246,13 @@ const submit = async ({ openid, payload }) => {
   await closeOpenRescue(openid, GAME_TYPE, levelNo)
   const titleBefore = describeTitle(outcome.solvedCountBefore, rules)
   const titleAfter = describeTitle(outcome.solvedCountAfter, rules)
-  const progress = await getProgress(openid, GAME_TYPE)
+  const { progress, allCleared } = await syncProgressAfterSolve(openid, GAME_TYPE, total)
   return {
     correct: true,
     solution: toSolution(level),
     nextLevelNo: levelNo < total ? levelNo + 1 : null,
+    allCleared,
+    totalLevels: total,
     achievement: describeAchievement(progress, rules),
     titleUpgrade: titleAfter.name !== titleBefore.name ? titleAfter.name : null
   }

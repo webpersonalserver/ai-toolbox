@@ -120,6 +120,23 @@
   color: var(--color-ink-soft);
 }
 
+.play__all-cleared {
+  margin-top: var(--space-lg);
+  padding: var(--space-lg);
+  border-radius: var(--radius-md);
+  background: var(--color-success-soft);
+  color: var(--color-success);
+}
+
+.play__all-cleared-title {
+  font-size: var(--font-lg);
+  font-weight: 800;
+}
+
+.play__all-cleared-desc {
+  font-size: var(--font-sm);
+}
+
 .play__reward {
   display: flex;
   align-items: center;

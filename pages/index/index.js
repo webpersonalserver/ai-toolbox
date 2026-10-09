@@ -33,7 +33,8 @@ Page({
           total: levelList.total,
           titleName: levelList.achievement.title.name,
           titleProgressText: describeTitleProgress(levelList.achievement),
-          pendingChests: levelList.achievement.milestone.pendingChests
+          pendingChests: levelList.achievement.milestone.pendingChests,
+          allCleared: levelList.allCleared
         }
       })
       showRescueNotices(levelList.rescueNotices)
@@ -56,6 +57,10 @@ Page({
 
   async handleCheckin() {
     if (await checkinToday()) this.syncSession()
+  },
+
+  openLeaderboard() {
+    wx.navigateTo({ url: '/pages/leaderboard/leaderboard' })
   },
 
   openIdiomGame() {

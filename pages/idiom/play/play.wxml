@@ -54,6 +54,10 @@
     <view class="play__result-badge">过关</view>
     <view class="play__result-answer">{{solution.answer}}</view>
     <view class="play__result-pinyin">{{solution.pinyin}}</view>
+    <view wx:if="{{allCleared}}" class="play__all-cleared">
+      <view class="play__all-cleared-title">恭喜通关全部 {{total}} 关！</view>
+      <view class="play__all-cleared-desc">更多挑战正在准备中，敬请期待</view>
+    </view>
     <view wx:if="{{titleUpgrade}}" class="play__reward play__reward--title">晋升为「{{titleUpgrade}}」！</view>
     <view wx:if="{{milestone && milestone.pendingChests > 0}}" class="play__reward">
       <view>解锁了 {{milestone.pendingChests}} 个宝箱</view>
@@ -70,7 +74,8 @@
     </view>
     <view class="play__actions">
       <button class="btn btn--muted play__action" bindtap="goLevelList">关卡列表</button>
-      <button class="btn btn--primary play__action" bindtap="goNextLevel">{{nextLevelNo ? '下一关' : '返回'}}</button>
+      <button wx:if="{{nextLevelNo}}" class="btn btn--primary play__action" bindtap="goNextLevel">下一关</button>
+      <button wx:else class="btn btn--primary play__action" bindtap="openLeaderboard">看排行榜</button>
     </view>
   </view>
 </view>

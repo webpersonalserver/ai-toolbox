@@ -1,6 +1,8 @@
 const { db, _ } = require('../lib/cloud')
 const { loadRules } = require('../lib/rules')
 const { chinaDateKey } = require('../lib/date')
+const { snapshotDailyStats } = require('../lib/stats')
+const { GAME_TYPE } = require('./idiom')
 
 const DAY_MS = 24 * 60 * 60 * 1000
 
@@ -30,4 +32,6 @@ const cleanupExpiredRecords = async () => {
   return removed
 }
 
-module.exports = { cleanupExpiredRecords }
+const snapshotStats = () => snapshotDailyStats(GAME_TYPE)
+
+module.exports = { cleanupExpiredRecords, snapshotStats }

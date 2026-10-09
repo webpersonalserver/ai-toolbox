@@ -43,6 +43,7 @@ Page({
     solution: null,
     nextLevelNo: null,
     titleUpgrade: '',
+    allCleared: false,
     milestone: null,
     submitting: false,
     busy: false,
@@ -163,6 +164,7 @@ Page({
           solution: result.solution,
           nextLevelNo: result.nextLevelNo,
           titleUpgrade: result.titleUpgrade || '',
+          allCleared: result.allCleared,
           milestone: result.achievement.milestone
         })
         wx.vibrateShort({ type: 'light' })
@@ -234,6 +236,10 @@ Page({
     } else {
       wx.navigateBack()
     }
+  },
+
+  openLeaderboard() {
+    wx.redirectTo({ url: '/pages/leaderboard/leaderboard' })
   },
 
   goLevelList() {

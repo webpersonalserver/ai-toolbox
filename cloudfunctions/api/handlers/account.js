@@ -5,6 +5,7 @@ const { loadRules, sumRewardsByType, toClientRules } = require('../lib/rules')
 const { dailyDocId, getTodayRecord, ensureTodayRecord, adRewardCountOf, describeTodayStatus } = require('../lib/daily')
 const { isItemType, settleUserItems, toItemsView, changeItemsInTransaction } = require('../lib/items')
 const { ITEM_LOG_REASONS, writeItemLogs } = require('../lib/item-log')
+const { isAdmin } = require('./admin')
 
 const NICKNAME_MAX_LENGTH = 20
 const AVATAR_ROOT_DIR = 'avatars'
@@ -80,6 +81,8 @@ const login = async ({ openid }) => {
   const todayRecord = await getTodayRecord(openid)
   return {
     isNewUser,
+    openid,
+    isAdmin: isAdmin(rules, openid),
     profile: { nickname: user.nickname, avatarUrl: user.avatarUrl, avatarUploadDir: avatarUploadDirOf(openid) },
     items: toItemsView(settleUserItems(user, rules, now), rules),
     today: describeTodayStatus(todayRecord, rules),

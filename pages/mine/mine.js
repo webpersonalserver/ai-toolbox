@@ -16,6 +16,8 @@ Page({
     checkedIn: false,
     ruleLines: [],
     titleName: '',
+    isAdmin: false,
+    openid: '',
     titleProgressText: '',
     solvedCount: 0,
     profileDirty: false,
@@ -37,8 +39,10 @@ Page({
   },
 
   syncSession() {
-    const { profile, items, today, rules } = getSession()
+    const { profile, items, today, rules, isAdmin, openid } = getSession()
     this.setData({
+      isAdmin,
+      openid,
       nickname: profile.nickname,
       avatarUrl: profile.avatarUrl,
       items,
@@ -85,6 +89,14 @@ Page({
 
   async handleCheckin() {
     if (await checkinToday()) this.syncSession()
+  },
+
+  openAdminStats() {
+    wx.navigateTo({ url: '/pages/admin/stats' })
+  },
+
+  copyOpenid() {
+    wx.setClipboardData({ data: this.data.openid })
   },
 
   openBook() {

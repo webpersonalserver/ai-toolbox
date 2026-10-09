@@ -10,6 +10,7 @@ const command = {
   addToSet: (value) => ({ [COMMAND]: 'addToSet', value }),
   in: (value) => ({ [COMMAND]: 'in', value }),
   gt: (value) => ({ [COMMAND]: 'gt', value }),
+  gte: (value) => ({ [COMMAND]: 'gte', value }),
   lt: (value) => ({ [COMMAND]: 'lt', value })
 }
 
@@ -50,6 +51,7 @@ const matches = (doc, where) =>
   Object.entries(where).every(([key, condition]) => {
     if (condition && condition[COMMAND] === 'in') return condition.value.includes(doc[key])
     if (condition && condition[COMMAND] === 'gt') return comparable(doc[key]) > comparable(condition.value)
+    if (condition && condition[COMMAND] === 'gte') return comparable(doc[key]) >= comparable(condition.value)
     if (condition && condition[COMMAND] === 'lt') return comparable(doc[key]) < comparable(condition.value)
     return doc[key] === condition
   })
@@ -72,12 +74,23 @@ const docApi = (name, id) => ({
   }
 })
 
-const query = (name, where = {}) => {
+const compareBy = (orders) => (left, right) => {
+  for (const { field, direction } of orders) {
+    const leftValue = comparable(left[field])
+    const rightValue = comparable(right[field])
+    if (leftValue < rightValue) return direction === 'desc' ? 1 : -1
+    if (leftValue > rightValue) return direction === 'desc' ? -1 : 1
+  }
+  return 0
+}
+
+const query = (name, where = {}, orders = [], limitCount = Infinity) => {
   const selected = () => Object.values(collectionStore(name)).filter((doc) => matches(doc, where))
   return {
-    where: (condition) => query(name, condition),
-    limit: () => query(name, where),
-    get: async () => ({ data: clone(selected()) }),
+    where: (condition) => query(name, condition, orders, limitCount),
+    orderBy: (field, direction) => query(name, where, [...orders, { field, direction }], limitCount),
+    limit: (count) => query(name, where, orders, count),
+    get: async () => ({ data: clone(selected().sort(compareBy(orders)).slice(0, limitCount)) }),
     count: async () => ({ total: selected().length }),
     update: async ({ data }) => {
       const docs = selected()

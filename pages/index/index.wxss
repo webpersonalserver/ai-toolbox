@@ -79,6 +79,10 @@
   font-weight: 800;
 }
 
+.hall__game-icon--gold {
+  background: var(--color-gold);
+}
+
 .hall__game-icon--muted {
   background: var(--color-surface-muted);
   color: var(--color-ink-faint);

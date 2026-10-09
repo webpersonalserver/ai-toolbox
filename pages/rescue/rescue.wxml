@@ -38,11 +38,9 @@
     <button class="btn btn--muted rescue__cta" bindtap="goPlay">返回关卡</button>
   </block>
 
-  <block wx:elif="{{viewState === 'helperDailyLimit' || viewState === 'helperLocked'}}">
+  <block wx:elif="{{helperBlocked}}">
     <view class="card rescue__waiting">
-      <view class="rescue__clue">
-        {{viewState === 'helperDailyLimit' ? helperLimitMessage : '答错 ' + maxWrongAnswersPerHelper + ' 次了，这道题你帮不上啦'}}
-      </view>
+      <view class="rescue__clue">{{helperBlockedMessage}}</view>
       <view class="rescue__hint">换一位好友来帮 TA 吧，你也可以自己去闯关。</view>
     </view>
     <button class="btn btn--primary rescue__cta" bindtap="goPlay">我也去闯关</button>

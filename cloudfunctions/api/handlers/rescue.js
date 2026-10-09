@@ -14,6 +14,8 @@ const {
   toSolution
 } = require('../lib/progress')
 const { GAME_TYPE } = require('./idiom')
+const { countLevels } = require('../lib/level-count')
+const { syncProgressAfterSolve } = require('../lib/completion')
 
 const EMPTY_PROFILE = { nickname: '', avatarUrl: '' }
 
@@ -192,6 +194,7 @@ const answer = async ({ openid, payload }) => {
   })
   throwIfFailed(outcome)
   await markLevelSolved(rescue.requesterOpenid, rescue.gameType, rescue.levelNo)
+  await syncProgressAfterSolve(rescue.requesterOpenid, rescue.gameType, await countLevels(rescue.gameType))
   return { correct: true, solution: toSolution(level) }
 }
 

@@ -60,7 +60,7 @@ Page({
         pageCount: Math.ceil(levelList.total / LEVELS_PER_PAGE),
         solvedCount: levelList.solved.length,
         total: levelList.total,
-        allSolved: levelList.total > 0 && levelList.solved.length >= levelList.total,
+        allSolved: levelList.allCleared,
         titleName: levelList.achievement.title.name,
         titleProgressText: describeTitleProgress(levelList.achievement),
         pendingChests: levelList.achievement.milestone.pendingChests
@@ -84,6 +84,10 @@ Page({
     this.setData({ openingChests: true })
     const result = await openMilestoneChests()
     this.setData({ openingChests: false, pendingChests: result ? 0 : this.data.pendingChests })
+  },
+
+  openLeaderboard() {
+    wx.navigateTo({ url: '/pages/leaderboard/leaderboard' })
   },
 
   openBook() {

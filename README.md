@@ -5,6 +5,7 @@
 - **AppID**: `wxb3265721f68a1847`
 - **云环境 ID**: `cloud1-d8g9yyxwe128b2185`
 - 旧版「AI 工具箱」代码已存档在 tag `archive/ai-toolbox`
+- **上线前待办**：见 [docs/launch-checklist.md](docs/launch-checklist.md)
 
 ## 目录结构
 
@@ -38,11 +39,11 @@
 
 0. **小程序后台 → 设置 → 用户隐私保护指引**：声明收集「头像、昵称」，用途填"展示在求助页和分享卡片上"。不配置的话，选头像、填昵称会直接失败
 1. **建集合**（云开发控制台 → 数据库）：
-   `users` `daily` `progress` `levels` `rescues` `rescue_help_pairs` `rescue_helper_attempts` `item_logs` `app_config`
+   `users` `daily` `progress` `levels` `rescues` `rescue_help_pairs` `rescue_helper_attempts` `item_logs` `app_config` `completions` `stats_daily`
    - 权限全部设为**自定义规则** `{"read": false, "write": false}`。所有读写都走云函数（管理员权限不受影响），客户端直连数据库读不到答案
 2. **导入数据**：`levels` 导入 `database/levels.jsonl`，`app_config` 导入 `database/app_config.jsonl`（格式选 JSON Lines）
 3. **部署云函数**：开发者工具右键 `cloudfunctions/api` →「上传并部署：云端安装依赖」
-   - 部署后再右键 →「上传触发器」，启用每天 04:30 的过期数据清理（`config.json` 里的 `cleanupExpiredRecords`）
+   - 部署后再右键 →「上传触发器」，启用两个定时任务：每天 04:30 清理过期数据（`cleanupExpiredRecords`），每小时整点写入当天统计（`snapshotStats`）
    - `config.json` 同时声明了昵称内容安全检测需要的 `security.msgSecCheck` 权限
 4. **建索引（必须）**：没有索引时，打开大厅、关卡页的查询会随数据增长变慢，定时清理也可能超时
    | 集合 | 索引字段 |
@@ -53,6 +54,9 @@
    | `rescue_help_pairs` | `date` |
    | `rescue_helper_attempts` | `date` |
    | `levels` | `gameType` + `levelNo` |
+   | `progress` | `gameType` + `solvedCount`（降序）+ `lastSolvedAt`（升序），排行榜和通关统计都依赖它 |
+   | `completions` | `gameType` + `completedAt`；`gameType` + `date` |
+   | `stats_daily` | `gameType` + `date` |
 5. **云函数超时时间**：控制台把 `api` 的超时时间从默认的 3 秒改成 10 秒（冷启动加多次数据库读写有可能超过 3 秒）
 
 ## 游戏规则配置表
@@ -83,6 +87,8 @@
 | `milestone.rewards` | 提示 2、体力 3 | 每个宝箱的奖励，格式同 `checkinRewards` |
 | `maintenance.itemLogRetentionDays` | 180 | 道具流水保留天数，过期由定时任务清理 |
 | `maintenance.dailyRecordRetentionDays` | 7 | 每日打卡记录、求助计数这类按天记录的数据保留天数 |
+| `leaderboard.size` | 100 | 排行榜展示前多少名（上限 1000） |
+| `admin.openids` | `[]` | 管理员 openid 列表，名单内的人在「我的」页能看到「数据统计」入口 |
 | `titles` | 15 档，见下方「段位称号」 | 段位称号，`[{name, minSolved}]`，`minSolved` 表示通过多少关可晋升 |
 
 ## 闯关规则
@@ -130,6 +136,18 @@
 
 - **成语本**：自动收录已通过的成语，每页加载 20 条，点开词条可以看出处
 - 不做"每关都发道具"：道具会越攒越多，体力和看视频就失去了意义
+
+## 全部通关、统计与排行榜
+
+- **"通关"只针对当前的最高关卡**：现在 1000 关，就是通过全部 1000 关；以后扩关，原来通关的人自动变回未通关，可以接着往下玩
+- **全部通关提示**：通过最后一关时，过关页显示「恭喜通关全部 N 关！更多挑战正在准备中，敬请期待」；关卡页和大厅也会显示已全部通关
+- **通关记录**：每当有人打通当前全部关卡，就在 `completions` 写一条记录（用户、昵称、当时的关卡总数、日期）。同一个人在同一关卡总数下只记一次，扩关后再次通关会另记一条。目前只记录到数据库，不主动推送通知
+- **统计**：
+  - 通关率 = `progress.solvedCount ≥ 当前关卡总数` 的用户数 ÷ `users` 总数
+  - 实时数据：管理员在「我的」→「数据统计」查看（通关率、最近 20 条通关记录、最近 30 天趋势）
+  - 每日快照：定时任务每小时整点覆盖写入 `stats_daily` 中当天的那条记录，控制台可以直接查看
+- **设置管理员**：在「我的」页最底部长按「用户编号」复制自己的 openid，填进 `game_rules.admin.openids`。权限在云函数里校验，入口隐藏只是界面层面的处理
+- **排行榜**：按通关数排名，同分时先达到的人排在前面。展示前 `leaderboard.size` 名，在榜外的用户底部单独显示自己的名次，一关都没过的显示「暂未上榜」。前 N 名在每个云函数实例里缓存 1 分钟。接口不返回 openid
 
 ## 求助好友
 

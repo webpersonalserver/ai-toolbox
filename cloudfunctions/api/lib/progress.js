@@ -12,7 +12,7 @@ const getProgress = async (openid, gameType) => {
     const { data } = await progressCollection.doc(docId).get()
     return data
   } catch (error) {
-    const initialProgress = { openid, gameType, currentLevel: 1, solved: [], hintsUsed: {}, attempts: {} }
+    const initialProgress = { openid, gameType, currentLevel: 1, solved: [], solvedCount: 0, hintsUsed: {}, attempts: {} }
     try {
       await progressCollection.add({ data: { _id: docId, ...initialProgress } })
       return { _id: docId, ...initialProgress }

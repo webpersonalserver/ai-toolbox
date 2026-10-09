@@ -58,6 +58,12 @@ const DEFAULT_RULES = {
   maintenance: {
     itemLogRetentionDays: 180,
     dailyRecordRetentionDays: 7
+  },
+  admin: {
+    openids: []
+  },
+  leaderboard: {
+    size: 100
   }
 }
 
@@ -76,6 +82,9 @@ const isBoolean = (value) => typeof value === 'boolean'
 const isString = (value) => typeof value === 'string'
 const isNonNegativeInteger = (value) => Number.isInteger(value) && value >= 0
 const isPositiveInteger = (value) => Number.isInteger(value) && value > 0
+const LEADERBOARD_MAX_SIZE = 1000
+const isLeaderboardSize = (value) => isPositiveInteger(value) && value <= LEADERBOARD_MAX_SIZE
+const isStringList = (value) => Array.isArray(value) && value.every(isString)
 const isRewardList = (value) =>
   Array.isArray(value) &&
   value.every((reward) => isPlainObject(reward) && isItemType(reward.type) && isPositiveInteger(reward.amount))
@@ -101,7 +110,9 @@ const RULE_VALIDATORS = {
   'milestone.everyLevels': isPositiveInteger,
   'milestone.rewards': isRewardList,
   'maintenance.itemLogRetentionDays': isPositiveInteger,
-  'maintenance.dailyRecordRetentionDays': isPositiveInteger
+  'maintenance.dailyRecordRetentionDays': isPositiveInteger,
+  'admin.openids': isStringList,
+  'leaderboard.size': isLeaderboardSize
 }
 
 const readPath = (source, path) => path.split('.').reduce((value, key) => (value == null ? undefined : value[key]), source)

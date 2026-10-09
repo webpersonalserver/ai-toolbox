@@ -62,4 +62,12 @@ const rescue = {
   answer: (rescueId, answer) => call('rescue.answer', { rescueId, answer })
 }
 
-module.exports = { ERROR_CODES, ApiError, toastError, account, idiom, rescue }
+const leaderboard = {
+  list: () => call('leaderboard.list')
+}
+
+const admin = {
+  stats: () => call('admin.stats')
+}
+
+module.exports = { ERROR_CODES, ApiError, toastError, account, idiom, rescue, leaderboard, admin }

@@ -10,6 +10,8 @@ page {
   --color-success: #3C7A4E;
   --color-success-soft: #DCEBDD;
   --color-border: #E3D8C3;
+  --color-gold: #C9962B;
+  --color-gold-soft: #F6EAD0;
   --radius-sm: 12rpx;
   --radius-md: 20rpx;
   --radius-lg: 32rpx;

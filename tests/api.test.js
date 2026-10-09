@@ -187,6 +187,48 @@ const startedAttempt = { active: true, wrongCount: 0 }
   assert(Object.keys(S.item_logs).length === recentLogCount && !S.daily.oldDaily, 'recent records kept', Object.keys(S.item_logs).length)
   r = await main({ Type: 'Timer', TriggerName: 'nope' }); assert(r.code === 40000, 'unknown timer rejected', r)
   r = await main({ action: 'account.login' }); assert(r.code === 40000, 'call without user identity rejected', r)
+  // all-clear, completions, stats, admin
+  S.app_config = {}
+  const total = Object.keys(S.levels).length
+  await call('c1', 'account.login'); await call('c1', 'idiom.summary')
+  S.progress['c1_idiom'].solved = Array.from({ length: total - 1 }, (_, i) => i + 1)
+  S.progress['c1_idiom'].currentLevel = total
+  await call('c1', 'idiom.startAttempt', { levelNo: total })
+  r = await call('c1', 'idiom.submit', { levelNo: total, answer: levels[total - 1].answer })
+  assert(r.data.correct && r.data.allCleared && r.data.nextLevelNo === null && r.data.totalLevels === total, 'solving the last level reports all cleared', r.data)
+  assert(Object.values(S.completions).filter((c) => c.openid === 'c1' && c.totalLevels === total).length === 1, 'completion recorded once', S.completions)
+  r = await call('c1', 'idiom.levelList'); assert(r.data.allCleared && r.data.currentLevel === total, 'level list all cleared', r.data.allCleared)
+  r = await call('c1', 'idiom.summary'); assert(r.data.allCleared, 'summary all cleared', r.data)
+  r = await call('c1', 'admin.stats'); assert(r.code === 40300, 'non-admin cannot read stats', r)
+  r = await call('c1', 'account.login'); assert(r.data.isAdmin === false && r.data.openid === 'c1', 'login exposes own openid and admin flag', r.data)
+  S.app_config = { game_rules: { _id: 'game_rules', admin: { openids: ['c1'] } } }
+  r = await call('c1', 'account.login'); assert(r.data.isAdmin === true, 'admin flag from config', r.data.isAdmin)
+  r = await call('c1', 'admin.stats')
+  const clearedNow = Object.values(S.progress).filter((p) => p.gameType === 'idiom' && (p.solvedCount || 0) >= total).length
+  assert(r.code === 0 && r.data.current.totalLevels === total && r.data.current.clearedUsers === clearedNow && r.data.current.totalUsers === Object.keys(S.users).length, 'admin stats counts', r.data.current)
+  assert(r.data.current.clearRate === Math.round((clearedNow / Object.keys(S.users).length) * 10000) / 10000 && r.data.recentCompletions[0].openid === 'c1', 'clear rate and recent completions', r.data)
+  sdk.testing.actAs('')
+  r = await main({ Type: 'Timer', TriggerName: 'snapshotStats' }); assert(r.code === 0 && S.stats_daily[`idiom_${r.data.date}`].clearedUsers === clearedNow, 'hourly snapshot written', r)
+  r = await main({ Type: 'Timer', TriggerName: 'snapshotStats' }); assert(Object.keys(S.stats_daily).length === 1, 'snapshot overwrites same day', Object.keys(S.stats_daily))
+  r = await call('c1', 'admin.stats'); assert(r.data.dailyHistory.length === 1 && r.data.dailyHistory[0].clearedUsers === clearedNow, 'admin sees daily history', r.data.dailyHistory)
+  S.app_config = { game_rules: { _id: 'game_rules', admin: { openids: 'c1' } } }
+  r = await call('c1', 'admin.stats'); assert(r.code === 40300, 'malformed admin list falls back to no admins', r)
+  // leaderboard
+  S.app_config = { game_rules: { _id: 'game_rules', leaderboard: { size: 2 } } }
+  Object.values(S.progress).forEach((p) => { p.solvedCount = p.openid === 'c1' ? p.solved.length : 0 })
+  S.progress['c1_idiom'].lastSolvedAt = new Date(Date.now() - 10 * MIN).toISOString()
+  for (const id of ['l1', 'l2']) { await call(id, 'account.login'); await call(id, 'idiom.summary') }
+  S.progress['l1_idiom'].solved = Array.from({ length: total }, (_, i) => i + 1); S.progress['l1_idiom'].solvedCount = total; S.progress['l1_idiom'].lastSolvedAt = new Date(Date.now() - 5 * MIN).toISOString()
+  S.progress['l2_idiom'].solved = [1]; S.progress['l2_idiom'].solvedCount = 1; S.progress['l2_idiom'].lastSolvedAt = new Date().toISOString()
+  S.users.l1.nickname = '榜一'
+  r = await call('l2', 'leaderboard.list')
+  assert(r.code === 0 && r.data.entries.length === 2 && r.data.entries[0].solvedCount === total && r.data.entries[0].rank === 1, 'top list ordered by solved count', r.data.entries)
+  assert(r.data.entries[0].nickname !== '榜一' && r.data.entries[1].nickname === '榜一', 'tie broken by who got there first', r.data.entries.map((e) => e.nickname))
+  assert(r.data.entries.every((e) => e.openid === undefined), 'leaderboard does not expose openid', r.data.entries)
+  const expectedL2Rank = Object.values(S.progress).filter((p) => p.gameType === 'idiom' && (p.solvedCount || 0) > 1).length + 1
+  assert(r.data.me.rank === expectedL2Rank && !r.data.me.inTop && r.data.me.solvedCount === 1, 'self rank outside top', r.data.me)
+  r = await call('l1', 'leaderboard.list'); assert(r.data.me.inTop && r.data.me.rank === 2 && r.data.entries[1].isMe, 'self inside top marked', r.data.me)
+  await call('l3', 'account.login'); r = await call('l3', 'leaderboard.list'); assert(r.data.me.rank === null && r.data.me.solvedCount === 0, 'zero solved not ranked', r.data.me)
   console.log('logs:', Object.values(S.item_logs).filter((l) => l.openid === 'u1').map((l) => `${l.reason}:${l.itemType}${l.delta > 0 ? '+' : ''}${l.delta}`).join(' '))
   console.log(`\n${passed} passed, ${failed} failed`)
   process.exitCode = failed ? 1 : 0

@@ -4,6 +4,8 @@ const account = require('./handlers/account')
 const idiom = require('./handlers/idiom')
 const rescue = require('./handlers/rescue')
 const maintenance = require('./handlers/maintenance')
+const admin = require('./handlers/admin')
+const leaderboard = require('./handlers/leaderboard')
 
 const ROUTES = {
   'account.login': account.login,
@@ -20,13 +22,16 @@ const ROUTES = {
   'idiom.useHint': idiom.useHint,
   'rescue.create': rescue.create,
   'rescue.view': rescue.view,
-  'rescue.answer': rescue.answer
+  'rescue.answer': rescue.answer,
+  'leaderboard.list': leaderboard.list,
+  'admin.stats': admin.stats
 }
 
 const KNOWN_ERROR_CODES = new Set(Object.values(ERROR_CODES))
 
 const TIMER_TRIGGERS = {
-  cleanupExpiredRecords: maintenance.cleanupExpiredRecords
+  cleanupExpiredRecords: maintenance.cleanupExpiredRecords,
+  snapshotStats: maintenance.snapshotStats
 }
 
 exports.main = async (event) => {

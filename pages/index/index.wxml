@@ -27,7 +27,10 @@
         猜成语
         <text wx:if="{{idiomProgress}}" class="chip hall__game-title">{{idiomProgress.titleName}}</text>
       </view>
-      <view wx:if="{{idiomProgress}}" class="hall__game-desc">
+      <view wx:if="{{idiomProgress && idiomProgress.allCleared}}" class="hall__game-desc">
+        已通关全部 {{idiomProgress.total}} 关 · 更多挑战敬请期待
+      </view>
+      <view wx:elif="{{idiomProgress}}" class="hall__game-desc">
         已通过 {{idiomProgress.solvedCount}} / {{idiomProgress.total}} 关 · {{idiomProgress.titleProgressText}}
       </view>
       <view wx:if="{{idiomProgress && idiomProgress.pendingChests > 0}}" class="hall__game-chest">
@@ -36,6 +39,15 @@
       <view wx:else class="hall__game-desc">看释义，拼出四字成语</view>
     </view>
     <view class="hall__game-action">闯关</view>
+  </view>
+
+  <view class="card hall__game" hover-class="hall__game--pressed" bindtap="openLeaderboard">
+    <view class="hall__game-icon hall__game-icon--gold">榜</view>
+    <view class="hall__game-body">
+      <view class="hall__game-name">排行榜</view>
+      <view class="hall__game-desc">看看谁闯得最远</view>
+    </view>
+    <view class="hall__game-action">查看</view>
   </view>
 
   <view class="card hall__game hall__game--coming">

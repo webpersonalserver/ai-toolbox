@@ -4,6 +4,8 @@
     "pages/idiom/levels/levels",
     "pages/idiom/play/play",
     "pages/idiom/book/book",
+    "pages/leaderboard/leaderboard",
+    "pages/admin/stats",
     "pages/rescue/rescue",
     "pages/mine/mine"
   ],

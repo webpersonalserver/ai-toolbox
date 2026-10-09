@@ -34,6 +34,12 @@ const resolveViewState = (detail) => {
   return VIEW_STATES.ANSWERING
 }
 
+const describeHelperBlock = (viewState, detail) => {
+  if (viewState === VIEW_STATES.HELPER_DAILY_LIMIT) return detail.helperLimitMessage
+  if (viewState === VIEW_STATES.HELPER_LOCKED) return `答错 ${detail.maxWrongAnswersPerHelper} 次了，这道题你帮不上啦`
+  return ''
+}
+
 Page({
   data: {
     loading: true,
@@ -45,6 +51,8 @@ Page({
     helperName: '',
     helperLimitMessage: '',
     helperAttemptsLeft: 0,
+    helperBlocked: false,
+    helperBlockedMessage: '',
     maxWrongAnswersPerHelper: 0,
     levelNo: 0,
     clue: '',
@@ -64,9 +72,13 @@ Page({
     try {
       await ensureLogin()
       const detail = await rescue.view(this.data.rescueId)
+      const viewState = resolveViewState(detail)
+      const helperBlockedMessage = describeHelperBlock(viewState, detail)
       this.setData({
         loading: false,
-        viewState: resolveViewState(detail),
+        viewState,
+        helperBlocked: Boolean(helperBlockedMessage),
+        helperBlockedMessage,
         isOwner: detail.isOwner,
         requesterName: detail.requester.nickname || FALLBACK_REQUESTER_NAME,
         requesterAvatar: detail.requester.avatarUrl,
@@ -94,7 +106,12 @@ Page({
       if (result.correct) {
         this.setData({ viewState: VIEW_STATES.SOLVED, helpedByMe: true, solution: result.solution })
       } else if (result.attemptsLeft <= 0) {
-        this.setData({ viewState: VIEW_STATES.HELPER_LOCKED, helperAttemptsLeft: 0 })
+        this.setData({
+          viewState: VIEW_STATES.HELPER_LOCKED,
+          helperAttemptsLeft: 0,
+          helperBlocked: true,
+          helperBlockedMessage: describeHelperBlock(VIEW_STATES.HELPER_LOCKED, this.data)
+        })
       } else {
         this.setData({ helperAttemptsLeft: result.attemptsLeft })
         this.selectComponent('#puzzle').showWrongAnswer()
