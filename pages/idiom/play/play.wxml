@@ -1,0 +1,98 @@
+<view class="page play" wx:if="{{stage !== 'loading'}}">
+  <view class="play__topbar">
+    <view class="play__level">第 {{levelNo}} 关<text class="play__total"> / {{total}}</text></view>
+    <view class="play__items">
+      <view class="chip">体力 {{items.stamina}}</view>
+      <view class="chip">提示 {{items.hint}}</view>
+    </view>
+  </view>
+
+  <view wx:if="{{stage === 'ready'}}" class="card play__ready">
+    <block wx:if="{{attempt.failed}}">
+      <view class="play__ready-title">挑战失败</view>
+      <view class="play__ready-desc">答错 {{attempt.maxWrongAttempts}} 次了。再来一次，已揭开的字会保留。</view>
+    </block>
+    <block wx:else>
+      <view class="play__ready-title">准备好了吗？</view>
+      <view class="play__ready-desc">每次挑战有 {{attempt.maxWrongAttempts}} 次答错机会，答错用完即挑战失败。</view>
+    </block>
+    <button class="btn btn--primary play__start" loading="{{busy}}" bindtap="handleStart">
+      {{attempt.failed ? '再来一次' : '开始挑战'}}（体力 -{{staminaCost}}）
+    </button>
+    <view wx:if="{{staminaRecoveryText}}" class="play__recovery">体力 {{staminaRecoveryText}}</view>
+    <button wx:if="{{attempt.failed}}" class="btn btn--ghost play__start" bindtap="handleRescue">求助好友（免费）</button>
+    <view class="play__guide-link" bindtap="openGuide">玩法说明</view>
+  </view>
+
+  <block wx:if="{{stage === 'playing'}}">
+    <view class="play__hearts">
+      <text wx:for="{{hearts}}" wx:key="index" class="play__heart {{item ? '' : 'play__heart--lost'}}">♥</text>
+    </view>
+    <view class="card play__clue">
+      <view class="play__clue-label">释义</view>
+      <view class="play__clue-text">{{clue}}</view>
+    </view>
+
+    <idiom-puzzle
+      id="puzzle"
+      board="{{board}}"
+      answer-length="{{answerLength}}"
+      revealed="{{revealed}}"
+      disabled="{{submitting}}"
+      bind:complete="handleComplete"
+    />
+
+    <view class="play__actions">
+      <button class="btn btn--ghost play__action" loading="{{busy}}" bindtap="handleHint">
+        提示（{{hintsUsed}}/{{maxHints}}）
+      </button>
+      <button class="btn btn--primary play__action" bindtap="handleRescue">求助好友</button>
+    </view>
+  </block>
+
+  <view wx:if="{{stage === 'solved'}}" class="card play__result">
+    <view class="play__result-badge">过关</view>
+    <view class="play__result-answer">{{solution.answer}}</view>
+    <view class="play__result-pinyin">{{solution.pinyin}}</view>
+    <view wx:if="{{allCleared}}" class="play__all-cleared">
+      <view class="play__all-cleared-title">恭喜通关全部 {{total}} 关！</view>
+      <view class="play__all-cleared-desc">更多挑战正在准备中，敬请期待</view>
+    </view>
+    <view wx:if="{{titleUpgrade}}" class="play__reward play__reward--title">晋升为「{{titleUpgrade}}」！</view>
+    <view wx:if="{{milestone && milestone.pendingChests > 0}}" class="play__reward">
+      <view>解锁了 {{milestone.pendingChests}} 个宝箱</view>
+      <button class="btn btn--primary play__reward-btn" loading="{{busy}}" bindtap="handleOpenChests">开宝箱</button>
+    </view>
+    <view wx:elif="{{milestone}}" class="play__reward-hint">再通过 {{milestone.levelsToNextChest}} 关可开宝箱</view>
+    <view class="play__result-section">
+      <view class="play__result-label">释义</view>
+      <view>{{solution.explanation}}</view>
+    </view>
+    <view wx:if="{{solution.derivation}}" class="play__result-section">
+      <view class="play__result-label">出处</view>
+      <view class="play__result-derivation">{{solution.derivation}}</view>
+    </view>
+    <view class="play__actions">
+      <button class="btn btn--muted play__action" bindtap="goLevelList">关卡列表</button>
+      <button wx:if="{{nextLevelNo}}" class="btn btn--primary play__action" bindtap="goNextLevel">下一关</button>
+      <button wx:else class="btn btn--primary play__action" bindtap="openLeaderboard">看排行榜</button>
+    </view>
+  </view>
+</view>
+
+<game-guide
+  visible="{{guideVisible}}"
+  sections="{{guideSections}}"
+  confirm-text="{{guideConfirmText}}"
+  bind:confirm="handleGuideConfirm"
+  bind:close="handleGuideClose"
+/>
+
+<view wx:if="{{rescueSheetVisible}}" class="rescue-sheet" bindtap="closeRescueSheet">
+  <view class="rescue-sheet__panel" catchtap="noop">
+    <view class="rescue-sheet__title">向好友求助</view>
+    <view class="rescue-sheet__desc">把这一关发给好友或群，有人答对你就直接过关，不消耗体力。</view>
+    <button class="btn btn--primary" open-type="share" data-purpose="rescue">发给好友 / 群</button>
+    <button class="btn btn--muted rescue-sheet__cancel" bindtap="closeRescueSheet">再想想</button>
+  </view>
+</view>

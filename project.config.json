@@ -3,7 +3,7 @@
   "compileType": "miniprogram",
   "cloudfunctionRoot": "cloudfunctions/",
   "libVersion": "3.8.0",
-  "projectname": "ai-toolbox",
+  "projectname": "puzzle-master",
   "setting": {
     "es6": true,
     "enhance": true,

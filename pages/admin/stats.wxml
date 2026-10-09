@@ -1,0 +1,53 @@
+<view class="page admin" wx:if="{{!loading && current}}">
+  <view class="card admin__overview">
+    <view class="admin__rate">{{current.clearRateText}}</view>
+    <view class="admin__rate-label">当前通关率（通关全部 {{current.totalLevels}} 关的用户 / 总用户）</view>
+    <view class="admin__metrics">
+      <view class="admin__metric">
+        <view class="admin__metric-value">{{current.clearedUsers}}</view>
+        <view class="admin__metric-label">通关用户</view>
+      </view>
+      <view class="admin__metric">
+        <view class="admin__metric-value">{{current.totalUsers}}</view>
+        <view class="admin__metric-label">总用户</view>
+      </view>
+      <view class="admin__metric">
+        <view class="admin__metric-value">{{current.completionsToday}}</view>
+        <view class="admin__metric-label">今日新通关</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="admin__section-title">最近通关</view>
+  <view class="card admin__list">
+    <view wx:if="{{!recentCompletions.length}}" class="admin__empty">还没有人通关</view>
+    <view
+      wx:for="{{recentCompletions}}"
+      wx:key="index"
+      class="admin__row"
+      data-openid="{{item.openid}}"
+      bindlongpress="copyOpenid"
+    >
+      <view class="admin__row-main">{{item.displayName}}</view>
+      <view class="admin__row-side">{{item.totalLevels}} 关 · {{item.dateText}}</view>
+    </view>
+    <view wx:if="{{recentCompletions.length}}" class="admin__hint">长按一行可复制该用户的 openid</view>
+  </view>
+
+  <view class="admin__section-title">每日趋势（每小时更新当天数据）</view>
+  <view class="card admin__list">
+    <view wx:if="{{!dailyHistory.length}}" class="admin__empty">暂无数据，定时任务运行后出现</view>
+    <view class="admin__row admin__row--head" wx:if="{{dailyHistory.length}}">
+      <view class="admin__cell">日期</view>
+      <view class="admin__cell">总用户</view>
+      <view class="admin__cell">通关</view>
+      <view class="admin__cell">通关率</view>
+    </view>
+    <view wx:for="{{dailyHistory}}" wx:key="date" class="admin__row">
+      <view class="admin__cell">{{item.dateText}}</view>
+      <view class="admin__cell">{{item.totalUsers}}</view>
+      <view class="admin__cell">{{item.clearedUsers}}</view>
+      <view class="admin__cell">{{item.clearRateText}}</view>
+    </view>
+  </view>
+</view>

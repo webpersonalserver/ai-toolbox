@@ -1,36 +1,73 @@
-// pages/index/index.js — 首页
+const { idiom, toastError } = require('../../utils/api')
+const { ensureLogin, getSession } = require('../../utils/session')
+const { checkinToday } = require('../../utils/checkin')
+const { describeRewards, describeStaminaRecovery } = require('../../utils/items')
+const { DEFAULT_SHARE } = require('../../utils/share')
+const { showRescueNotices } = require('../../utils/rescue-notice')
+const { describeTitleProgress } = require('../../utils/milestone')
+
 Page({
   data: {
-    tools: [
-      {
-        id: 'restore',
-        title: '老照片修复',
-        desc: '模糊旧照变清晰 · 支持黑白上色',
-        icon: '📷',
-        url: '/pages/restore/restore',
-        tag: '热门'
-      },
-      {
-        id: 'idphoto',
-        title: 'AI 证件照',
-        desc: '一寸/二寸 · 白底红底蓝底',
-        icon: '🪪',
-        url: '/pages/idphoto/idphoto',
-        tag: '刚需'
-      },
-      {
-        id: 'ledger',
-        title: '牌局记账',
-        desc: '打牌不用现金 · 散场自动算账',
-        icon: '🀄',
-        url: '/pages/ledger/ledger',
-        tag: '新品'
-      }
-    ]
+    loading: true,
+    items: { hint: 0, stamina: 0 },
+    staminaRecoveryText: '',
+    checkedIn: false,
+    checkinRewardText: '',
+    idiomProgress: null
   },
 
-  goTool(e) {
-    const url = e.currentTarget.dataset.url
-    wx.navigateTo({ url })
+  onShow() {
+    this.refresh()
+  },
+
+  async refresh() {
+    try {
+      await ensureLogin({ force: true })
+      const levelList = await idiom.levelList()
+      this.syncSession()
+      this.setData({
+        loading: false,
+        idiomProgress: {
+          currentLevel: levelList.currentLevel,
+          solvedCount: levelList.solved.length,
+          total: levelList.total,
+          titleName: levelList.achievement.title.name,
+          titleProgressText: describeTitleProgress(levelList.achievement),
+          pendingChests: levelList.achievement.milestone.pendingChests,
+          allCleared: levelList.allCleared
+        }
+      })
+      showRescueNotices(levelList.rescueNotices)
+    } catch (error) {
+      this.setData({ loading: false })
+      toastError(error)
+    }
+  },
+
+  syncSession() {
+    const session = getSession()
+    if (!session) return
+    this.setData({
+      items: session.items,
+      staminaRecoveryText: describeStaminaRecovery(session.items),
+      checkedIn: session.today.checkedIn,
+      checkinRewardText: describeRewards(session.rules.checkinRewards)
+    })
+  },
+
+  async handleCheckin() {
+    if (await checkinToday()) this.syncSession()
+  },
+
+  openLeaderboard() {
+    wx.navigateTo({ url: '/pages/leaderboard/leaderboard' })
+  },
+
+  openIdiomGame() {
+    wx.navigateTo({ url: '/pages/idiom/levels/levels' })
+  },
+
+  onShareAppMessage() {
+    return DEFAULT_SHARE
   }
 })

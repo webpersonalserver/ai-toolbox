@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "猜成语",
+  "usingComponents": {
+    "idiom-puzzle": "/components/idiom-puzzle/idiom-puzzle",
+    "game-guide": "/components/game-guide/game-guide"
+  }
+}

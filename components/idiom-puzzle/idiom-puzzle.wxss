@@ -1,0 +1,72 @@
+.idiom-puzzle__slots {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-xl);
+}
+
+.idiom-puzzle__slots--wrong {
+  animation: idiom-puzzle-shake 0.4s ease-in-out;
+}
+
+.idiom-puzzle__slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 128rpx;
+  height: 128rpx;
+  border: 4rpx dashed var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  font-size: var(--font-title);
+  font-weight: 700;
+}
+
+.idiom-puzzle__slot--filled {
+  border-style: solid;
+  border-color: var(--color-ink);
+}
+
+.idiom-puzzle__slot--locked {
+  border-style: solid;
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+.idiom-puzzle__slots--wrong .idiom-puzzle__slot--filled {
+  border-color: var(--color-primary);
+}
+
+.idiom-puzzle__board {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: var(--space-sm);
+}
+
+.idiom-puzzle__key {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 96rpx;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  box-shadow: 0 4rpx 0 var(--color-border);
+  font-size: var(--font-xl);
+  font-weight: 600;
+}
+
+.idiom-puzzle__key--pressed {
+  transform: translateY(4rpx);
+  box-shadow: none;
+}
+
+.idiom-puzzle__key--used {
+  visibility: hidden;
+}
+
+@keyframes idiom-puzzle-shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-16rpx); }
+  40%, 80% { transform: translateX(16rpx); }
+}

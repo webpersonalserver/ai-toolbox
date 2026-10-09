@@ -1,6 +1,0 @@
-{
-  "navigationBarTitleText": "AI 证件照",
-  "usingComponents": {
-    "paywall": "/components/paywall/paywall"
-  }
-}

@@ -1,185 +1,113 @@
-// pages/mine/mine.js — 我的（会员中心）
-const api = require('../../utils/api')
+const { account, idiom, toastError } = require('../../utils/api')
+const { ensureLogin, getSession, updateSession } = require('../../utils/session')
+const { checkinToday } = require('../../utils/checkin')
+const { describeStaminaRecovery } = require('../../utils/items')
+const { buildRuleLines } = require('../../utils/rule-text')
+const { DEFAULT_SHARE } = require('../../utils/share')
+const { describeTitleProgress } = require('../../utils/milestone')
+
 
 Page({
   data: {
-    quotaUsed: 0,
-    quotaFree: 3,
-    isMember: false,
-    unlimited: false,
-    levelLabel: '',
-    expireText: '',
+    nickname: '',
+    avatarUrl: '',
+    items: { hint: 0, stamina: 0 },
+    staminaRecoveryText: '',
+    checkedIn: false,
+    ruleLines: [],
+    titleName: '',
+    isAdmin: false,
     openid: '',
-    env: '',
-    showDev: false,   // 连点标题 5 次唤出的开发者入口
-    tapCount: 0,
-    tapTimer: null
+    titleProgressText: '',
+    solvedCount: 0,
+    profileDirty: false,
+    saving: false
   },
 
-  onShow() {
-    this.refreshQuota()
-  },
-
-  async refreshQuota() {
+  async onShow() {
     try {
-      const q = await api.getQuota()
+      const [, summary] = await Promise.all([ensureLogin({ force: true }), idiom.summary()])
+      this.syncSession()
       this.setData({
-        quotaUsed: q.used,
-        quotaFree: q.free,
-        isMember: !!q.isMember,
-        unlimited: !!q.unlimited,
-        levelLabel: q.levelLabel || (q.isMember ? '会员' : ''),
-        expireText: this.formatExpire(q.expireAt),
-        openid: q.openid || '',
-        env: q.env || ''
+        titleName: summary.achievement.title.name,
+        titleProgressText: describeTitleProgress(summary.achievement),
+        solvedCount: summary.achievement.solvedCount
       })
-    } catch (e) { /* 静默 */ }
-  },
-
-  /** 到期时间文案：null = 永久 */
-  formatExpire(expireAt) {
-    if (!expireAt) return ''
-    const d = new Date(expireAt)
-    if (isNaN(d.getTime())) return ''
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} 到期`
-  },
-
-  // 连点「我的账户」5 次 → 唤出开发者入口（自测/给体验成员开白名单用）
-  onTitleTap() {
-    if (this.data.showDev) return
-    if (this.data.tapTimer) clearTimeout(this.data.tapTimer)
-    const n = this.data.tapCount + 1
-    if (n >= 5) {
-      this.setData({ tapCount: 0, showDev: true })
-      wx.showToast({ title: '开发者模式已开启', icon: 'none' })
-      return
+    } catch (error) {
+      toastError(error)
     }
+  },
+
+  syncSession() {
+    const { profile, items, today, rules, isAdmin, openid } = getSession()
     this.setData({
-      tapCount: n,
-      tapTimer: setTimeout(() => this.setData({ tapCount: 0 }), 2000)
+      isAdmin,
+      openid,
+      nickname: profile.nickname,
+      avatarUrl: profile.avatarUrl,
+      items,
+      staminaRecoveryText: describeStaminaRecovery(items),
+      checkedIn: today.checkedIn,
+      ruleLines: buildRuleLines(rules),
+      profileDirty: false
     })
   },
 
-  // 开发者口令：输入正确即把当前微信永久加入免费白名单（不限次）
-  devActivate() {
-    wx.showModal({
-      title: '开发者口令',
-      content: '输入口令后，当前微信将永久免额度',
-      editable: true,
-      placeholderText: '请输入口令',
-      success: async (res) => {
-        if (!res.confirm) return
-        const pass = (res.content || '').trim()
-        if (!pass) return
-        wx.showLoading({ title: '激活中', mask: true })
-        try {
-          await api.bindMember(pass)
-          wx.hideLoading()
-          await this.refreshQuota()
-          wx.showModal({ title: '激活成功', content: '当前微信已永久免额度（不限次数）', showCancel: false })
-        } catch (e) {
-          wx.hideLoading()
-          wx.showModal({ title: '激活失败', content: e.message || '请检查口令后重试', showCancel: false })
-        }
-      }
-    })
+  handleChooseAvatar(event) {
+    this.setData({ avatarUrl: event.detail.avatarUrl, profileDirty: true })
   },
 
-  // 云端体检：依赖/配置 + 真实调用一次上色/增强/抠图，看哪一步挂
-  devDiagnose() {
-    wx.showLoading({ title: '体检中', mask: true })
-    const safe = (p) => p.catch((e) => ({ __err: e.message || '调用失败' }))
+  handleNicknameInput(event) {
+    this.setData({ nickname: event.detail.value, profileDirty: true })
+  },
 
-    Promise.all([safe(api.diagnose()), safe(api.probe())]).then((arr) => {
-      wx.hideLoading()
-      const d = arr[0]
-      const pr = arr[1]
-      const lines = []
+  async uploadAvatarIfLocal(avatarUrl) {
+    const isCloudFile = avatarUrl.startsWith('cloud://')
+    if (!avatarUrl || isCloudFile) return avatarUrl
+    const extension = avatarUrl.split('.').pop() || 'png'
+    const { avatarUploadDir } = getSession().profile
+    const cloudPath = `${avatarUploadDir}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${extension}`
+    const { fileID } = await wx.cloud.uploadFile({ cloudPath, filePath: avatarUrl })
+    return fileID
+  },
 
-      if (d && !d.__err) {
-        const mods = d.modules || {}
-        lines.push('Node ' + d.node)
-        lines.push('密钥 ' + d.secretId)
-        lines.push('桶 ' + d.bucket)
-        lines.push('环境 ' + d.envVersion + ' / ENV_FREE=' + d.envFree)
-        lines.push('免费额度 ' + d.freeQuota)
-        lines.push('--- 依赖 ---')
-        Object.keys(mods).forEach((k) => lines.push(k + ': ' + mods[k]))
-      } else {
-        lines.push('自检失败：' + ((d && d.__err) || '未知'))
-      }
+  async saveProfile() {
+    if (this.data.saving) return
+    this.setData({ saving: true })
+    try {
+      const avatarUrl = await this.uploadAvatarIfLocal(this.data.avatarUrl)
+      const profile = await account.updateProfile({ nickname: this.data.nickname, avatarUrl })
+      updateSession({ profile })
+      this.setData({ avatarUrl: profile.avatarUrl, nickname: profile.nickname, profileDirty: false })
+      wx.showToast({ title: '已保存', icon: 'success' })
+    } catch (error) {
+      toastError(error)
+    } finally {
+      this.setData({ saving: false })
+    }
+  },
 
-      lines.push('--- 数据万象接口 ---')
-      if (pr && !pr.__err) {
-        Object.keys(pr).forEach((k) => {
-          if (k !== 'total') lines.push(k + ' → ' + pr[k])
-        })
-        if (pr.total) lines.push('合计耗时 ' + pr.total + 'ms')
-      } else {
-        lines.push('体检失败：' + ((pr && pr.__err) || '未知'))
-      }
+  async handleCheckin() {
+    if (await checkinToday()) this.syncSession()
+  },
 
-      const summary = lines.join('\n')
-      wx.setClipboardData({ data: summary })
-      wx.showModal({ title: '云端体检（已复制）', content: summary, showCancel: false })
-    })
+  openAdminStats() {
+    wx.navigateTo({ url: '/pages/admin/stats' })
   },
 
   copyOpenid() {
-    const id = this.data.openid
-    if (!id) {
-      wx.showToast({ title: '未获取到 openid', icon: 'none' })
-      return
+    wx.setClipboardData({ data: this.data.openid })
+  },
+
+  openBook() {
+    wx.navigateTo({ url: '/pages/idiom/book/book' })
+  },
+
+  onShareAppMessage() {
+    if (!this.data.titleName) return DEFAULT_SHARE
+    return {
+      ...DEFAULT_SHARE,
+      title: `我在猜成语闯过了 ${this.data.solvedCount} 关，晋升「${this.data.titleName}」，你能到第几关？`
     }
-    wx.setClipboardData({ data: id })
-  },
-
-  // 兑换码核销：输入白名单/会员兑换码
-  redeem() {
-    wx.showModal({
-      title: '兑换码',
-      editable: true,
-      placeholderText: '请输入兑换码',
-      success: async (res) => {
-        if (!res.confirm) return
-        const code = (res.content || '').trim()
-        if (!code) {
-          wx.showToast({ title: '请输入兑换码', icon: 'none' })
-          return
-        }
-        wx.showLoading({ title: '兑换中', mask: true })
-        try {
-          const r = await api.redeemCode(code)
-          wx.hideLoading()
-          await this.refreshQuota()
-          const tip = r.days > 0 ? `已开通 ${r.days} 天免费权益` : '已开通永久免费权益'
-          wx.showModal({ title: '兑换成功', content: tip, showCancel: false })
-        } catch (e) {
-          wx.hideLoading()
-          wx.showModal({
-            title: '兑换失败',
-            content: e.message || '请检查兑换码后重试',
-            showCancel: false
-          })
-        }
-      }
-    })
-  },
-
-  // TODO: 接入微信虚拟支付 wx.requestVirtualPayment → 调云函数开通会员
-  buyMembership() {
-    wx.showModal({
-      title: '会员开通',
-      content: '会员体系将在支付功能联调后上线（9.9元/月 · 无水印 · 无限次）',
-      showCancel: false
-    })
-  },
-
-  about() {
-    wx.showModal({
-      title: '关于',
-      content: 'AI 照片工具箱 v0.1.0\n老照片修复 · AI 证件照',
-      showCancel: false
-    })
   }
 })

@@ -1,0 +1,33 @@
+<view class="page leaderboard" wx:if="{{!loading}}">
+  <view class="leaderboard__summary">按通关数排名，展示前 {{size}} 名</view>
+
+  <view wx:if="{{!entries.length}}" class="card leaderboard__empty">还没有人上榜，快去闯关吧</view>
+
+  <view
+    wx:for="{{entries}}"
+    wx:key="rank"
+    class="leaderboard__row {{item.isMe ? 'leaderboard__row--me' : ''}}"
+  >
+    <view class="leaderboard__rank {{item.rank <= podiumSize ? 'leaderboard__rank--podium' : ''}}">{{item.rank}}</view>
+    <image wx:if="{{item.avatarUrl}}" class="leaderboard__avatar" src="{{item.avatarUrl}}" mode="aspectFill" lazy-load />
+    <view wx:else class="leaderboard__avatar leaderboard__avatar--empty">{{item.initial}}</view>
+    <view class="leaderboard__body">
+      <view class="leaderboard__name">{{item.displayName}}<text wx:if="{{item.isMe}}" class="leaderboard__me-tag">我</text></view>
+      <view class="leaderboard__title">{{item.titleName}}</view>
+    </view>
+    <view class="leaderboard__score">{{item.solvedCount}}<text class="leaderboard__unit"> 关</text></view>
+  </view>
+</view>
+
+<view wx:if="{{!loading && me && !me.inTop}}" class="leaderboard__mine">
+  <view class="leaderboard__row leaderboard__row--me">
+    <view class="leaderboard__rank">{{me.rankText}}</view>
+    <image wx:if="{{me.avatarUrl}}" class="leaderboard__avatar" src="{{me.avatarUrl}}" mode="aspectFill" />
+    <view wx:else class="leaderboard__avatar leaderboard__avatar--empty">{{me.initial}}</view>
+    <view class="leaderboard__body">
+      <view class="leaderboard__name">{{me.displayName}}<text class="leaderboard__me-tag">我</text></view>
+      <view class="leaderboard__title">{{me.rank ? me.titleName : '暂未上榜，通过 1 关即可上榜'}}</view>
+    </view>
+    <view class="leaderboard__score">{{me.solvedCount}}<text class="leaderboard__unit"> 关</text></view>
+  </view>
+</view>

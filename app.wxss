@@ -1,36 +1,92 @@
-/* app.wxss — 全局样式 */
 page {
-  background: #F5F6FA;
-  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-  font-size: 28rpx;
-  color: #1F2937;
+  --color-bg: #F6F0E4;
+  --color-surface: #FFFDF8;
+  --color-surface-muted: #EFE6D4;
+  --color-ink: #2B2620;
+  --color-ink-soft: #6B6255;
+  --color-ink-faint: #A69B8A;
+  --color-primary: #B8322A;
+  --color-primary-soft: #F3DDD6;
+  --color-success: #3C7A4E;
+  --color-success-soft: #DCEBDD;
+  --color-border: #E3D8C3;
+  --color-gold: #C9962B;
+  --color-gold-soft: #F6EAD0;
+  --radius-sm: 12rpx;
+  --radius-md: 20rpx;
+  --radius-lg: 32rpx;
+  --space-xs: 8rpx;
+  --space-sm: 16rpx;
+  --space-md: 24rpx;
+  --space-lg: 32rpx;
+  --space-xl: 48rpx;
+  --font-sm: 24rpx;
+  --font-md: 28rpx;
+  --font-lg: 34rpx;
+  --font-xl: 44rpx;
+  --font-title: 56rpx;
+
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-size: var(--font-md);
+  line-height: 1.6;
 }
 
-.container {
-  padding: 30rpx;
+.page {
+  padding: var(--space-lg) var(--space-lg) calc(var(--space-xl) + env(safe-area-inset-bottom));
 }
 
-/* 通用主按钮 */
-.btn-primary {
-  background: #4F46E5;
-  color: #fff;
-  border-radius: 16rpx;
-  font-size: 32rpx;
-  font-weight: 500;
-  padding: 24rpx 0;
-  text-align: center;
-}
-
-.btn-primary[disabled] {
-  background: #A5B4FC;
-  color: #fff;
-}
-
-/* 卡片 */
 .card {
-  background: #fff;
-  border-radius: 20rpx;
-  padding: 30rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
-  margin-bottom: 30rpx;
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  box-shadow: 0 6rpx 24rpx rgba(80, 60, 30, 0.06);
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 88rpx;
+  margin: 0;
+  padding: 0 var(--space-lg);
+  border-radius: 44rpx;
+  font-size: var(--font-md);
+  font-weight: 600;
+  line-height: 88rpx;
+}
+
+.btn::after {
+  border: none;
+}
+
+.btn--primary {
+  background: var(--color-primary);
+  color: #FFFFFF;
+}
+
+.btn--ghost {
+  background: var(--color-surface);
+  color: var(--color-primary);
+  border: 2rpx solid var(--color-primary);
+}
+
+.btn--muted {
+  background: var(--color-surface-muted);
+  color: var(--color-ink-soft);
+}
+
+.btn[disabled] {
+  opacity: 0.5;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4rpx var(--space-sm);
+  border-radius: 999rpx;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-size: var(--font-sm);
+  font-weight: 600;
 }

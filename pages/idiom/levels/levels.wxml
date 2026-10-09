@@ -1,0 +1,38 @@
+<view class="page levels" wx:if="{{!loading}}">
+  <view class="card levels__header">
+    <view class="levels__title-row">
+      <view class="chip">{{titleName}}</view>
+      <view class="levels__links">
+        <text class="levels__link" bindtap="openLeaderboard">排行榜 ›</text>
+        <text class="levels__link" bindtap="openBook">成语本 ›</text>
+      </view>
+    </view>
+    <view class="levels__summary">
+      <text wx:if="{{allSolved}}">你已通关全部 {{total}} 关，更多挑战敬请期待</text>
+      <text wx:else>已通过 {{solvedCount}} / {{total}} 关 · {{titleProgressText}}</text>
+    </view>
+    <button wx:if="{{pendingChests > 0}}" class="btn btn--primary levels__chest" loading="{{openingChests}}" bindtap="handleOpenChests">
+      有 {{pendingChests}} 个宝箱待打开
+    </button>
+  </view>
+
+  <view class="levels__pager">
+    <button class="btn btn--muted levels__pager-btn" disabled="{{pageIndex === 0}}" bindtap="showPreviousPage">上一页</button>
+    <view class="levels__pager-range">第 {{firstLevelNo}} - {{lastLevelNo}} 关</view>
+    <button class="btn btn--muted levels__pager-btn" disabled="{{pageIndex >= pageCount - 1}}" bindtap="showNextPage">下一页</button>
+  </view>
+
+  <view class="levels__grid">
+    <view
+      wx:for="{{levels}}"
+      wx:key="levelNo"
+      class="levels__cell levels__cell--{{item.status}}"
+      data-level-no="{{item.levelNo}}"
+      data-status="{{item.status}}"
+      bindtap="handleLevelTap"
+    >
+      <text wx:if="{{item.status === 'locked'}}" class="levels__lock">锁</text>
+      <text wx:else>{{item.levelNo}}</text>
+    </view>
+  </view>
+</view>

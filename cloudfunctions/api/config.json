@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "openapi": [
+      "security.msgSecCheck"
+    ]
+  },
+  "triggers": [
+    {
+      "name": "cleanupExpiredRecords",
+      "type": "timer",
+      "config": "0 30 4 * * * *"
+    },
+    {
+      "name": "snapshotStats",
+      "type": "timer",
+      "config": "0 0 * * * * *"
+    }
+  ]
+}

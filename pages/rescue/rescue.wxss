@@ -1,0 +1,77 @@
+.rescue__header {
+  display: flex;
+  align-items: center;
+  margin-bottom: var(--space-lg);
+}
+
+.rescue__avatar {
+  flex-shrink: 0;
+  width: 88rpx;
+  height: 88rpx;
+  margin-right: var(--space-md);
+  border-radius: 50%;
+}
+
+.rescue__avatar--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+.rescue__headline {
+  font-size: var(--font-lg);
+  font-weight: 700;
+}
+
+.rescue__clue-card,
+.rescue__waiting {
+  margin-bottom: var(--space-xl);
+}
+
+.rescue__clue-label {
+  margin-bottom: var(--space-xs);
+  color: var(--color-primary);
+  font-size: var(--font-sm);
+  font-weight: 700;
+  letter-spacing: 4rpx;
+}
+
+.rescue__clue {
+  font-size: var(--font-lg);
+  line-height: 1.8;
+}
+
+.rescue__hint {
+  margin-top: var(--space-md);
+  color: var(--color-ink-soft);
+  font-size: var(--font-sm);
+}
+
+.rescue__result {
+  margin-bottom: var(--space-xl);
+  text-align: center;
+}
+
+.rescue__result-title {
+  color: var(--color-success);
+  font-weight: 700;
+}
+
+.rescue__answer {
+  margin-top: var(--space-md);
+  font-size: 80rpx;
+  font-weight: 800;
+  letter-spacing: 16rpx;
+}
+
+.rescue__pinyin {
+  color: var(--color-ink-soft);
+}
+
+.rescue__explanation {
+  margin-top: var(--space-md);
+  text-align: left;
+}
