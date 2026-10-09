@@ -1,0 +1,21 @@
+<view class="idiom-puzzle">
+  <view class="idiom-puzzle__slots {{isWrong ? 'idiom-puzzle__slots--wrong' : ''}}">
+    <view
+      wx:for="{{slots}}"
+      wx:key="index"
+      class="idiom-puzzle__slot {{item.locked ? 'idiom-puzzle__slot--locked' : ''}} {{item.char ? 'idiom-puzzle__slot--filled' : ''}}"
+      data-index="{{index}}"
+      bindtap="handleSlotTap"
+    >{{item.char}}</view>
+  </view>
+  <view class="idiom-puzzle__board">
+    <view
+      wx:for="{{boardItems}}"
+      wx:key="index"
+      class="idiom-puzzle__key {{item.used ? 'idiom-puzzle__key--used' : ''}}"
+      hover-class="idiom-puzzle__key--pressed"
+      data-index="{{index}}"
+      bindtap="handleBoardTap"
+    >{{item.char}}</view>
+  </view>
+</view>

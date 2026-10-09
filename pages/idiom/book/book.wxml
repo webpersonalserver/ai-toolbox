@@ -1,0 +1,26 @@
+<view class="page book" wx:if="{{!loading}}">
+  <view class="book__summary">已收录 {{total}} 个成语</view>
+
+  <view wx:if="{{!total}}" class="card book__empty">还没有收录成语，去闯关吧</view>
+
+  <view
+    wx:for="{{entries}}"
+    wx:key="levelNo"
+    class="card book__entry"
+    data-level-no="{{item.levelNo}}"
+    bindtap="toggleEntry"
+  >
+    <view class="book__head">
+      <view class="book__word">{{item.answer}}</view>
+      <view class="book__level">第 {{item.levelNo}} 关</view>
+    </view>
+    <view class="book__pinyin">{{item.pinyin}}</view>
+    <view class="book__explanation">{{item.explanation}}</view>
+    <view wx:if="{{expandedLevelNo === item.levelNo && item.derivation}}" class="book__derivation">
+      出处：{{item.derivation}}
+    </view>
+  </view>
+
+  <view wx:if="{{loadingMore}}" class="book__footer">加载中…</view>
+  <view wx:elif="{{!hasMore && total}}" class="book__footer">点击词条可查看出处</view>
+</view>

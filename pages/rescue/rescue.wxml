@@ -1,0 +1,65 @@
+<view class="page rescue" wx:if="{{!loading}}">
+  <view class="rescue__header">
+    <image wx:if="{{requesterAvatar}}" class="rescue__avatar" src="{{requesterAvatar}}" mode="aspectFill" />
+    <view wx:else class="rescue__avatar rescue__avatar--empty">友</view>
+    <view class="rescue__headline">
+      <block wx:if="{{isOwner}}">你在第 {{levelNo}} 关发出了求助</block>
+      <block wx:else>{{requesterName}} 被第 {{levelNo}} 关难住了</block>
+    </view>
+  </view>
+
+  <block wx:if="{{viewState === 'solved'}}">
+    <view class="card rescue__result">
+      <view class="rescue__result-title">
+        <block wx:if="{{helpedByMe}}">你帮 {{requesterName}} 解开了！</block>
+        <block wx:elif="{{isOwner}}">{{helperName}} 帮你解开了这一关</block>
+        <block wx:else>这道题已经被 {{helperName}} 解开了</block>
+      </view>
+      <view class="rescue__answer">{{solution.answer}}</view>
+      <view class="rescue__pinyin">{{solution.pinyin}}</view>
+      <view class="rescue__explanation">{{solution.explanation}}</view>
+    </view>
+    <button class="btn btn--primary rescue__cta" bindtap="goPlay">{{isOwner ? '继续闯关' : '我也去闯关'}}</button>
+  </block>
+
+  <block wx:elif="{{viewState === 'closedByRequester'}}">
+    <view class="card rescue__waiting">
+      <view class="rescue__clue">{{isOwner ? '你已经自己解开这一关啦' : 'TA 已经自己解开这一关啦'}}</view>
+      <view class="rescue__hint">这条求助已结束。</view>
+    </view>
+    <button class="btn btn--primary rescue__cta" bindtap="goPlay">{{isOwner ? '继续闯关' : '我也去闯关'}}</button>
+  </block>
+
+  <block wx:elif="{{viewState === 'ownerWaiting'}}">
+    <view class="card rescue__waiting">
+      <view class="rescue__clue">{{clue}}</view>
+      <view class="rescue__hint">等好友来帮你解开，答对后你会直接过关。</view>
+    </view>
+    <button class="btn btn--muted rescue__cta" bindtap="goPlay">返回关卡</button>
+  </block>
+
+  <block wx:elif="{{viewState === 'helperDailyLimit' || viewState === 'helperLocked'}}">
+    <view class="card rescue__waiting">
+      <view class="rescue__clue">
+        {{viewState === 'helperDailyLimit' ? helperLimitMessage : '答错 ' + maxWrongAnswersPerHelper + ' 次了，这道题你帮不上啦'}}
+      </view>
+      <view class="rescue__hint">换一位好友来帮 TA 吧，你也可以自己去闯关。</view>
+    </view>
+    <button class="btn btn--primary rescue__cta" bindtap="goPlay">我也去闯关</button>
+  </block>
+
+  <block wx:else>
+    <view class="card rescue__clue-card">
+      <view class="rescue__clue-label">释义</view>
+      <view class="rescue__clue">{{clue}}</view>
+      <view class="rescue__hint">你还有 {{helperAttemptsLeft}} 次答错机会</view>
+    </view>
+    <idiom-puzzle
+      id="puzzle"
+      board="{{board}}"
+      answer-length="{{answerLength}}"
+      disabled="{{submitting}}"
+      bind:complete="handleComplete"
+    />
+  </block>
+</view>

@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "好友求助",
+  "usingComponents": {
+    "idiom-puzzle": "/components/idiom-puzzle/idiom-puzzle"
+  }
+}
