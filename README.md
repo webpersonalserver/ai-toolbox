@@ -48,7 +48,7 @@
 4. **建索引（必须）**：没有索引时，打开大厅、关卡页的查询会随数据增长变慢，定时清理也可能超时
    | 集合 | 索引字段 |
    |---|---|
-   | `rescues` | `requesterOpenid` + `status` + `noticeSeen` |
+   | `rescues` | `requesterOpenid` + `gameType` + `status` + `noticeSeen` |
    | `item_logs` | `createdAt` |
    | `daily` | `date` |
    | `rescue_help_pairs` | `date` |
@@ -171,7 +171,7 @@
 ## 测试
 
 ```
-node tests/api.test.js      # 后端：用内存版数据库跑完整业务流程（83 个用例）
+node tests/api.test.js      # 后端：用内存版数据库跑完整业务流程（104 个用例）
 node tests/levels.test.js   # 题库体检：编号连续、答案不重复、字盘包含答案、题面不泄露答案
 ```
 
