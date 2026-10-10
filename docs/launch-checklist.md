@@ -5,8 +5,10 @@
 
 ## 0. 代码分支
 
-- [ ] 决定合并方式：继续直接用 main 的话，运行 `git checkout main && git merge feat/puzzle-master-v1`
-- [ ] 需要时推送到远端（目前只提交在本地，没有 push）
+- [x] 决定合并方式：继续直接用 main 的话，运行 `git checkout main && git merge feat/puzzle-master-v1`
+- [x] 需要时推送到远端（目前只提交在本地，没有 push）
+  - 已完成：PR #1 合并进 `main`（`8cc4b03`），本地已同步到该版本
+- [x] 本地清理旧版残留目录 `cloudfunctions/photo`（仅剩未被 git 跟踪的 `config.local.js`）
 
 ## 1. 小程序备案（最慢，优先提交）
 
