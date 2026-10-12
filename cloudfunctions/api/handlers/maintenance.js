@@ -2,7 +2,7 @@ const { db, _ } = require('../lib/cloud')
 const { loadRules } = require('../lib/rules')
 const { chinaDateKey } = require('../lib/date')
 const { snapshotDailyStats } = require('../lib/stats')
-const { GAME_TYPE } = require('./idiom')
+const { ALL_GAME_TYPES } = require('../lib/games')
 
 const DAY_MS = 24 * 60 * 60 * 1000
 
@@ -32,6 +32,6 @@ const cleanupExpiredRecords = async () => {
   return removed
 }
 
-const snapshotStats = () => snapshotDailyStats(GAME_TYPE)
+const snapshotStats = () => Promise.all(ALL_GAME_TYPES.map((gameType) => snapshotDailyStats(gameType)))
 
 module.exports = { cleanupExpiredRecords, snapshotStats }

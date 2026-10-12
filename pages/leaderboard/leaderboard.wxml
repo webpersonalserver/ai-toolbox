@@ -1,3 +1,13 @@
+<view class="game-tabs">
+  <view
+    wx:for="{{gameTabs}}"
+    wx:key="gameType"
+    class="game-tabs__tab {{item.gameType === gameType ? 'game-tabs__tab--active' : ''}}"
+    data-game-type="{{item.gameType}}"
+    bindtap="switchGame"
+  >{{item.name}}</view>
+</view>
+
 <view class="page leaderboard" wx:if="{{!loading}}">
   <view class="leaderboard__summary">按通关数排名，展示前 {{size}} 名</view>
 

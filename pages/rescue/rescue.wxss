@@ -60,18 +60,22 @@
   font-weight: 700;
 }
 
-.rescue__answer {
-  margin-top: var(--space-md);
-  font-size: 80rpx;
+
+
+
+.rescue__typo {
+  display: flex;
+  justify-content: center;
+  margin: var(--space-sm) 0;
+}
+
+.rescue__typo-char {
+  margin: 0 var(--space-xs);
+  font-size: 64rpx;
   font-weight: 800;
-  letter-spacing: 16rpx;
 }
 
-.rescue__pinyin {
-  color: var(--color-ink-soft);
-}
-
-.rescue__explanation {
-  margin-top: var(--space-md);
-  text-align: left;
+.rescue__typo-char--wrong {
+  color: var(--color-primary);
+  text-decoration: underline wavy;
 }

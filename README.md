@@ -1,6 +1,6 @@
 # 解谜达人（微信小程序）
 
-解谜类小游戏合集，首期上线「猜成语」闯关（1000 关）。微信原生小程序 + 云开发，类目：教育。
+解谜类小游戏合集：猜成语（1000 关）、成语找错字（500 关）、诗词填空（500 关，按幼儿园→高中分学段）、歇后语（106 关）。微信原生小程序 + 云开发，类目：教育。
 
 - **AppID**: `wxb3265721f68a1847`
 - **云环境 ID**: `cloud1-d8g9yyxwe128b2185`
@@ -13,9 +13,9 @@
 ├── app.js / app.json / app.wxss     入口、路由、全局样式 token
 ├── pages/
 │   ├── index/          游戏大厅（体力/提示余额、每日打卡、玩法入口）
-│   ├── idiom/levels/   关卡地图（每页 50 关）
-│   ├── idiom/play/     答题页（开始挑战、答错扣心、提示、求助、过关奖励）
-│   ├── idiom/book/     我的成语本（已通过的成语，可看释义和出处）
+│   ├── game/levels/    关卡地图（?gameType=，每页 50 关，按学段分段）
+│   ├── game/play/      答题页（开始挑战、答错扣心、提示、求助、过关奖励）
+│   ├── game/book/      收藏本（成语本 / 诗词本 / 歇后语本）
 │   ├── rescue/         救助落地页（好友从分享卡片进入）
 │   └── mine/           我的（头像昵称、道具余额、当前规则说明）
 ├── components/idiom-puzzle/   填字格 + 24 字字盘（答题页与救助页共用）
@@ -30,9 +30,9 @@
 │   ├── handlers/       account / idiom / rescue
 │   └── lib/            规则配置、道具结算、北京时间日期、进度、流水
 ├── database/           可直接导入云数据库的初始数据
-│   ├── levels.jsonl     1000 关题库
+│   ├── levels/          三个玩法的题库（idiom / typo / poetry / xiehouyu.jsonl）
 │   └── app_config.jsonl 游戏规则配置
-└── scripts/            题库生成脚本、分档成语清单、手写题面
+└── scripts/            题库生成（build_levels.py + level_builders/）、清单与补录数据（data/）、校对清单导出
 ```
 
 ## 首次部署（按顺序）
@@ -41,7 +41,7 @@
 1. **建集合**（云开发控制台 → 数据库）：
    `users` `daily` `progress` `levels` `rescues` `rescue_help_pairs` `rescue_helper_attempts` `item_logs` `app_config` `completions` `stats_daily`
    - 权限全部设为**自定义规则** `{"read": false, "write": false}`。所有读写都走云函数（管理员权限不受影响），客户端直连数据库读不到答案
-2. **导入数据**：`levels` 导入 `database/levels.jsonl`，`app_config` 导入 `database/app_config.jsonl`（格式选 JSON Lines）
+2. **导入数据**：`levels` 依次导入 `database/levels/` 下的四个文件（idiom / typo / poetry / xiehouyu），`app_config` 导入 `database/app_config.jsonl`（格式都选 JSON Lines）
 3. **部署云函数**：开发者工具右键 `cloudfunctions/api` →「上传并部署：云端安装依赖」
    - 部署后再右键 →「上传触发器」，启用两个定时任务：每天 04:30 清理过期数据（`cleanupExpiredRecords`），每小时整点写入当天统计（`snapshotStats`）
    - `config.json` 同时声明了昵称内容安全检测需要的 `security.msgSecCheck` 权限
@@ -89,7 +89,7 @@
 | `maintenance.dailyRecordRetentionDays` | 7 | 每日打卡记录、求助计数这类按天记录的数据保留天数 |
 | `leaderboard.size` | 100 | 排行榜展示前多少名（上限 1000） |
 | `admin.openids` | `[]` | 管理员 openid 列表，名单内的人在「我的」页能看到「数据统计」入口 |
-| `titles` | 15 档，见下方「段位称号」 | 段位称号，`[{name, minSolved}]`，`minSolved` 表示通过多少关可晋升 |
+| `titles.idiom` / `.typo` / `.poetry` / `.xiehouyu` | 每个玩法一套，见下方「段位称号」 | 段位称号，`[{name, minSolved}]`，`minSolved` 表示通过多少关可晋升 |
 
 ## 闯关规则
 
@@ -123,7 +123,7 @@
 - **里程碑宝箱**：每通过 `milestone.everyLevels` 关解锁一个宝箱。在过关页、关卡页都能打开，攒下的多个宝箱可以一次全部打开
   - 记录的是"已领到第几关的宝箱"（`progress.milestoneClaimedSolvedCount`），所以以后调整 `everyLevels` 也不会重复发奖
   - 好友救助通过的关卡也算通关数
-- **段位称号**：按通关数自动计算，不单独存储。**称号只能往后追加**：配置里的 `titles` 必须原样保留代码里的 15 档基线（`lib/rules.js` 的 `BASELINE_TITLES`），名称、门槛、顺序都不能改，只能在末尾追加门槛更高的新档。不符合规则时云函数会忽略配置、继续使用基线，并在日志里报错，避免玩家的段位被改乱。晋升的那一关在过关页会提示「晋升为 X」；「我的」页可以把段位分享出去（不附带任何奖励）
+- **段位称号**：按通关数自动计算，不单独存储。**称号只能往后追加**：每个玩法的称号必须原样保留代码里的基线（`lib/rules.js` 的 `BASELINE_TITLES_BY_GAME`），名称、门槛、顺序都不能改，只能在末尾追加门槛更高的新档。不符合规则时云函数会忽略配置、继续使用基线，并在日志里报错，避免玩家的段位被改乱。晋升的那一关在过关页会提示「晋升为 X」；「我的」页可以把段位分享出去（不附带任何奖励）
 - **段位称号**（默认 15 档，沿用科举晋升顺序，前期升得快、后期升得慢）：
 
   | 称号 | 通关数 | 称号 | 通关数 | 称号 | 通关数 |
@@ -134,8 +134,19 @@
   | 进士 | 500 | 探花 | 600 | 榜眼 | 700 |
   | 状元 | 800 | 翰林 | 900 | 大学士 | 1000 |
 
-- **成语本**：自动收录已通过的成语，每页加载 20 条，点开词条可以看出处
+- **收藏本**：每个玩法各有一本（成语本 / 诗词本 / 歇后语本），自动收录已通过的关卡，每页加载 20 条
+- **诗词称号**（10 档）：学童 0 · 诗童 10 · 吟者 30 · 诗友 60 · 诗客 100 · 词人 160 · 诗家 240 · 诗翁 320 · 诗仙 400 · 诗圣 500
+- **歇后语称号**（7 档）：听众 0 · 学徒 5 · 票友 15 · 说书人 30 · 评书家 50 · 名角 75 · 曲艺大师 100
+- **找错字称号**（9 档）：书童 0 · 识字郎 10 · 校对员 30 · 小编辑 60 · 编辑 100 · 主编 160 · 总编 240 · 活字典 350 · 字圣 500
 - 不做"每关都发道具"：道具会越攒越多，体力和看视频就失去了意义
+
+## 多玩法
+
+- **共用**：体力、提示、每日打卡、激励视频、配置里的闯关参数（体力消耗、答错次数、提示上限）和宝箱规则
+- **各算各的**：关卡进度、段位称号、宝箱累计、排行榜、通关统计、收藏本
+- 接口统一为 `game.*`，必须带 `gameType`（`idiom` / `typo` / `poetry` / `xiehouyu`），缺失或未知时返回参数错误
+- 提示有两种方式（`lib/games.js` 的 `HINT_STRATEGY_BY_GAME`）：默认「揭开下一个字」；找错字是「排除错误选项」
+- 新增玩法需要做的事：`lib/games.js` 注册玩法、解答字段和提示方式；`lib/rules.js` 加称号基线；`utils/games.js` 加前端展示文案；`scripts/level_builders/` 加一个生成器；`tests/levels.test.js` 加体检规则
 
 ## 全部通关、统计与排行榜
 
@@ -171,31 +182,77 @@
 ## 测试
 
 ```
-node tests/api.test.js      # 后端：用内存版数据库跑完整业务流程（83 个用例）
-node tests/levels.test.js   # 题库体检：编号连续、答案不重复、字盘包含答案、题面不泄露答案
+node tests/api.test.js      # 后端：用内存版数据库跑完整业务流程（136 个用例）
+node tests/levels.test.js   # 题库体检（四个玩法）：编号连续、字盘包含答案、题面与答案能还原原句、学段连续
 ```
 
 改云函数或扩关卡之后都要跑这两条。`tests/support/fake-wx-server-sdk.js` 模拟了用到的数据库能力，事务通过"快照 + 回滚"实现，**不能替代真机验证**。
 
-## 题库（1000 关，由易到难）
+## 题库
 
-- 数据源：[chinese-xinhua](https://github.com/pwxcoo/chinese-xinhua) 的 `data/idiom.json`（约 3 万条，含释义、拼音、出处）
-- **难度排序分两层**：
-  1. `scripts/idioms.txt` 用 `# tier N` 把成语按熟悉程度分成 5 档：小学常见 → 常用 → 中学 → 高中文学 → 文言生僻。数据源里没有常用度字段，所以这一层靠人工判断
-  2. 同一档内部按用字生僻度排序（字频统计自整个数据源的释义和例句），档内难度也是平滑上升的
-- 释义完全相同的近义成语（如「拔苗助长 / 揠苗助长」）只保留排在前面的那个
-- **题面遮挡**：答案里的两字片段一律遮住；单个字只有生僻时才遮，「一、不、人」这类常用字保留，否则题面会满是 □。遮完后仍露出 3 个及以上答案字的，就全部遮住
-- 遮完还是读不通的题，在 `scripts/clue_overrides.json` 里手写题面。脚本会检查手写题面里有没有答案用字，有就报错
-- 字盘 24 字 = 答案 4 字 + 20 个干扰字（取自其他关卡的成语），以成语本身作随机种子，所以每次生成结果都一样
-- **扩充关卡（只追加）**：
-  1. 在 `idioms.txt` **末尾**新增一个 `# tier 6`（7、8…）档，写入比现有关卡更难的成语
-  2. 运行 `python3 scripts/build_levels.py <path/to/idiom.json> <目标总关数>`
-  3. 云开发控制台把 `levels.jsonl` 导入 `levels` 集合，冲突处理选 **Upsert**（已有关卡内容完全一样，覆盖也没有影响）
-- **脚本的三条保护**：
+| 玩法 | 关数 | 学段 / 分档 | 玩法说明 |
+|---|---|---|---|
+| 猜成语 `idiom` | 1000 | 5 档（小学常见 → 文言生僻） | 看释义（答案用字遮成 □），拼出四字成语 |
+| 诗词填空 `poetry` | 500 | 幼儿园 33 · 小学 96 · 初中 71 · 高中 77 · 进阶 223 | 给出上句，补全下句被挖掉的字；越往后挖得越多（幼儿园 2 字 → 小学 3 字 → 初中 4 字 → 高中起整句） |
+| 歇后语 `xiehouyu` | 106 | 幼儿园 12 · 小学 36 · 初中 32 · 高中 26 | 给出前半句，补出后半句（2–7 字） |
+| 成语找错字 `typo` | 500 | 小学 208 · 初中 235 · 高中 57 | 成语里有一个字被换成同音字并标红，从 8 个同音 / 近音字中选出正确的字；小学段额外显示释义 |
+
+- 每个玩法的关卡都放在 `database/levels/<玩法>.jsonl`，导入**同一个** `levels` 集合，用 `gameType` 区分
+- 带学段的玩法，每关都有 `stage` 字段；关卡页按学段显示分段，可以点击跳转；答题页显示「小学 · 第 N 关」
+- 字盘固定 24 个字 = 答案 + 干扰字（取自同玩法其他关卡的答案用字）。以关卡内容作随机种子，每次生成结果都一样
+- **内容需要人工校对**：运行 `python3 scripts/export_content_review.py` 生成 `docs/content-review.md`
+
+### 数据来源（均为 MIT 许可，可商用）
+
+- [chinese-xinhua](https://github.com/pwxcoo/chinese-xinhua)：`idiom.json`（成语）、`xiehouyu.json`（歇后语）、`word.json`（汉字拼音，用于找同音字）
+- 新华成语数据里的录入乱码（「◇」= 被吞掉的「，后」，以及个别 ↑ ◆ ★）在 `scripts/data/idiom_text_fixes.json` 里统一修正
+- [chinese-poetry](https://github.com/chinese-poetry/chinese-poetry)：蒙学版《唐诗三百首》《千家诗》、全唐诗版《唐诗三百首》、《宋词三百首》、《全唐诗》、《全宋词》
+- 原始数据下载到 `.cache/`（已加入 `.gitignore`，不入库），下载方式见 `scripts/build_levels.py` 顶部说明
+
+### 各玩法的生成规则
+
+**猜成语**（`scripts/level_builders/idiom.py`）
+- `scripts/data/idioms.txt` 用 `# tier N` 分档（人工判断熟悉程度），同档内按用字生僻度排序
+- 题面遮挡：答案的两字片段一律遮住；单个字只有生僻时才遮，常用字保留，避免题面满是 □；遮完仍露出 3 个及以上答案字的，就全部遮住
+- 遮完仍读不通的题，在 `scripts/data/idiom_clue_overrides.json` 里手写题面（脚本会检查手写题面里有没有答案用字）
+
+**诗词填空**（`scripts/level_builders/poetry.py`）
+- 学段清单在 `scripts/data/poetry_stages.txt`，幼儿园到高中按部编版教材必背篇目人工整理；「进阶」自动收录唐诗三百首、宋词三百首里的其余作品
+- **版本以课本为准**：取文本的优先级是 `scripts/data/poetry_supplement.json`（按课本手工补录的 24 首）→ 蒙学版唐诗三百首 → 千家诗 → 全唐诗版唐诗三百首 → 宋词三百首 → 全唐诗 / 全宋词。古籍里常见与课本不同的版本，例如全唐诗版《静夜思》是「床前看月光」
+- 按**首句**匹配作品（古籍标题常与课本不同，如「钱唐湖春行」「池上二绝 二」），显示的标题统一用课本标题
+- 异体字统一替换（穉→稚、遶→绕、徧→遍、篴→笛、沈舟→沉舟 等，见补录文件的 `variantReplacements`）
+- 同一首诗的不同版本、开头一句相同的重复作品只保留一个；每首诗最多出几关由学段参数 `couplets` 决定
+- 需要 OpenCC 做繁简转换，所以用 `.cache/venv/bin/python` 运行（`python3 -m venv .cache/venv && .cache/venv/bin/pip install opencc-python-reimplemented`）
+
+**成语找错字**（`scripts/level_builders/typo.py`）
+- 题目来源：`scripts/data/typo_common.txt` 里人工整理的常见易错成语（排在各学段最前），其余由脚本自动生成：在成语的某个位置换一个**同音常用字**
+- 学段沿用猜成语的分档：第 1 档 → 小学，第 2 档 → 初中，第 3 档 → 高中，第 4、5 档 → 进阶
+- 字盘 8 个字 = 正确字 + 7 个干扰字。干扰字依次取：正确字的同音字 → 错字的同音字 → 声母相同的常用字，只用常用字
+- **两条硬性过滤**：错误写法如果被新华成语词典收录为异形词（如「莫明其妙」「走头无路」），整道题丢弃；字盘里的干扰字如果能拼出词典收录的写法，这个字不用
+- **提示方式不同**：答案只有一个字，所以提示是「排除 2 个错误选项」，排除顺序在生成时固定（`eliminationOrder`）；每关最多 3 次，至少保留 2 个选项
+- 需要额外下载 `xinhua/word.json`（汉字拼音）
+
+**歇后语**（`scripts/level_builders/xiehouyu.py`）
+- **全部人工挑选**，清单在 `scripts/data/xiehouyu_stages.txt`。原始数据有大量粗俗、别扭或多答案的条目，所以不自动收录
+- 答案必须是数据源给出的答案之一；去掉括号里的谐音或释义，原始写法保留在 `note`，过关后显示（如「照旧（舅）」）
+- 幼儿园到初中由人工按熟悉程度挑选；高中档挑的是历史和文学人物相关的条目。**歇后语没有教材可依，学段划分是主观判断**
+
+### 生成与扩充（只追加）
+
+```
+python3 scripts/build_levels.py idiom 1000
+.cache/venv/bin/python scripts/build_levels.py poetry 500
+python3 scripts/build_levels.py xiehouyu 106
+python3 scripts/build_levels.py typo 500
+node tests/levels.test.js
+```
+
+- 扩充时把新内容写到对应清单的**末尾**（新档位或新学段），把目标关数调大后重新运行，再把整个 `.jsonl` 导入 `levels` 集合，冲突处理选 **Upsert**
+- **脚本的三条保护**（`scripts/level_builders/common.py`）：
   - 已有关卡逐字节保留，绝不重新编号、不改字盘。玩家进度是按关卡编号存的，一旦改动，所有人的进度都会错乱
-  - 新成语必须比现有最难的关卡更难：放在更靠后的档位，或者和最后一档同档但用字更生僻。否则脚本直接报错并列出这些成语
+  - 新内容必须比现有最难的关卡更难：放在更靠后的档位或学段，或者和最后一档同档但更难，否则脚本报错并列出这些内容
   - 目标关数小于等于现有关数时什么也不做，不会删除关卡
-- 只有在**上线前**想整体重排时，才删除 `database/levels.jsonl` 后重新生成
+- 只有在**上线前**想整体重排时，才删除 `database/levels/<玩法>.jsonl` 后重新生成
 
 ## 广告上线清单
 

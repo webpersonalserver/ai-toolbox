@@ -20,23 +20,24 @@
 
   <view class="hall__section-title">玩法</view>
 
-  <view class="card hall__game" hover-class="hall__game--pressed" bindtap="openIdiomGame">
-    <view class="hall__game-icon">成</view>
+  <view
+    wx:for="{{gameCards}}"
+    wx:key="gameType"
+    class="card hall__game"
+    hover-class="hall__game--pressed"
+    data-game-type="{{item.gameType}}"
+    bindtap="openGame"
+  >
+    <view class="hall__game-icon">{{item.icon}}</view>
     <view class="hall__game-body">
       <view class="hall__game-name">
-        猜成语
-        <text wx:if="{{idiomProgress}}" class="chip hall__game-title">{{idiomProgress.titleName}}</text>
+        {{item.name}}
+        <text wx:if="{{item.titleName}}" class="chip hall__game-title">{{item.titleName}}</text>
       </view>
-      <view wx:if="{{idiomProgress && idiomProgress.allCleared}}" class="hall__game-desc">
-        已通关全部 {{idiomProgress.total}} 关 · 更多挑战敬请期待
-      </view>
-      <view wx:elif="{{idiomProgress}}" class="hall__game-desc">
-        已通过 {{idiomProgress.solvedCount}} / {{idiomProgress.total}} 关 · {{idiomProgress.titleProgressText}}
-      </view>
-      <view wx:if="{{idiomProgress && idiomProgress.pendingChests > 0}}" class="hall__game-chest">
-        有 {{idiomProgress.pendingChests}} 个宝箱待打开
-      </view>
-      <view wx:else class="hall__game-desc">看释义，拼出四字成语</view>
+      <view wx:if="{{item.allCleared}}" class="hall__game-desc">已通关全部 {{item.total}} 关 · 更多挑战敬请期待</view>
+      <view wx:elif="{{item.total}}" class="hall__game-desc">已通过 {{item.solvedCount}} / {{item.total}} 关 · {{item.titleProgressText}}</view>
+      <view wx:else class="hall__game-desc">{{item.intro}}</view>
+      <view wx:if="{{item.pendingChests > 0}}" class="hall__game-chest">有 {{item.pendingChests}} 个宝箱待打开</view>
     </view>
     <view class="hall__game-action">闯关</view>
   </view>

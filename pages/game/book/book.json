@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "我的收藏本",
+  "onReachBottomDistance": 120,
+  "usingComponents": {
+    "game-solution": "/components/game-solution/game-solution"
+  }
+}

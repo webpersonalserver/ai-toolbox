@@ -1,7 +1,7 @@
 const { cloud } = require('./lib/cloud')
 const { ERROR_CODES, BusinessError, ok, fail } = require('./lib/response')
 const account = require('./handlers/account')
-const idiom = require('./handlers/idiom')
+const game = require('./handlers/game')
 const rescue = require('./handlers/rescue')
 const maintenance = require('./handlers/maintenance')
 const admin = require('./handlers/admin')
@@ -12,14 +12,14 @@ const ROUTES = {
   'account.updateProfile': account.updateProfile,
   'account.checkin': account.checkin,
   'account.grantAdReward': account.grantAdReward,
-  'idiom.levelList': idiom.levelList,
-  'idiom.summary': idiom.summary,
-  'idiom.claimMilestones': idiom.claimMilestones,
-  'idiom.solvedBook': idiom.solvedBook,
-  'idiom.getLevel': idiom.getLevel,
-  'idiom.startAttempt': idiom.startAttempt,
-  'idiom.submit': idiom.submit,
-  'idiom.useHint': idiom.useHint,
+  'game.levelList': game.levelList,
+  'game.summary': game.summary,
+  'game.claimMilestones': game.claimMilestones,
+  'game.solvedBook': game.solvedBook,
+  'game.getLevel': game.getLevel,
+  'game.startAttempt': game.startAttempt,
+  'game.submit': game.submit,
+  'game.useHint': game.useHint,
   'rescue.create': rescue.create,
   'rescue.view': rescue.view,
   'rescue.answer': rescue.answer,

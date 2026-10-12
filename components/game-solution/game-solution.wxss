@@ -1,0 +1,57 @@
+.game-solution {
+  text-align: center;
+}
+
+.game-solution__answer {
+  margin-top: var(--space-sm);
+  font-size: 72rpx;
+  font-weight: 800;
+  letter-spacing: 12rpx;
+}
+
+.game-solution--compact .game-solution__answer {
+  font-size: var(--font-xl);
+  letter-spacing: 6rpx;
+}
+
+.game-solution__pinyin,
+.game-solution__source,
+.game-solution__note {
+  color: var(--color-ink-soft);
+  font-size: var(--font-sm);
+}
+
+.game-solution__verse {
+  margin-top: var(--space-sm);
+  font-size: var(--font-xl);
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+.game-solution--compact .game-solution__verse {
+  font-size: var(--font-lg);
+}
+
+.game-solution__riddle {
+  margin-top: var(--space-sm);
+  font-size: var(--font-lg);
+  font-weight: 600;
+}
+
+.game-solution__section {
+  margin-top: var(--space-lg);
+  text-align: left;
+}
+
+.game-solution__label {
+  margin-bottom: var(--space-xs);
+  color: var(--color-primary);
+  font-size: var(--font-sm);
+  font-weight: 700;
+  letter-spacing: 4rpx;
+}
+
+.game-solution__muted {
+  color: var(--color-ink-soft);
+  font-size: var(--font-sm);
+}

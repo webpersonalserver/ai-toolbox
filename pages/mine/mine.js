@@ -1,10 +1,11 @@
-const { account, idiom, toastError } = require('../../utils/api')
+const { account, game, toastError } = require('../../utils/api')
 const { ensureLogin, getSession, updateSession } = require('../../utils/session')
 const { checkinToday } = require('../../utils/checkin')
 const { describeStaminaRecovery } = require('../../utils/items')
 const { buildRuleLines } = require('../../utils/rule-text')
 const { DEFAULT_SHARE } = require('../../utils/share')
 const { describeTitleProgress } = require('../../utils/milestone')
+const { GAME_ORDER, gameConfigOf } = require('../../utils/games')
 
 
 Page({
@@ -15,23 +16,28 @@ Page({
     staminaRecoveryText: '',
     checkedIn: false,
     ruleLines: [],
-    titleName: '',
+    gameTitles: [],
     isAdmin: false,
     openid: '',
-    titleProgressText: '',
-    solvedCount: 0,
+
     profileDirty: false,
     saving: false
   },
 
   async onShow() {
     try {
-      const [, summary] = await Promise.all([ensureLogin({ force: true }), idiom.summary()])
+      const [, ...summaries] = await Promise.all([
+        ensureLogin({ force: true }),
+        ...GAME_ORDER.map((gameType) => game.summary(gameType))
+      ])
       this.syncSession()
       this.setData({
-        titleName: summary.achievement.title.name,
-        titleProgressText: describeTitleProgress(summary.achievement),
-        solvedCount: summary.achievement.solvedCount
+        gameTitles: GAME_ORDER.map((gameType, index) => ({
+          ...gameConfigOf(gameType),
+          titleName: summaries[index].achievement.title.name,
+          titleProgressText: describeTitleProgress(summaries[index].achievement),
+          solvedCount: summaries[index].achievement.solvedCount
+        }))
       })
     } catch (error) {
       toastError(error)
@@ -99,15 +105,16 @@ Page({
     wx.setClipboardData({ data: this.data.openid })
   },
 
-  openBook() {
-    wx.navigateTo({ url: '/pages/idiom/book/book' })
+  openBook(event) {
+    wx.navigateTo({ url: `/pages/game/book/book?gameType=${event.currentTarget.dataset.gameType}` })
   },
 
   onShareAppMessage() {
-    if (!this.data.titleName) return DEFAULT_SHARE
+    const best = [...this.data.gameTitles].sort((left, right) => right.solvedCount - left.solvedCount)[0]
+    if (!best || !best.solvedCount) return DEFAULT_SHARE
     return {
       ...DEFAULT_SHARE,
-      title: `我在猜成语闯过了 ${this.data.solvedCount} 关，晋升「${this.data.titleName}」，你能到第几关？`
+      title: `我在${best.name}闯过了 ${best.solvedCount} 关，晋升「${best.titleName}」，你能到第几关？`
     }
   }
 })

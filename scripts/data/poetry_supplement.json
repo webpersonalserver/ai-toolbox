@@ -1,0 +1,207 @@
+{
+  "notes": "课本版本补录：数据源中缺失或版本与课本不一致的作品。由人工按部编版教材录入，需人工校对。needsReview 为 true 的条目版本存疑。",
+  "poems": [
+    {
+      "title": "风",
+      "author": "李峤",
+      "dynasty": "唐",
+      "text": "解落三秋叶，能开二月花。过江千尺浪，入竹万竿斜。",
+      "needsReview": false
+    },
+    {
+      "title": "小池",
+      "author": "杨万里",
+      "dynasty": "宋",
+      "text": "泉眼无声惜细流，树阴照水爱晴柔。小荷才露尖尖角，早有蜻蜓立上头。",
+      "needsReview": false
+    },
+    {
+      "title": "夜宿山寺",
+      "author": "李白",
+      "dynasty": "唐",
+      "text": "危楼高百尺，手可摘星辰。不敢高声语，恐惊天上人。",
+      "needsReview": false
+    },
+    {
+      "title": "梅花",
+      "author": "王安石",
+      "dynasty": "宋",
+      "text": "墙角数枝梅，凌寒独自开。遥知不是雪，为有暗香来。",
+      "needsReview": false
+    },
+    {
+      "title": "画鸡",
+      "author": "唐寅",
+      "dynasty": "明",
+      "text": "头上红冠不用裁，满身雪白走将来。平生不敢轻言语，一叫千门万户开。",
+      "needsReview": false
+    },
+    {
+      "title": "村居",
+      "author": "高鼎",
+      "dynasty": "清",
+      "text": "草长莺飞二月天，拂堤杨柳醉春烟。儿童散学归来早，忙趁东风放纸鸢。",
+      "needsReview": false
+    },
+    {
+      "title": "晓出净慈寺送林子方",
+      "author": "杨万里",
+      "dynasty": "宋",
+      "text": "毕竟西湖六月中，风光不与四时同。接天莲叶无穷碧，映日荷花别样红。",
+      "needsReview": false
+    },
+    {
+      "title": "舟夜书所见",
+      "author": "查慎行",
+      "dynasty": "清",
+      "text": "月黑见渔灯，孤光一点萤。微微风簇浪，散作满河星。",
+      "needsReview": false
+    },
+    {
+      "title": "所见",
+      "author": "袁枚",
+      "dynasty": "清",
+      "text": "牧童骑黄牛，歌声振林樾。意欲捕鸣蝉，忽然闭口立。",
+      "needsReview": false
+    },
+    {
+      "title": "赠刘景文",
+      "author": "苏轼",
+      "dynasty": "宋",
+      "text": "荷尽已无擎雨盖，菊残犹有傲霜枝。一年好景君须记，最是橙黄橘绿时。",
+      "needsReview": false
+    },
+    {
+      "title": "夜书所见",
+      "author": "叶绍翁",
+      "dynasty": "宋",
+      "text": "萧萧梧叶送寒声，江上秋风动客情。知有儿童挑促织，夜深篱落一灯明。",
+      "needsReview": false
+    },
+    {
+      "title": "惠崇春江晚景",
+      "author": "苏轼",
+      "dynasty": "宋",
+      "text": "竹外桃花三两枝，春江水暖鸭先知。蒌蒿满地芦芽短，正是河豚欲上时。",
+      "needsReview": false
+    },
+    {
+      "title": "宿新市徐公店",
+      "author": "杨万里",
+      "dynasty": "宋",
+      "text": "篱落疏疏一径深，树头新绿未成阴。儿童急走追黄蝶，飞入菜花无处寻。",
+      "needsReview": true
+    },
+    {
+      "title": "夏日绝句",
+      "author": "李清照",
+      "dynasty": "宋",
+      "text": "生当作人杰，死亦为鬼雄。至今思项羽，不肯过江东。",
+      "needsReview": false
+    },
+    {
+      "title": "示儿",
+      "author": "陆游",
+      "dynasty": "宋",
+      "text": "死去元知万事空，但悲不见九州同。王师北定中原日，家祭无忘告乃翁。",
+      "needsReview": false
+    },
+    {
+      "title": "泊船瓜洲",
+      "author": "王安石",
+      "dynasty": "宋",
+      "text": "京口瓜洲一水间，钟山只隔数重山。春风又绿江南岸，明月何时照我还。",
+      "needsReview": false
+    },
+    {
+      "title": "乡村四月",
+      "author": "翁卷",
+      "dynasty": "宋",
+      "text": "绿遍山原白满川，子规声里雨如烟。乡村四月闲人少，才了蚕桑又插田。",
+      "needsReview": false
+    },
+    {
+      "title": "登飞来峰",
+      "author": "王安石",
+      "dynasty": "宋",
+      "text": "飞来山上千寻塔，闻说鸡鸣见日升。不畏浮云遮望眼，自缘身在最高层。",
+      "needsReview": false
+    },
+    {
+      "title": "游山西村",
+      "author": "陆游",
+      "dynasty": "宋",
+      "text": "莫笑农家腊酒浑，丰年留客足鸡豚。山重水复疑无路，柳暗花明又一村。箫鼓追随春社近，衣冠简朴古风存。从今若许闲乘月，拄杖无时夜叩门。",
+      "needsReview": false
+    },
+    {
+      "title": "己亥杂诗",
+      "author": "龚自珍",
+      "dynasty": "清",
+      "text": "浩荡离愁白日斜，吟鞭东指即天涯。落红不是无情物，化作春泥更护花。",
+      "needsReview": false
+    },
+    {
+      "title": "江城子",
+      "author": "苏轼",
+      "dynasty": "宋",
+      "text": "老夫聊发少年狂，左牵黄，右擎苍，锦帽貂裘，千骑卷平冈。为报倾城随太守，亲射虎，看孙郎。酒酣胸胆尚开张。鬓微霜，又何妨！持节云中，何日遣冯唐？会挽雕弓如满月，西北望，射天狼。",
+      "needsReview": false
+    },
+    {
+      "title": "过零丁洋",
+      "author": "文天祥",
+      "dynasty": "宋",
+      "text": "辛苦遭逢起一经，干戈寥落四周星。山河破碎风飘絮，身世浮沉雨打萍。惶恐滩头说惶恐，零丁洋里叹零丁。人生自古谁无死？留取丹心照汗青。",
+      "needsReview": false
+    },
+    {
+      "title": "破阵子",
+      "author": "辛弃疾",
+      "dynasty": "宋",
+      "text": "醉里挑灯看剑，梦回吹角连营。八百里分麾下炙，五十弦翻塞外声，沙场秋点兵。马作的卢飞快，弓如霹雳弦惊。了却君王天下事，赢得生前身后名。可怜白发生！",
+      "needsReview": false
+    },
+    {
+      "title": "苏幕遮",
+      "author": "周邦彦",
+      "dynasty": "宋",
+      "text": "燎沉香，消溽暑。鸟雀呼晴，侵晓窥檐语。叶上初阳干宿雨，水面清圆，一一风荷举。故乡遥，何日去？家住吴门，久作长安旅。五月渔郎相忆否？小楫轻舟，梦入芙蓉浦。",
+      "needsReview": false
+    }
+  ],
+  "variantReplacements": [
+    [
+      "穉",
+      "稚"
+    ],
+    [
+      "遶",
+      "绕"
+    ],
+    [
+      "徧",
+      "遍"
+    ],
+    [
+      "篴",
+      "笛"
+    ],
+    [
+      "呌",
+      "叫"
+    ],
+    [
+      "迳",
+      "径"
+    ],
+    [
+      "疎",
+      "疏"
+    ],
+    [
+      "沈舟",
+      "沉舟"
+    ]
+  ]
+}

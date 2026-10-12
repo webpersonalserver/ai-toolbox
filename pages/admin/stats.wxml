@@ -1,3 +1,13 @@
+<view class="game-tabs">
+  <view
+    wx:for="{{gameTabs}}"
+    wx:key="gameType"
+    class="game-tabs__tab {{item.gameType === gameType ? 'game-tabs__tab--active' : ''}}"
+    data-game-type="{{item.gameType}}"
+    bindtap="switchGame"
+  >{{item.name}}</view>
+</view>
+
 <view class="page admin" wx:if="{{!loading && current}}">
   <view class="card admin__overview">
     <view class="admin__rate">{{current.clearRateText}}</view>

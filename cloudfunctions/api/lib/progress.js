@@ -1,5 +1,6 @@
 const { db, _ } = require('./cloud')
 const { ERROR_CODES, BusinessError } = require('./response')
+const { SOLUTION_FIELDS_BY_GAME, PUZZLE_FIELDS_BY_GAME, pickFields } = require('./games')
 
 const progressDocId = (openid, gameType) => `${openid}_${gameType}`
 
@@ -87,14 +88,15 @@ const toPuzzle = (level) => ({
   levelNo: level.levelNo,
   clue: level.clue,
   board: level.board,
-  answerLength: level.answer.length
+  answerLength: level.answer.length,
+  stage: level.stage || '',
+  ...pickFields(level, PUZZLE_FIELDS_BY_GAME[level.gameType] || [])
 })
 
 const toSolution = (level) => ({
   answer: level.answer,
-  pinyin: level.pinyin,
-  explanation: level.explanation,
-  derivation: level.derivation
+  stage: level.stage || '',
+  ...pickFields(level, SOLUTION_FIELDS_BY_GAME[level.gameType] || [])
 })
 
 module.exports = {

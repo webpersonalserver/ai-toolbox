@@ -3,8 +3,8 @@
     <image wx:if="{{requesterAvatar}}" class="rescue__avatar" src="{{requesterAvatar}}" mode="aspectFill" />
     <view wx:else class="rescue__avatar rescue__avatar--empty">友</view>
     <view class="rescue__headline">
-      <block wx:if="{{isOwner}}">你在第 {{levelNo}} 关发出了求助</block>
-      <block wx:else>{{requesterName}} 被第 {{levelNo}} 关难住了</block>
+      <block wx:if="{{isOwner}}">你在{{game.name}}第 {{levelNo}} 关发出了求助</block>
+      <block wx:else>{{requesterName}} 被{{game.name}}第 {{levelNo}} 关难住了</block>
     </view>
   </view>
 
@@ -15,9 +15,7 @@
         <block wx:elif="{{isOwner}}">{{helperName}} 帮你解开了这一关</block>
         <block wx:else>这道题已经被 {{helperName}} 解开了</block>
       </view>
-      <view class="rescue__answer">{{solution.answer}}</view>
-      <view class="rescue__pinyin">{{solution.pinyin}}</view>
-      <view class="rescue__explanation">{{solution.explanation}}</view>
+      <game-solution game-type="{{gameType}}" solution="{{solution}}" compact />
     </view>
     <button class="btn btn--primary rescue__cta" bindtap="goPlay">{{isOwner ? '继续闯关' : '我也去闯关'}}</button>
   </block>
@@ -48,14 +46,20 @@
 
   <block wx:else>
     <view class="card rescue__clue-card">
-      <view class="rescue__clue-label">释义</view>
-      <view class="rescue__clue">{{clue}}</view>
+      <view class="rescue__clue-label">{{game.clueLabel}}</view>
+      <view wx:if="{{gameType === 'typo'}}" class="rescue__typo">
+        <text wx:for="{{clueChars}}" wx:key="index" class="rescue__typo-char {{item.wrong ? 'rescue__typo-char--wrong' : ''}}">{{item.char}}</text>
+      </view>
+      <view wx:else class="rescue__clue">{{clue}}</view>
+      <view wx:if="{{clueHint}}" class="rescue__hint">释义：{{clueHint}}</view>
+      <view wx:if="{{poemSource}}" class="rescue__hint">{{poemSource}}</view>
       <view class="rescue__hint">你还有 {{helperAttemptsLeft}} 次答错机会</view>
     </view>
-    <idiom-puzzle
+    <char-puzzle
       id="puzzle"
       board="{{board}}"
       answer-length="{{answerLength}}"
+      columns="{{game.boardColumns}}"
       disabled="{{submitting}}"
       bind:complete="handleComplete"
     />

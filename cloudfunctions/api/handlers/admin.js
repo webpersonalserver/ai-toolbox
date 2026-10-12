@@ -2,7 +2,7 @@ const { db } = require('../lib/cloud')
 const { ERROR_CODES, BusinessError } = require('../lib/response')
 const { loadRules } = require('../lib/rules')
 const { computeClearStats } = require('../lib/stats')
-const { GAME_TYPE } = require('./idiom')
+const { parseGameType } = require('../lib/games')
 
 const RECENT_COMPLETION_LIMIT = 20
 const DAILY_HISTORY_LIMIT = 30
@@ -16,12 +16,13 @@ const assertAdmin = async (openid) => {
   }
 }
 
-const stats = async ({ openid }) => {
+const stats = async ({ openid, payload }) => {
   await assertAdmin(openid)
+  const gameType = parseGameType(payload)
   const [current, { data: recentCompletions }, { data: dailyHistory }] = await Promise.all([
-    computeClearStats(GAME_TYPE),
-    db.collection('completions').where({ gameType: GAME_TYPE }).orderBy('completedAt', 'desc').limit(RECENT_COMPLETION_LIMIT).get(),
-    db.collection('stats_daily').where({ gameType: GAME_TYPE }).orderBy('date', 'desc').limit(DAILY_HISTORY_LIMIT).get()
+    computeClearStats(gameType),
+    db.collection('completions').where({ gameType }).orderBy('completedAt', 'desc').limit(RECENT_COMPLETION_LIMIT).get(),
+    db.collection('stats_daily').where({ gameType }).orderBy('date', 'desc').limit(DAILY_HISTORY_LIMIT).get()
   ])
   return {
     current,

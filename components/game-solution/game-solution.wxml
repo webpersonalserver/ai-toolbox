@@ -1,0 +1,35 @@
+<view wx:if="{{solution}}" class="game-solution {{compact ? 'game-solution--compact' : ''}}">
+  <block wx:if="{{gameType === 'poetry'}}">
+    <view class="game-solution__verse">{{solution.verse}}</view>
+    <view class="game-solution__source">{{poemSource}}</view>
+  </block>
+
+  <block wx:elif="{{gameType === 'xiehouyu'}}">
+    <view class="game-solution__riddle">{{solution.riddle}}——</view>
+    <view class="game-solution__answer">{{solution.answer}}</view>
+    <view wx:if="{{solution.note}}" class="game-solution__note">原文：{{solution.note}}</view>
+  </block>
+
+  <block wx:elif="{{gameType === 'typo'}}">
+    <view class="game-solution__answer">{{solution.idiom}}</view>
+    <view class="game-solution__pinyin">{{solution.pinyin}}</view>
+    <view class="game-solution__note">「{{solution.wrongChar}}」应为「{{solution.answer}}」</view>
+    <view wx:if="{{!compact}}" class="game-solution__section">
+      <view class="game-solution__label">释义</view>
+      <view>{{solution.explanation}}</view>
+    </view>
+  </block>
+
+  <block wx:else>
+    <view class="game-solution__answer">{{solution.answer}}</view>
+    <view class="game-solution__pinyin">{{solution.pinyin}}</view>
+    <view class="game-solution__section">
+      <view class="game-solution__label">释义</view>
+      <view>{{solution.explanation}}</view>
+    </view>
+    <view wx:if="{{solution.derivation && !compact}}" class="game-solution__section">
+      <view class="game-solution__label">出处</view>
+      <view class="game-solution__muted">{{solution.derivation}}</view>
+    </view>
+  </block>
+</view>
