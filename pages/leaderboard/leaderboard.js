@@ -2,6 +2,7 @@ const { leaderboard, toastError } = require('../../utils/api')
 const { ensureLogin } = require('../../utils/session')
 const { DEFAULT_SHARE } = require('../../utils/share')
 const { GAME_ORDER, gameConfigOf } = require('../../utils/games')
+const { takePendingLeaderboardGameType } = require('../../utils/navigation')
 
 const ANONYMOUS_NAME = '匿名玩家'
 const PODIUM_SIZE = 3
@@ -29,11 +30,10 @@ Page({
     podiumSize: PODIUM_SIZE
   },
 
-  onLoad(query) {
-    this.setData({ gameType: gameConfigOf(query.gameType).gameType })
-  },
-
   onShow() {
+    const requestedGameType = takePendingLeaderboardGameType()
+    const gameType = requestedGameType || this.data.gameType || GAME_ORDER[0]
+    this.setData({ gameType: gameConfigOf(gameType).gameType })
     this.loadLeaderboard()
   },
 

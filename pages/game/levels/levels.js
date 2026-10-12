@@ -4,6 +4,7 @@ const { showRescueNotices } = require('../../../utils/rescue-notice')
 const { DEFAULT_SHARE } = require('../../../utils/share')
 const { openMilestoneChests, describeTitleProgress } = require('../../../utils/milestone')
 const { gameConfigOf } = require('../../../utils/games')
+const { openLeaderboardTab } = require('../../../utils/navigation')
 
 const LEVELS_PER_PAGE = 50
 
@@ -113,7 +114,7 @@ Page({
   },
 
   openLeaderboard() {
-    wx.navigateTo({ url: `/pages/leaderboard/leaderboard?gameType=${this.data.gameType}` })
+    openLeaderboardTab(this.data.gameType)
   },
 
   openBook() {

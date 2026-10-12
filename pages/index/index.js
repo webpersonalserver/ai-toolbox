@@ -69,10 +69,6 @@ Page({
     if (await checkinToday()) this.syncSession()
   },
 
-  openLeaderboard() {
-    wx.navigateTo({ url: '/pages/leaderboard/leaderboard' })
-  },
-
   openGame(event) {
     wx.navigateTo({ url: `/pages/game/levels/levels?gameType=${event.currentTarget.dataset.gameType}` })
   },

@@ -7,6 +7,7 @@ const { openMilestoneChests } = require('../../../utils/milestone')
 const { buildGuideSections } = require('../../../utils/rule-text')
 const { GUIDE_KEYS, hasSeenGuide, markGuideSeen } = require('../../../utils/onboarding')
 const { gameConfigOf, hintTextsOf, describePoemSource, splitTypoClue } = require('../../../utils/games')
+const { openLeaderboardTab } = require('../../../utils/navigation')
 
 const PLAY_STAGES = {
   LOADING: 'loading',
@@ -254,7 +255,7 @@ Page({
   },
 
   openLeaderboard() {
-    wx.redirectTo({ url: `/pages/leaderboard/leaderboard?gameType=${this.data.gameType}` })
+    openLeaderboardTab(this.data.gameType)
   },
 
   goLevelList() {

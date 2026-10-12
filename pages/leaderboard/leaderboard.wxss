@@ -98,7 +98,7 @@
   right: 0;
   bottom: 0;
   left: 0;
-  padding: var(--space-sm) var(--space-lg) calc(var(--space-sm) + env(safe-area-inset-bottom));
+  padding: var(--space-sm) var(--space-lg);
   background: var(--color-bg);
   box-shadow: 0 -6rpx 24rpx rgba(80, 60, 30, 0.08);
 }

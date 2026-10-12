@@ -42,15 +42,6 @@
     <view class="hall__game-action">闯关</view>
   </view>
 
-  <view class="card hall__game" hover-class="hall__game--pressed" bindtap="openLeaderboard">
-    <view class="hall__game-icon hall__game-icon--gold">榜</view>
-    <view class="hall__game-body">
-      <view class="hall__game-name">排行榜</view>
-      <view class="hall__game-desc">看看谁闯得最远</view>
-    </view>
-    <view class="hall__game-action">查看</view>
-  </view>
-
   <view class="card hall__game hall__game--coming">
     <view class="hall__game-icon hall__game-icon--muted">?</view>
     <view class="hall__game-body">
