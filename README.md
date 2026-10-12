@@ -48,7 +48,7 @@
 4. **建索引（必须）**：没有索引时，打开大厅、关卡页的查询会随数据增长变慢，定时清理也可能超时
    | 集合 | 索引字段 |
    |---|---|
-   | `rescues` | `requesterOpenid` + `status` + `noticeSeen` |
+   | `rescues` | `requesterOpenid` + `gameType` + `status` + `noticeSeen` |
    | `item_logs` | `createdAt` |
    | `daily` | `date` |
    | `rescue_help_pairs` | `date` |

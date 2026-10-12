@@ -5,8 +5,10 @@
 
 ## 0. 代码分支
 
-- [ ] 决定合并方式：继续直接用 main 的话，运行 `git checkout main && git merge feat/puzzle-master-v1`
-- [ ] 需要时推送到远端（目前只提交在本地，没有 push）
+- [x] 决定合并方式：继续直接用 main 的话，运行 `git checkout main && git merge feat/puzzle-master-v1`
+- [x] 需要时推送到远端（目前只提交在本地，没有 push）
+  - 已完成：PR #1 合并进 `main`（`8cc4b03`），本地已同步到该版本
+- [x] 本地清理旧版残留目录 `cloudfunctions/photo`（仅剩未被 git 跟踪的 `config.local.js`）
 
 ## 1. 小程序备案（最慢，优先提交）
 
@@ -55,7 +57,7 @@
 
 | 集合 | 索引字段 | 完成 |
 |---|---|---|
-| `rescues` | `requesterOpenid` + `status` + `noticeSeen` | [ ] |
+| `rescues` | `requesterOpenid` + `gameType` + `status` + `noticeSeen`（`gameType` 不能漏，代码查询里带了这个字段） | [ ] |
 | `item_logs` | `createdAt` | [ ] |
 | `daily` | `date` | [ ] |
 | `rescue_help_pairs` | `date` | [ ] |
@@ -83,7 +85,7 @@
 
 ## 5. 真机全流程验证
 
-后端 85 个用例跑在**模拟数据库**上，以下行为只有在真实云环境里才能确认。建议用两个微信号（A、B）操作，任何一步报错，把云函数日志里的第一行错误发出来。
+后端 136 个用例跑在**模拟数据库**上，以下行为只有在真实云环境里才能确认。建议用两个微信号（A、B）操作，任何一步报错，把云函数日志里的第一行错误发出来。
 
 **账号与打卡**
 - [ ] A 首次进入：提示 10、体力 25
