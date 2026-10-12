@@ -2,6 +2,7 @@
   "navigationBarTitleText": "好友求助",
   "usingComponents": {
     "char-puzzle": "/components/char-puzzle/char-puzzle",
-    "game-solution": "/components/game-solution/game-solution"
+    "game-solution": "/components/game-solution/game-solution",
+    "loading-skeleton": "/components/loading-skeleton/loading-skeleton"
   }
 }

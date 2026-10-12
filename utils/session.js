@@ -22,6 +22,10 @@ const ensureLogin = ({ force = false } = {}) => {
   return pendingLogin
 }
 
+const setSession = (session) => {
+  getApp().globalData.session = session
+}
+
 const updateSession = (patch) => {
   const session = getSession()
   if (!session) return
@@ -37,4 +41,4 @@ const setItems = (items) => {
   if (items) updateSession({ items })
 }
 
-module.exports = { getSession, ensureLogin, updateSession, setItems }
+module.exports = { getSession, setSession, ensureLogin, updateSession, setItems }

@@ -1,5 +1,6 @@
 const GUIDE_KEYS = {
-  IDIOM_RULES: 'guide.idiomRules.seen.v1'
+  IDIOM_RULES: 'guide.idiomRules.seen.v1',
+  PROFILE_WELCOME: 'guide.profileWelcome.seen.v1'
 }
 
 // Storage can be unavailable (privacy mode, cleared data); failing open only means the guide shows again.

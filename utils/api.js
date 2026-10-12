@@ -46,6 +46,7 @@ const account = {
 }
 
 const game = {
+  overview: () => call('game.overview'),
   levelList: (gameType) => call('game.levelList', { gameType }),
   summary: (gameType) => call('game.summary', { gameType }),
   claimMilestones: (gameType) => call('game.claimMilestones', { gameType }),

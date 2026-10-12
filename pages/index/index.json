@@ -1,3 +1,7 @@
 {
-  "navigationBarTitleText": "解谜达人"
+  "navigationBarTitleText": "解谜达人",
+  "usingComponents": {
+    "item-chip": "/components/item-chip/item-chip",
+    "profile-editor": "/components/profile-editor/profile-editor"
+  }
 }

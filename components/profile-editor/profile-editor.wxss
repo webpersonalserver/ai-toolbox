@@ -1,0 +1,126 @@
+.profile-sheet {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 20;
+  display: flex;
+  align-items: flex-end;
+  background: var(--color-overlay);
+}
+
+.profile-sheet__panel {
+  width: 100%;
+  padding: var(--space-xl) var(--space-lg) calc(var(--space-lg) + env(safe-area-inset-bottom));
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  background: var(--color-surface);
+  box-sizing: border-box;
+}
+
+.profile-sheet__title {
+  margin-bottom: var(--space-sm);
+  font-size: var(--font-lg);
+  font-weight: 800;
+  text-align: center;
+}
+
+/* Doubled class outranks the built-in button width/padding so the picker stays a circle. */
+.profile-sheet__avatar-picker.profile-sheet__avatar-picker {
+  position: relative;
+  width: 176rpx;
+  height: 176rpx;
+  margin: 0 auto var(--space-xl);
+  padding: 0;
+  border-radius: 50%;
+  background: transparent;
+  line-height: normal;
+  overflow: visible;
+}
+
+.profile-sheet__avatar-picker::after {
+  border: none;
+}
+
+.profile-sheet__avatar {
+  width: 176rpx;
+  height: 176rpx;
+  border-radius: 50%;
+  background: var(--color-primary-soft);
+}
+
+.profile-sheet__avatar-badge {
+  position: absolute;
+  left: 50%;
+  bottom: -18rpx;
+  transform: translateX(-50%);
+  padding: 2rpx 18rpx;
+  border-radius: 999rpx;
+  background: var(--color-primary);
+  box-shadow: 0 4rpx 0 var(--color-primary-deep);
+  color: var(--color-on-accent);
+  font-size: 22rpx;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.profile-sheet__field {
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+}
+
+.profile-sheet__label-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: var(--space-xs);
+}
+
+.profile-sheet__label {
+  color: var(--color-ink-soft);
+  font-size: var(--font-sm);
+  font-weight: 700;
+}
+
+.profile-sheet__counter {
+  color: var(--color-ink-faint);
+  font-size: 22rpx;
+}
+
+.profile-sheet__input {
+  height: 64rpx;
+  font-size: var(--font-lg);
+  font-weight: 700;
+}
+
+.profile-sheet__placeholder {
+  color: var(--color-ink-faint);
+  font-size: var(--font-md);
+  font-weight: 400;
+}
+
+.profile-sheet__tip {
+  margin: var(--space-sm) 0 var(--space-lg);
+  color: var(--color-ink-faint);
+  font-size: 22rpx;
+}
+
+.profile-sheet__actions {
+  display: flex;
+  gap: var(--space-md);
+}
+
+.btn.profile-sheet__action {
+  flex: 1;
+}
+
+.profile-sheet__intro {
+  margin-bottom: var(--space-lg);
+  color: var(--color-ink-soft);
+  font-size: var(--font-sm);
+  text-align: center;
+}
+
+.profile-sheet__title + .profile-sheet__avatar-picker {
+  margin-top: var(--space-lg);
+}

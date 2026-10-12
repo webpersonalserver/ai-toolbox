@@ -3,7 +3,7 @@
 Usage:
     python3 scripts/build_levels.py <game> <target_total_levels> [--data-dir .cache]
 
-Games: idiom | poetry | xiehouyu | typo. Output: database/levels/<game>.jsonl.
+Games: idiom | poetry | xiehouyu | typo. Output: database/levels/<game>.json.
 poetry needs OpenCC, so run it with .cache/venv/bin/python.
 
 Source data (downloaded into --data-dir, not committed):

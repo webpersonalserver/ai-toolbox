@@ -1,0 +1,7 @@
+<view class="loading-skeleton" aria-label="加载中">
+  <view wx:for="{{rowList}}" wx:key="*this" class="loading-skeleton__card">
+    <view class="loading-skeleton__line loading-skeleton__line--short"></view>
+    <view class="loading-skeleton__line"></view>
+    <view class="loading-skeleton__line loading-skeleton__line--medium"></view>
+  </view>
+</view>

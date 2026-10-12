@@ -1,4 +1,5 @@
-<view class="page levels" wx:if="{{!loading}}">
+<loading-skeleton wx:if="{{loading}}" rows="3" />
+<view class="page levels game-theme--{{gameType}}" wx:if="{{!loading}}">
   <view class="card levels__header">
     <view class="levels__title-row">
       <view class="chip">{{titleName}}</view>
@@ -8,8 +9,8 @@
       </view>
     </view>
     <view class="levels__summary">
-      <text wx:if="{{allSolved}}">你已通关全部 {{total}} 关，更多挑战敬请期待</text>
-      <text wx:else>已通过 {{solvedCount}} / {{total}} 关 · {{titleProgressText}}</text>
+      <text wx:if="{{allSolved}}">你已通关全部关卡，更多挑战敬请期待</text>
+      <text wx:else>已通过 {{solvedCount}} 关 · {{titleProgressText}}</text>
     </view>
     <button wx:if="{{pendingChests > 0}}" class="btn btn--primary levels__chest" loading="{{openingChests}}" bindtap="handleOpenChests">
       有 {{pendingChests}} 个宝箱待打开
@@ -29,6 +30,12 @@
     </view>
   </scroll-view>
 
+  <view wx:if="{{!total}}" class="card levels__empty">
+    <view class="levels__empty-title">关卡正在准备中</view>
+    <view class="levels__empty-desc">这个玩法的题目还没上线，先去玩玩别的吧</view>
+  </view>
+
+  <block wx:else>
   <view class="levels__pager">
     <button class="btn btn--muted levels__pager-btn" disabled="{{pageIndex === 0}}" bindtap="showPreviousPage">上一页</button>
     <view class="levels__pager-range">第 {{firstLevelNo}} - {{lastLevelNo}} 关</view>
@@ -48,4 +55,5 @@
       <text wx:else>{{item.levelNo}}</text>
     </view>
   </view>
+  </block>
 </view>

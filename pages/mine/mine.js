@@ -1,12 +1,16 @@
-const { account, game, toastError } = require('../../utils/api')
-const { ensureLogin, getSession, updateSession } = require('../../utils/session')
-const { checkinToday } = require('../../utils/checkin')
+const { game, toastError } = require('../../utils/api')
+const { getSession, setSession } = require('../../utils/session')
 const { describeStaminaRecovery } = require('../../utils/items')
-const { buildRuleLines } = require('../../utils/rule-text')
+const { buildRuleSections } = require('../../utils/rule-text')
 const { DEFAULT_SHARE } = require('../../utils/share')
 const { describeTitleProgress } = require('../../utils/milestone')
 const { GAME_ORDER, gameConfigOf } = require('../../utils/games')
 
+
+const DEFAULT_AVATAR = '/assets/icons/default-avatar.png'
+const EMPTY_NICKNAME_TEXT = '点击设置昵称'
+
+const displayAvatarOf = (avatarUrl) => avatarUrl || DEFAULT_AVATAR
 
 Page({
   data: {
@@ -14,29 +18,30 @@ Page({
     avatarUrl: '',
     items: { hint: 0, stamina: 0 },
     staminaRecoveryText: '',
-    checkedIn: false,
-    ruleLines: [],
+    rulesVisible: false,
+    ruleSections: [],
     gameTitles: [],
+    titlesExpanded: false,
     isAdmin: false,
     openid: '',
 
-    profileDirty: false,
-    saving: false
+    avatarDisplay: DEFAULT_AVATAR,
+    nicknameDisplay: EMPTY_NICKNAME_TEXT,
+    editorVisible: false
   },
 
   async onShow() {
     try {
-      const [, ...summaries] = await Promise.all([
-        ensureLogin({ force: true }),
-        ...GAME_ORDER.map((gameType) => game.summary(gameType))
-      ])
+      const { session, games } = await game.overview()
+      setSession(session)
       this.syncSession()
+      const summaryByGame = Object.fromEntries(games.map((summary) => [summary.gameType, summary]))
       this.setData({
-        gameTitles: GAME_ORDER.map((gameType, index) => ({
+        gameTitles: GAME_ORDER.filter((gameType) => summaryByGame[gameType]).map((gameType) => ({
           ...gameConfigOf(gameType),
-          titleName: summaries[index].achievement.title.name,
-          titleProgressText: describeTitleProgress(summaries[index].achievement),
-          solvedCount: summaries[index].achievement.solvedCount
+          titleName: summaryByGame[gameType].achievement.title.name,
+          titleProgressText: describeTitleProgress(summaryByGame[gameType].achievement),
+          solvedCount: summaryByGame[gameType].solvedCount
         }))
       })
     } catch (error) {
@@ -45,56 +50,37 @@ Page({
   },
 
   syncSession() {
-    const { profile, items, today, rules, isAdmin, openid } = getSession()
+    const { profile, items, rules, isAdmin, openid } = getSession()
     this.setData({
       isAdmin,
       openid,
       nickname: profile.nickname,
       avatarUrl: profile.avatarUrl,
+      nicknameDisplay: profile.nickname || EMPTY_NICKNAME_TEXT,
+      avatarDisplay: displayAvatarOf(profile.avatarUrl),
       items,
       staminaRecoveryText: describeStaminaRecovery(items),
-      checkedIn: today.checkedIn,
-      ruleLines: buildRuleLines(rules),
-      profileDirty: false
+      ruleSections: buildRuleSections(rules)
     })
   },
 
-  handleChooseAvatar(event) {
-    this.setData({ avatarUrl: event.detail.avatarUrl, profileDirty: true })
+  openProfileEditor() {
+    this.setData({ editorVisible: true })
   },
 
-  handleNicknameInput(event) {
-    this.setData({ nickname: event.detail.value, profileDirty: true })
+  closeProfileEditor() {
+    this.setData({ editorVisible: false })
   },
 
-  async uploadAvatarIfLocal(avatarUrl) {
-    const isCloudFile = avatarUrl.startsWith('cloud://')
-    if (!avatarUrl || isCloudFile) return avatarUrl
-    const extension = avatarUrl.split('.').pop() || 'png'
-    const { avatarUploadDir } = getSession().profile
-    const cloudPath = `${avatarUploadDir}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${extension}`
-    const { fileID } = await wx.cloud.uploadFile({ cloudPath, filePath: avatarUrl })
-    return fileID
-  },
-
-  async saveProfile() {
-    if (this.data.saving) return
-    this.setData({ saving: true })
-    try {
-      const avatarUrl = await this.uploadAvatarIfLocal(this.data.avatarUrl)
-      const profile = await account.updateProfile({ nickname: this.data.nickname, avatarUrl })
-      updateSession({ profile })
-      this.setData({ avatarUrl: profile.avatarUrl, nickname: profile.nickname, profileDirty: false })
-      wx.showToast({ title: '已保存', icon: 'success' })
-    } catch (error) {
-      toastError(error)
-    } finally {
-      this.setData({ saving: false })
-    }
-  },
-
-  async handleCheckin() {
-    if (await checkinToday()) this.syncSession()
+  handleProfileSaved(event) {
+    const profile = event.detail
+    this.setData({
+      avatarUrl: profile.avatarUrl,
+      nickname: profile.nickname,
+      avatarDisplay: displayAvatarOf(profile.avatarUrl),
+      nicknameDisplay: profile.nickname || EMPTY_NICKNAME_TEXT,
+      editorVisible: false
+    })
   },
 
   openAdminStats() {
@@ -103,6 +89,18 @@ Page({
 
   copyOpenid() {
     wx.setClipboardData({ data: this.data.openid })
+  },
+
+  openRules() {
+    this.setData({ rulesVisible: true })
+  },
+
+  closeRules() {
+    this.setData({ rulesVisible: false })
+  },
+
+  toggleTitles() {
+    this.setData({ titlesExpanded: !this.data.titlesExpanded })
   },
 
   openBook(event) {

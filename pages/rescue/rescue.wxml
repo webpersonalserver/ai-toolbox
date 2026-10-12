@@ -1,4 +1,5 @@
-<view class="page rescue" wx:if="{{!loading}}">
+<loading-skeleton wx:if="{{loading}}" rows="2" />
+<view class="page rescue game-theme--{{gameType}}" wx:if="{{!loading}}">
   <view class="rescue__header">
     <image wx:if="{{requesterAvatar}}" class="rescue__avatar" src="{{requesterAvatar}}" mode="aspectFill" />
     <view wx:else class="rescue__avatar rescue__avatar--empty">友</view>

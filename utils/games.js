@@ -14,6 +14,7 @@ const GAME_CONFIGS = {
   [GAME_TYPES.IDIOM]: {
     gameType: GAME_TYPES.IDIOM,
     name: '猜成语',
+    shortName: '成语',
     icon: '成',
     intro: '看释义，拼出四字成语',
     clueLabel: '释义',
@@ -24,6 +25,7 @@ const GAME_CONFIGS = {
   [GAME_TYPES.POETRY]: {
     gameType: GAME_TYPES.POETRY,
     name: '诗词填空',
+    shortName: '诗词',
     icon: '诗',
     intro: '从幼儿园到高中，补全经典诗句',
     clueLabel: '补全诗句',
@@ -34,6 +36,7 @@ const GAME_CONFIGS = {
   [GAME_TYPES.XIEHOUYU]: {
     gameType: GAME_TYPES.XIEHOUYU,
     name: '歇后语',
+    shortName: '歇后语',
     icon: '歇',
     intro: '听前半句，猜出后半句',
     clueLabel: '歇后语',
@@ -44,6 +47,7 @@ const GAME_CONFIGS = {
   [GAME_TYPES.TYPO]: {
     gameType: GAME_TYPES.TYPO,
     name: '成语找错字',
+    shortName: '找错字',
     icon: '错',
     intro: '揪出成语里的错别字',
     clueLabel: '找出并改正标红的错字',

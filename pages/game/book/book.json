@@ -2,6 +2,7 @@
   "navigationBarTitleText": "我的收藏本",
   "onReachBottomDistance": 120,
   "usingComponents": {
-    "game-solution": "/components/game-solution/game-solution"
+    "game-solution": "/components/game-solution/game-solution",
+    "loading-skeleton": "/components/loading-skeleton/loading-skeleton"
   }
 }

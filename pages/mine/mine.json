@@ -1,3 +1,8 @@
 {
-  "navigationBarTitleText": "我的"
+  "navigationBarTitleText": "我的",
+  "usingComponents": {
+    "item-chip": "/components/item-chip/item-chip",
+    "game-guide": "/components/game-guide/game-guide",
+    "profile-editor": "/components/profile-editor/profile-editor"
+  }
 }

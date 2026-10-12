@@ -1,4 +1,8 @@
 Component({
+  options: {
+    styleIsolation: 'apply-shared'
+  },
+
   properties: {
     visible: { type: Boolean, value: false },
     title: { type: String, value: '玩法说明' },

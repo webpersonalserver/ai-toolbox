@@ -43,8 +43,8 @@
 }
 
 .levels__stage--active {
-  background: var(--color-gold-soft);
-  color: var(--color-gold);
+  background: var(--game-color-soft);
+  color: var(--game-color-deep);
 }
 
 .levels__stage-name {
@@ -63,7 +63,9 @@
   margin-bottom: var(--space-lg);
 }
 
-.levels__pager-btn {
+/* Doubled class outranks the built-in `button:not([size=mini])` width rule. */
+.btn.levels__pager-btn {
+  flex-shrink: 0;
   width: 180rpx;
   height: 64rpx;
   line-height: 64rpx;
@@ -71,7 +73,11 @@
 }
 
 .levels__pager-range {
+  flex: 1;
+  margin: 0 var(--space-sm);
   font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .levels__grid {
@@ -96,9 +102,9 @@
 }
 
 .levels__cell--current {
-  background: var(--color-primary);
-  color: #FFFFFF;
-  box-shadow: 0 6rpx 0 #8A241E;
+  background: var(--game-color);
+  color: var(--color-on-accent);
+  box-shadow: 0 var(--jelly-depth) 0 var(--game-color-deep);
 }
 
 .levels__cell--locked {
@@ -107,5 +113,20 @@
 }
 
 .levels__lock {
+  font-size: var(--font-sm);
+}
+
+.levels__empty {
+  text-align: center;
+}
+
+.levels__empty-title {
+  font-size: var(--font-lg);
+  font-weight: 800;
+}
+
+.levels__empty-desc {
+  margin-top: var(--space-xs);
+  color: var(--color-ink-soft);
   font-size: var(--font-sm);
 }

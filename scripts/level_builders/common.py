@@ -1,6 +1,6 @@
 """Shared append-only level pipeline used by every game.
 
-Levels already written to database/levels/<game>.jsonl are kept byte-for-byte: player progress is
+Levels already written to database/levels/<game>.json are kept byte-for-byte: player progress is
 stored by level number, so renumbering or editing an existing level would corrupt it. New candidates
 are appended after the last level and must not be easier than what already exists.
 """
@@ -80,7 +80,7 @@ def find_out_of_order(new_candidates, frozen_keys, candidates_by_key):
 
 
 def append_levels(game_type, candidates, target_total, level_key_of, level_dedupe_of, include_source_key=True):
-    output_file = LEVELS_DIR / f"{game_type}.jsonl"
+    output_file = LEVELS_DIR / f"{game_type}.json"
     frozen = load_frozen_levels(output_file)
     frozen_levels = [level for _, level in frozen]
     if target_total <= len(frozen):

@@ -1,20 +1,30 @@
 page {
-  --color-bg: #F6F0E4;
-  --color-surface: #FFFDF8;
-  --color-surface-muted: #EFE6D4;
-  --color-ink: #2B2620;
-  --color-ink-soft: #6B6255;
-  --color-ink-faint: #A69B8A;
-  --color-primary: #B8322A;
-  --color-primary-soft: #F3DDD6;
-  --color-success: #3C7A4E;
-  --color-success-soft: #DCEBDD;
-  --color-border: #E3D8C3;
-  --color-gold: #C9962B;
-  --color-gold-soft: #F6EAD0;
-  --radius-sm: 12rpx;
-  --radius-md: 20rpx;
-  --radius-lg: 32rpx;
+  --color-bg: #FFF8EC;
+  --color-surface: #FFFFFF;
+  --color-surface-muted: #FBEFD9;
+  --color-ink: #3D2C1E;
+  --color-ink-soft: #8A7563;
+  --color-ink-faint: #BCA993;
+  --color-on-accent: #FFFFFF;
+  --color-primary: #FF8A3D;
+  --color-primary-deep: #D96A22;
+  --color-primary-soft: #FFE6D3;
+  --color-success: #27A086;
+  --color-success-soft: #D8F5EE;
+  --color-border: #F1E3CC;
+  --color-gold: #FFC93C;
+  --color-gold-soft: #FFF1C7;
+  --color-overlay: rgba(61, 44, 30, 0.45);
+  --color-shadow: rgba(61, 44, 30, 0.08);
+
+  --game-color: var(--color-primary);
+  --game-color-deep: var(--color-primary-deep);
+  --game-color-soft: var(--color-primary-soft);
+
+  --radius-sm: 16rpx;
+  --radius-md: 28rpx;
+  --radius-lg: 40rpx;
+  --jelly-depth: 8rpx;
   --space-xs: 8rpx;
   --space-sm: 16rpx;
   --space-md: 24rpx;
@@ -32,6 +42,31 @@ page {
   line-height: 1.6;
 }
 
+/* Each game has its own colour; pages and cards opt in with game-theme--<gameType>. */
+.game-theme--idiom {
+  --game-color: #FF8A3D;
+  --game-color-deep: #D96A22;
+  --game-color-soft: #FFE6D3;
+}
+
+.game-theme--typo {
+  --game-color: #FF6B6B;
+  --game-color-deep: #D94C4C;
+  --game-color-soft: #FFE1E1;
+}
+
+.game-theme--poetry {
+  --game-color: #3CC7A6;
+  --game-color-deep: #27A086;
+  --game-color-soft: #D8F5EE;
+}
+
+.game-theme--xiehouyu {
+  --game-color: #4AA8FF;
+  --game-color-deep: #2F86D6;
+  --game-color-soft: #DCEEFF;
+}
+
 .page {
   padding: var(--space-lg) var(--space-lg) calc(var(--space-xl) + env(safe-area-inset-bottom));
 }
@@ -40,40 +75,61 @@ page {
   background: var(--color-surface);
   border-radius: var(--radius-lg);
   padding: var(--space-lg);
-  box-shadow: 0 6rpx 24rpx rgba(80, 60, 30, 0.06);
+  box-shadow: 0 6rpx 0 var(--color-border);
 }
 
+/* Jelly buttons: a solid bottom shadow that disappears when pressed, like a physical key. */
 .btn {
   display: flex;
   align-items: center;
   justify-content: center;
   height: 88rpx;
-  margin: 0;
+  margin: 0 0 var(--jelly-depth);
   padding: 0 var(--space-lg);
-  border-radius: 44rpx;
+  border-radius: 999rpx;
   font-size: var(--font-md);
-  font-weight: 600;
+  font-weight: 800;
   line-height: 88rpx;
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
 }
 
 .btn::after {
   border: none;
 }
 
+/* The built-in `button:not([size=mini])` rule sets width: 184px and auto side margins with higher
+   specificity than a single class; the doubled class takes both back for every button. */
+.btn.btn {
+  width: auto;
+  margin-left: 0;
+  margin-right: 0;
+}
+
 .btn--primary {
   background: var(--color-primary);
-  color: #FFFFFF;
+  color: var(--color-on-accent);
+  box-shadow: 0 var(--jelly-depth) 0 var(--color-primary-deep);
 }
 
 .btn--ghost {
   background: var(--color-surface);
-  color: var(--color-primary);
-  border: 2rpx solid var(--color-primary);
+  color: var(--color-primary-deep);
+  box-shadow: inset 0 0 0 4rpx var(--color-primary), 0 var(--jelly-depth) 0 var(--color-border);
 }
 
 .btn--muted {
   background: var(--color-surface-muted);
   color: var(--color-ink-soft);
+  box-shadow: 0 var(--jelly-depth) 0 var(--color-border);
+}
+
+.btn.button-hover {
+  transform: translateY(var(--jelly-depth));
+  box-shadow: none;
+}
+
+.btn--ghost.button-hover {
+  box-shadow: inset 0 0 0 4rpx var(--color-primary);
 }
 
 .btn[disabled] {
@@ -86,9 +142,9 @@ page {
   padding: 4rpx var(--space-sm);
   border-radius: 999rpx;
   background: var(--color-primary-soft);
-  color: var(--color-primary);
+  color: var(--color-primary-deep);
   font-size: var(--font-sm);
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .game-tabs {
@@ -112,5 +168,12 @@ page {
 .game-tabs__tab--active {
   background: var(--color-surface);
   color: var(--color-primary);
-  box-shadow: 0 2rpx 8rpx rgba(80, 60, 30, 0.08);
+  box-shadow: 0 4rpx 0 var(--color-border);
+}
+
+.inline-icon {
+  width: 28rpx;
+  height: 28rpx;
+  margin-right: 6rpx;
+  vertical-align: -4rpx;
 }

@@ -17,7 +17,7 @@ const { main } = require(path.join(API_ROOT, 'index'))
 const { DEFAULT_RULES } = require(path.join(API_ROOT, 'lib', 'rules'))
 const { ALL_GAME_TYPES } = require(path.join(API_ROOT, 'lib', 'games'))
 
-const readLevels = (gameType) => fs.readFileSync(path.join(LEVELS_DIR, `${gameType}.jsonl`), 'utf8').trim().split('\n').map(JSON.parse)
+const readLevels = (gameType) => fs.readFileSync(path.join(LEVELS_DIR, `${gameType}.json`), 'utf8').trim().split('\n').map(JSON.parse)
 const levels = readLevels('idiom')
 const poetryLevels = readLevels('poetry')
 const xiehouyuLevels = readLevels('xiehouyu')
@@ -291,10 +291,51 @@ const startedAttempt = { active: true, wrongCount: 0 }
   }
   r = await call('t1', 'game.useHint', { gameType: 'typo', levelNo: 1 }); assert(r.code === 40005, 'typo hint limit keeps at least two candidates', r)
   r = await call('t1', 'game.getLevel', { gameType: 'typo', levelNo: 1 }); assert(r.data.puzzle.eliminated.join() === eliminated.join(), 'eliminations persist', r.data.puzzle.eliminated)
-  r = await call('t1', 'game.submit', { gameType: 'typo', levelNo: 1, answer: typo1.wrongChar }); assert(r.data.correct === false, 'choosing the wrong character fails', r.data)
+  const wrongPick = typo1.board.find((char) => char !== typo1.answer)
+  r = await call('t1', 'game.submit', { gameType: 'typo', levelNo: 1, answer: wrongPick })
+  assert(r.data.correct === false && r.data.attempt.failed && r.data.attempt.maxWrongAttempts === 1, 'typo fails after one wrong pick (per-game rule)', r.data)
+  r = await call('t1', 'game.startAttempt', { gameType: 'typo', levelNo: 1 }); assert(r.data.attempt.attemptsLeft === 1 && r.data.puzzle.eliminated.join() === eliminated.join(), 'retry keeps eliminations', r.data)
   r = await call('t1', 'game.submit', { gameType: 'typo', levelNo: 1, answer: typo1.answer })
   assert(r.data.correct && r.data.solution.idiom === typo1.idiom && r.data.solution.wrongChar === typo1.wrongChar && r.data.solution.explanation, 'typo solution shows the corrected idiom', r.data.solution)
   r = await call('t1', 'game.summary', { gameType: 'typo' }); assert(r.data.achievement.title.name === '书童', 'typo titles', r.data.achievement.title)
+  // per-game level rules
+  S.app_config = {}
+  await call('p1', 'account.login')
+  r = await call('p1', 'game.startAttempt', { gameType: 'idiom', levelNo: 1 }); assert(r.data.attempt.maxWrongAttempts === 3, 'idiom keeps the shared 3 wrong attempts', r.data.attempt)
+  S.app_config = { game_rules: { _id: 'game_rules', levelByGame: { poetry: { staminaCost: 2, maxHints: 1 }, typo: { maxWrongAttempts: 2 } } } }
+  const p1Stamina = S.users.p1.items.stamina
+  r = await call('p1', 'game.startAttempt', { gameType: 'poetry', levelNo: 1 })
+  assert(r.data.items.stamina === p1Stamina - 2 && r.data.maxHints === 1 && r.data.staminaCost === 2, 'poetry override: stamina cost 2, max 1 hint', r.data)
+  r = await call('p1', 'game.startAttempt', { gameType: 'typo', levelNo: 1 }); assert(r.data.attempt.maxWrongAttempts === 2, 'configured typo override replaces the default', r.data.attempt)
+  S.app_config = { game_rules: { _id: 'game_rules', levelByGame: { typo: { maxWrongAttempts: 0 }, chess: { maxHints: 9 } } } }
+  S.app_config.game_rules.signupItems = { hint: 6 }
+  r = await call('p1', 'account.login')
+  assert(JSON.stringify(r.data.rules.levelByGame) === '{"typo":{"maxWrongAttempts":1}}', 'invalid override falls back to default, unknown game dropped', r.data.rules.levelByGame)
+  await call('p2', 'account.login'); assert(S.users.p2.items.hint === 6, 'one bad override does not discard the rest of the config', S.users.p2.items)
+  S.app_config = {}
+  // overview: one call for hall and mine
+  S.app_config = {}
+  r = await call('o1', 'game.overview', {})
+  assert(r.code === 0 && r.data.session.isNewUser && r.data.session.items.stamina === 25 && r.data.games.length === ALL_GAME_TYPES.length, 'overview returns session and every game', r.data && r.data.games && r.data.games.map((g) => g.gameType))
+  assert(r.data.games.every((g) => g.total === LOADED_LEVEL_COUNT && g.solvedCount === 0 && g.achievement.title.name), 'overview game summaries', r.data.games[0])
+  await call('o1', 'game.startAttempt', { gameType: 'poetry', levelNo: 1 })
+  await call('o1', 'rescue.create', { gameType: 'poetry', levelNo: 1 })
+  const o1Rescue = Object.values(S.rescues).find((x) => x.requesterOpenid === 'o1')
+  await call('o2', 'account.login')
+  await call('o2', 'rescue.answer', { rescueId: o1Rescue._id, answer: poetryLevels[0].answer })
+  r = await call('o1', 'game.overview', {})
+  assert(r.data.rescueNotices.length === 1 && r.data.rescueNotices[0].gameType === 'poetry' && r.data.games.find((g) => g.gameType === 'poetry').solvedCount === 1, 'overview collects notices across games', r.data.rescueNotices)
+  r = await call('o1', 'game.overview', {}); assert(r.data.rescueNotices.length === 0 && r.data.session.isNewUser === false, 'overview notices shown once', r.data.rescueNotices)
+  // generated nickname for new and legacy users
+  S.app_config = {}
+  r = await call('n1', 'account.login')
+  assert(r.data.profile.nickname.length >= 4 && /的小/.test(r.data.profile.nickname) && r.data.profile.customized === false, 'new user gets a generated nickname', r.data.profile)
+  const n1Name = r.data.profile.nickname
+  r = await call('n1', 'account.login'); assert(r.data.profile.nickname === n1Name, 'generated nickname is stable', r.data.profile.nickname)
+  S.users.legacy = { _id: 'legacy', nickname: '', avatarUrl: '', items: { hint: 1, stamina: 1 }, staminaAnchorAt: Date.now() }
+  r = await call('legacy', 'account.login'); assert(r.data.profile.nickname && S.users.legacy.nickname === r.data.profile.nickname && r.data.profile.customized === false, 'legacy empty nickname backfilled', r.data.profile)
+  r = await call('n1', 'account.updateProfile', { nickname: '真名字', avatarUrl: '' }); assert(r.code === 0 && r.data.customized === true, 'saving profile marks it customized', r.data)
+  r = await call('n1', 'account.login'); assert(r.data.profile.customized === true && r.data.profile.nickname === '真名字', 'customized flag persists', r.data.profile)
   console.log('logs:', Object.values(S.item_logs).filter((l) => l.openid === 'u1').map((l) => `${l.reason}:${l.itemType}${l.delta > 0 ? '+' : ''}${l.delta}`).join(' '))
   console.log(`\n${passed} passed, ${failed} failed`)
   process.exitCode = failed ? 1 : 0

@@ -1,3 +1,4 @@
+<loading-skeleton wx:if="{{loading}}" rows="3" />
 <view class="page book" wx:if="{{!loading}}">
   <view class="book__summary">已收录 {{total}} {{game.bookUnit}}</view>
 

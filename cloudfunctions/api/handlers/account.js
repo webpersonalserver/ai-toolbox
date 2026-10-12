@@ -1,5 +1,6 @@
 const { cloud, db, _ } = require('../lib/cloud')
 const { hashedId } = require('../lib/hashed-id')
+const { generateNickname } = require('../lib/nickname')
 const { ERROR_CODES, BusinessError, throwIfFailed } = require('../lib/response')
 const { loadRules, sumRewardsByType, toClientRules } = require('../lib/rules')
 const { dailyDocId, getTodayRecord, ensureTodayRecord, adRewardCountOf, describeTodayStatus } = require('../lib/daily')
@@ -53,8 +54,9 @@ const findOrCreateUser = async (openid, rules, now) => {
     return { user: data, isNewUser: false }
   } catch (error) {
     const newUser = {
-      nickname: '',
+      nickname: generateNickname(openid),
       avatarUrl: '',
+      profileCustomized: false,
       items: { ...rules.signupItems },
       staminaAnchorAt: now,
       createdAt: db.serverDate(),
@@ -76,14 +78,21 @@ const login = async ({ openid }) => {
   const rules = await loadRules()
   const { user, isNewUser } = await findOrCreateUser(openid, rules, now)
   if (!isNewUser) {
-    await db.collection('users').doc(openid).update({ data: { lastLoginAt: db.serverDate() } })
+    const backfill = user.nickname ? {} : { nickname: generateNickname(openid), profileCustomized: false }
+    await db.collection('users').doc(openid).update({ data: { lastLoginAt: db.serverDate(), ...backfill } })
+    Object.assign(user, backfill)
   }
   const todayRecord = await getTodayRecord(openid)
   return {
     isNewUser,
     openid,
     isAdmin: isAdmin(rules, openid),
-    profile: { nickname: user.nickname, avatarUrl: user.avatarUrl, avatarUploadDir: avatarUploadDirOf(openid) },
+    profile: {
+      nickname: user.nickname,
+      avatarUrl: user.avatarUrl,
+      avatarUploadDir: avatarUploadDirOf(openid),
+      customized: Boolean(user.profileCustomized)
+    },
     items: toItemsView(settleUserItems(user, rules, now), rules),
     today: describeTodayStatus(todayRecord, rules),
     rules: toClientRules(rules)
@@ -104,10 +113,10 @@ const updateProfile = async ({ openid, payload }) => {
     await assertNicknameSafe(openid, nickname)
   }
   await db.collection('users').doc(openid).update({
-    data: { nickname, avatarUrl, updatedAt: db.serverDate() }
+    data: { nickname, avatarUrl, profileCustomized: true, updatedAt: db.serverDate() }
   })
   await deleteReplacedAvatar(user.avatarUrl, avatarUrl, openid)
-  return { nickname, avatarUrl }
+  return { nickname, avatarUrl, customized: true }
 }
 
 const checkin = async ({ openid }) => {

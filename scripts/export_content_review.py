@@ -11,7 +11,7 @@ OUTPUT = ROOT / "docs" / "content-review.md"
 
 
 def read_levels(game_type):
-    path = ROOT / "database" / "levels" / f"{game_type}.jsonl"
+    path = ROOT / "database" / "levels" / f"{game_type}.json"
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
 
 
@@ -78,7 +78,7 @@ def main():
         "# 题库内容校对清单",
         "",
         "> 由 `python3 scripts/export_content_review.py` 生成，改动题库后重新生成。",
-        "> 发现问题时修改 `scripts/data/` 下对应的清单或补录文件，再删除 `database/levels/<玩法>.jsonl` 重新生成（**仅限上线前**；上线后只能追加）。",
+        "> 发现问题时修改 `scripts/data/` 下对应的清单或补录文件，再删除 `database/levels/<玩法>.json` 重新生成（**仅限上线前**；上线后只能追加）。",
         "",
     ]
     lines += poetry_section(read_levels("poetry"), supplement)

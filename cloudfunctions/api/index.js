@@ -6,12 +6,14 @@ const rescue = require('./handlers/rescue')
 const maintenance = require('./handlers/maintenance')
 const admin = require('./handlers/admin')
 const leaderboard = require('./handlers/leaderboard')
+const overview = require('./handlers/overview')
 
 const ROUTES = {
   'account.login': account.login,
   'account.updateProfile': account.updateProfile,
   'account.checkin': account.checkin,
   'account.grantAdReward': account.grantAdReward,
+  'game.overview': overview.overview,
   'game.levelList': game.levelList,
   'game.summary': game.summary,
   'game.claimMilestones': game.claimMilestones,

@@ -2,11 +2,11 @@
   <view class="hall__header">
     <view class="hall__title">解谜达人</view>
     <view class="hall__items">
-      <view class="chip">体力 {{items.stamina}}</view>
-      <view class="chip">提示 {{items.hint}}</view>
+      <item-chip item-type="stamina" value="{{items.stamina}}" />
+      <item-chip item-type="hint" value="{{items.hint}}" />
     </view>
   </view>
-  <view wx:if="{{staminaRecoveryText}}" class="hall__recovery">体力 {{staminaRecoveryText}}</view>
+  <view wx:if="{{staminaRecoveryText}}" class="hall__recovery"><image class="inline-icon" src="/assets/icons/stamina.png" mode="aspectFit" />{{staminaRecoveryText}}</view>
 
   <view class="card hall__checkin">
     <view>
@@ -23,7 +23,7 @@
   <view
     wx:for="{{gameCards}}"
     wx:key="gameType"
-    class="card hall__game"
+    class="card hall__game game-theme--{{item.gameType}}"
     hover-class="hall__game--pressed"
     data-game-type="{{item.gameType}}"
     bindtap="openGame"
@@ -34,12 +34,23 @@
         {{item.name}}
         <text wx:if="{{item.titleName}}" class="chip hall__game-title">{{item.titleName}}</text>
       </view>
-      <view wx:if="{{item.allCleared}}" class="hall__game-desc">已通关全部 {{item.total}} 关 · 更多挑战敬请期待</view>
-      <view wx:elif="{{item.total}}" class="hall__game-desc">已通过 {{item.solvedCount}} / {{item.total}} 关 · {{item.titleProgressText}}</view>
+      <view wx:if="{{item.allCleared}}" class="hall__game-desc">已通关全部关卡 · 更多挑战敬请期待</view>
+      <view wx:elif="{{item.total}}" class="hall__game-desc">已通过 {{item.solvedCount}} 关 · {{item.titleProgressText}}</view>
       <view wx:else class="hall__game-desc">{{item.intro}}</view>
       <view wx:if="{{item.pendingChests > 0}}" class="hall__game-chest">有 {{item.pendingChests}} 个宝箱待打开</view>
     </view>
-    <view class="hall__game-action">闯关</view>
+    <view
+      wx:if="{{!item.allCleared && item.total}}"
+      class="hall__continue"
+      hover-class="hall__continue--pressed"
+      data-game-type="{{item.gameType}}"
+      data-level-no="{{item.currentLevel}}"
+      catchtap="continueGame"
+    >
+      <view class="hall__continue-label">继续</view>
+      <view class="hall__continue-level">第 {{item.currentLevel}} 关</view>
+    </view>
+    <view wx:else class="hall__game-action">查看</view>
   </view>
 
   <view class="card hall__game hall__game--coming">
@@ -50,3 +61,15 @@
     </view>
   </view>
 </view>
+
+<profile-editor
+  visible="{{welcomeVisible}}"
+  title="欢迎来到解谜达人"
+  intro="点头像可以用微信头像，点昵称输入框，键盘上方可以一键填入微信昵称"
+  cancel-text="先随便逛逛"
+  avatar-url="{{profileAvatarUrl}}"
+  nickname="{{profileNickname}}"
+  allow-unchanged
+  bind:saved="handleWelcomeSaved"
+  bind:cancel="handleWelcomeSkipped"
+/>

@@ -1,4 +1,7 @@
 {
   "navigationBarTitleText": "数据统计",
-  "enablePullDownRefresh": true
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "loading-skeleton": "/components/loading-skeleton/loading-skeleton"
+  }
 }

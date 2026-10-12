@@ -1,0 +1,5 @@
+<view class="item-chip {{large ? 'item-chip--large' : ''}}" aria-label="{{label}} {{value}}">
+  <image wx:if="{{itemType === 'hint'}}" class="item-chip__icon" src="/assets/icons/hint.png" mode="aspectFit" />
+  <image wx:else class="item-chip__icon" src="/assets/icons/stamina.png" mode="aspectFit" />
+  <text class="item-chip__value">{{value}}</text>
+</view>

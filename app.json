@@ -11,28 +11,34 @@
   ],
   "window": {
     "backgroundTextStyle": "dark",
-    "navigationBarBackgroundColor": "#F6F0E4",
+    "navigationBarBackgroundColor": "#FFF8EC",
     "navigationBarTitleText": "解谜达人",
     "navigationBarTextStyle": "black",
-    "backgroundColor": "#F6F0E4"
+    "backgroundColor": "#FFF8EC"
   },
   "tabBar": {
-    "color": "#8C8273",
-    "selectedColor": "#B8322A",
-    "backgroundColor": "#FFFDF8",
+    "color": "#BCA993",
+    "selectedColor": "#FF8A3D",
+    "backgroundColor": "#FFFFFF",
     "borderStyle": "white",
     "list": [
       {
         "pagePath": "pages/index/index",
-        "text": "大厅"
+        "text": "大厅",
+        "iconPath": "assets/tabbar/hall-normal.png",
+        "selectedIconPath": "assets/tabbar/hall-active.png"
       },
       {
         "pagePath": "pages/leaderboard/leaderboard",
-        "text": "排行榜"
+        "text": "排行榜",
+        "iconPath": "assets/tabbar/leaderboard-normal.png",
+        "selectedIconPath": "assets/tabbar/leaderboard-active.png"
       },
       {
         "pagePath": "pages/mine/mine",
-        "text": "我的"
+        "text": "我的",
+        "iconPath": "assets/tabbar/mine-normal.png",
+        "selectedIconPath": "assets/tabbar/mine-active.png"
       }
     ]
   },

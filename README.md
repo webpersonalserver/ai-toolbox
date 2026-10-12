@@ -1,6 +1,6 @@
 # 解谜达人（微信小程序）
 
-解谜类小游戏合集：猜成语（1000 关）、成语找错字（500 关）、诗词填空（500 关，按幼儿园→高中分学段）、歇后语（106 关）。微信原生小程序 + 云开发，类目：教育。
+解谜类小游戏合集：猜成语（1000 关）、成语找错字（500 关）、诗词填空（500 关，按幼儿园→高中分学段）、歇后语（239 关）。微信原生小程序 + 云开发，类目：教育。
 
 - **AppID**: `wxb3265721f68a1847`
 - **云环境 ID**: `cloud1-d8g9yyxwe128b2185`
@@ -30,8 +30,9 @@
 │   ├── handlers/       account / idiom / rescue
 │   └── lib/            规则配置、道具结算、北京时间日期、进度、流水
 ├── database/           可直接导入云数据库的初始数据
-│   ├── levels/          三个玩法的题库（idiom / typo / poetry / xiehouyu.jsonl）
-│   └── app_config.jsonl 游戏规则配置
+│   ├── levels/          三个玩法的题库（idiom / typo / poetry / xiehouyu.json）
+│   └── app_config.json 游戏规则配置
+├── assets/             底部导航图标（tabbar/）、体力 / 提示图标与默认头像（icons/），由 scripts/draw_*_icons.py 生成，可直接替换成设计稿
 └── scripts/            题库生成（build_levels.py + level_builders/）、清单与补录数据（data/）、校对清单导出
 ```
 
@@ -41,7 +42,7 @@
 1. **建集合**（云开发控制台 → 数据库）：
    `users` `daily` `progress` `levels` `rescues` `rescue_help_pairs` `rescue_helper_attempts` `item_logs` `app_config` `completions` `stats_daily`
    - 权限全部设为**自定义规则** `{"read": false, "write": false}`。所有读写都走云函数（管理员权限不受影响），客户端直连数据库读不到答案
-2. **导入数据**：`levels` 依次导入 `database/levels/` 下的四个文件（idiom / typo / poetry / xiehouyu），`app_config` 导入 `database/app_config.jsonl`（格式都选 JSON Lines）
+2. **导入数据**：`levels` 依次导入 `database/levels/` 下的四个文件（idiom / typo / poetry / xiehouyu），`app_config` 导入 `database/app_config.json`（格式选 JSON（控制台只认 .json 和 .csv 后缀；文件内容是每行一条记录））
 3. **部署云函数**：开发者工具右键 `cloudfunctions/api` →「上传并部署：云端安装依赖」
    - 部署后再右键 →「上传触发器」，启用两个定时任务：每天 04:30 清理过期数据（`cleanupExpiredRecords`），每小时整点写入当天统计（`snapshotStats`）
    - `config.json` 同时声明了昵称内容安全检测需要的 `security.msgSecCheck` 权限
@@ -78,6 +79,7 @@
 | `level.staminaCost` | 1 | 开始一次挑战消耗的体力 |
 | `level.maxWrongAttempts` | 3 | 每次挑战可以答错几次，用完即挑战失败 |
 | `level.maxHints` | 3 | 每关最多提示几次（同时不会超过「成语字数 − 1」） |
+| `levelByGame.<玩法>` | `typo: { maxWrongAttempts: 1 }` | 按玩法覆盖上面三项 `level` 设置，没写的项沿用 `level`。找错字只有 8 个选项，答错 3 次等于能试一半，所以默认 1 次。填错的项退回默认值，未知玩法会被丢弃 |
 | `staminaRecovery.enabled` | `true` | 体力是否随时间自动恢复 |
 | `staminaRecovery.intervalMinutes` | 30 | 每多少分钟恢复 1 点 |
 | `staminaRecovery.cap` | 10 | 自动恢复的上限（打卡、视频发的体力可以超过这个上限） |
@@ -151,7 +153,7 @@
 ## 全部通关、统计与排行榜
 
 - **"通关"只针对当前的最高关卡**：现在 1000 关，就是通过全部 1000 关；以后扩关，原来通关的人自动变回未通关，可以接着往下玩
-- **全部通关提示**：通过最后一关时，过关页显示「恭喜通关全部 N 关！更多挑战正在准备中，敬请期待」；关卡页和大厅也会显示已全部通关
+- **全部通关提示**：通过最后一关时，过关页显示「恭喜通关全部关卡！更多挑战正在准备中，敬请期待」；关卡页和大厅也会显示已全部通关。界面上**不显示总关数**（大厅、关卡页、答题页只显示已通过的关数），只有管理员统计页会显示
 - **通关记录**：每当有人打通当前全部关卡，就在 `completions` 写一条记录（用户、昵称、当时的关卡总数、日期）。同一个人在同一关卡总数下只记一次，扩关后再次通关会另记一条。目前只记录到数据库，不主动推送通知
 - **统计**：
   - 通关率 = `progress.solvedCount ≥ 当前关卡总数` 的用户数 ÷ `users` 总数
@@ -171,6 +173,13 @@
 - 限制放在好友答题这一步检查，因为分享时微信不会告诉我们卡片发给了谁，只有好友点开时才知道
 - **分享本身不发任何奖励**：微信运营规范禁止"分享后获得奖励"（诱导分享）
 
+## 头像与昵称
+
+- **微信不再允许直接读取用户头像昵称**（2022 年 10 月起 `wx.getUserProfile` 只返回灰色头像和「微信用户」）。唯一的官方方式是「头像昵称填写」：点头像时微信提供「用微信头像」，昵称输入框（`type="nickname"`）的键盘上方会出现微信昵称
+- **注册即有昵称**：服务端按 openid 生成固定的随机昵称（如「好学的小书童」，`lib/nickname.js`），头像用默认卡通头像，所以排行榜、求助页不会出现空白资料；历史上昵称为空的用户登录时自动补上
+- **新用户首次进入大厅**弹出欢迎面板引导设置（只弹一次，记在本机）。点「先随便逛逛」就保留随机昵称；之后可在「我的 → 编辑资料」修改。用户亲自保存过资料后 `profileCustomized` 为 true，不再弹出
+- 欢迎面板和「我的」页的编辑面板是同一个组件 `components/profile-editor`
+
 ## 安全与运维
 
 - **昵称内容安全**：保存昵称时在服务端调用 `security.msgSecCheck`，只有结果为 `pass` 才保存；接口异常时也拒绝保存。头像使用微信的选头像能力，由微信负责检测
@@ -182,7 +191,7 @@
 ## 测试
 
 ```
-node tests/api.test.js      # 后端：用内存版数据库跑完整业务流程（136 个用例）
+node tests/api.test.js      # 后端：用内存版数据库跑完整业务流程（146 个用例）
 node tests/levels.test.js   # 题库体检（四个玩法）：编号连续、字盘包含答案、题面与答案能还原原句、学段连续
 ```
 
@@ -194,10 +203,10 @@ node tests/levels.test.js   # 题库体检（四个玩法）：编号连续、�
 |---|---|---|---|
 | 猜成语 `idiom` | 1000 | 5 档（小学常见 → 文言生僻） | 看释义（答案用字遮成 □），拼出四字成语 |
 | 诗词填空 `poetry` | 500 | 幼儿园 33 · 小学 96 · 初中 71 · 高中 77 · 进阶 223 | 给出上句，补全下句被挖掉的字；越往后挖得越多（幼儿园 2 字 → 小学 3 字 → 初中 4 字 → 高中起整句） |
-| 歇后语 `xiehouyu` | 106 | 幼儿园 12 · 小学 36 · 初中 32 · 高中 26 | 给出前半句，补出后半句（2–7 字） |
+| 歇后语 `xiehouyu` | 239 | 幼儿园 28 · 小学 96 · 初中 70 · 高中 45 | 给出前半句，补出后半句（2–7 字） |
 | 成语找错字 `typo` | 500 | 小学 208 · 初中 235 · 高中 57 | 成语里有一个字被换成同音字并标红，从 8 个同音 / 近音字中选出正确的字；小学段额外显示释义 |
 
-- 每个玩法的关卡都放在 `database/levels/<玩法>.jsonl`，导入**同一个** `levels` 集合，用 `gameType` 区分
+- 每个玩法的关卡都放在 `database/levels/<玩法>.json`，导入**同一个** `levels` 集合，用 `gameType` 区分
 - 带学段的玩法，每关都有 `stage` 字段；关卡页按学段显示分段，可以点击跳转；答题页显示「小学 · 第 N 关」
 - 字盘固定 24 个字 = 答案 + 干扰字（取自同玩法其他关卡的答案用字）。以关卡内容作随机种子，每次生成结果都一样
 - **内容需要人工校对**：运行 `python3 scripts/export_content_review.py` 生成 `docs/content-review.md`
@@ -242,17 +251,17 @@ node tests/levels.test.js   # 题库体检（四个玩法）：编号连续、�
 ```
 python3 scripts/build_levels.py idiom 1000
 .cache/venv/bin/python scripts/build_levels.py poetry 500
-python3 scripts/build_levels.py xiehouyu 106
+python3 scripts/build_levels.py xiehouyu 239
 python3 scripts/build_levels.py typo 500
 node tests/levels.test.js
 ```
 
-- 扩充时把新内容写到对应清单的**末尾**（新档位或新学段），把目标关数调大后重新运行，再把整个 `.jsonl` 导入 `levels` 集合，冲突处理选 **Upsert**
+- 扩充时把新内容写到对应清单的**末尾**（新档位或新学段），把目标关数调大后重新运行，再把整个 `.json` 导入 `levels` 集合，冲突处理选 **Upsert**
 - **脚本的三条保护**（`scripts/level_builders/common.py`）：
   - 已有关卡逐字节保留，绝不重新编号、不改字盘。玩家进度是按关卡编号存的，一旦改动，所有人的进度都会错乱
   - 新内容必须比现有最难的关卡更难：放在更靠后的档位或学段，或者和最后一档同档但更难，否则脚本报错并列出这些内容
   - 目标关数小于等于现有关数时什么也不做，不会删除关卡
-- 只有在**上线前**想整体重排时，才删除 `database/levels/<玩法>.jsonl` 后重新生成
+- 只有在**上线前**想整体重排时，才删除 `database/levels/<玩法>.json` 后重新生成
 
 ## 广告上线清单
 

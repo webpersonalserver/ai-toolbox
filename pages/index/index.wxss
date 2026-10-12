@@ -11,8 +11,9 @@
   letter-spacing: 4rpx;
 }
 
-.hall__items .chip + .chip {
-  margin-left: var(--space-xs);
+.hall__items {
+  display: flex;
+  gap: var(--space-sm);
 }
 
 .hall__recovery {
@@ -39,7 +40,7 @@
   font-size: var(--font-sm);
 }
 
-.hall__checkin-btn {
+.btn.hall__checkin-btn {
   width: 180rpx;
 }
 
@@ -73,8 +74,9 @@
   height: 104rpx;
   margin-right: var(--space-md);
   border-radius: var(--radius-md);
-  background: var(--color-primary);
-  color: #FFFFFF;
+  background: var(--game-color);
+  box-shadow: 0 6rpx 0 var(--game-color-deep);
+  color: var(--color-on-accent);
   font-size: var(--font-xl);
   font-weight: 800;
 }
@@ -109,7 +111,37 @@
   font-size: var(--font-sm);
 }
 
+.hall__continue {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-left: var(--space-sm);
+  margin-bottom: var(--jelly-depth);
+  padding: var(--space-xs) var(--space-md);
+  border-radius: var(--radius-md);
+  background: var(--game-color);
+  box-shadow: 0 var(--jelly-depth) 0 var(--game-color-deep);
+  color: var(--color-on-accent);
+  line-height: 1.3;
+}
+
+.hall__continue--pressed {
+  transform: translateY(var(--jelly-depth));
+  box-shadow: none;
+}
+
+.hall__continue-label {
+  font-size: var(--font-md);
+  font-weight: 800;
+}
+
+.hall__continue-level {
+  font-size: 20rpx;
+  opacity: 0.9;
+}
+
 .hall__game-action {
-  color: var(--color-primary);
+  color: var(--game-color-deep);
   font-weight: 700;
 }

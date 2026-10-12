@@ -67,13 +67,13 @@
 | `completions` | `gameType` + `completedAt`；`gameType` + `date` | [ ] |
 | `stats_daily` | `gameType` + `date` | [ ] |
 
-### 4.3 导入数据（格式选 JSON Lines）
+### 4.3 导入数据（格式选 JSON）
 
-- [ ] `levels` ← `database/levels/idiom.jsonl`（1000 关）
-- [ ] `levels` ← `database/levels/poetry.jsonl`（500 关）
-- [ ] `levels` ← `database/levels/xiehouyu.jsonl`（106 关）
-- [ ] `levels` ← `database/levels/typo.jsonl`（500 关）
-- [ ] `app_config` ← `database/app_config.jsonl`（游戏规则配置，文档 `_id` 为 `game_rules`）
+- [ ] `levels` ← `database/levels/idiom.json`（1000 关）
+- [ ] `levels` ← `database/levels/poetry.json`（500 关）
+- [ ] `levels` ← `database/levels/xiehouyu.json`（239 关）
+- [ ] `levels` ← `database/levels/typo.json`（500 关）
+- [ ] `app_config` ← `database/app_config.json`（游戏规则配置，文档 `_id` 为 `game_rules`）
 
 ### 4.4 部署云函数
 
@@ -85,12 +85,14 @@
 
 ## 5. 真机全流程验证
 
-后端 136 个用例跑在**模拟数据库**上，以下行为只有在真实云环境里才能确认。建议用两个微信号（A、B）操作，任何一步报错，把云函数日志里的第一行错误发出来。
+后端 146 个用例跑在**模拟数据库**上，以下行为只有在真实云环境里才能确认。建议用两个微信号（A、B）操作，任何一步报错，把云函数日志里的第一行错误发出来。
 
 **账号与打卡**
 - [ ] A 首次进入：提示 10、体力 25
 - [ ] 每日打卡：提示 +3、体力 +5；当天再点提示"已打卡"
-- [ ] 「我的」页设置头像和昵称，保存成功；再换一次头像，云存储里的旧头像文件被删掉
+- [ ] 新用户第一次进入大厅弹出欢迎面板；点头像能看到「用微信头像」，点昵称键盘上方能看到微信昵称
+- [ ] 点「先随便逛逛」：提示随机昵称，「我的」页显示这个昵称和默认头像；再次进入大厅不再弹出
+- [ ] 「我的 → 编辑资料」设置头像和昵称，保存成功；再换一次头像，云存储里的旧头像文件被删掉
 - [ ] 昵称填敏感词，保存被拒绝
 
 **闯关**
@@ -115,7 +117,7 @@
 - [ ] A 先自己答对，B 再点开卡片：显示「TA 已经自己解开这一关啦」
 
 **通关、统计、排行榜**
-- [ ] 控制台把 A 的 `progress` 中 `solved` 改成 1–999、`currentLevel` 改成 1000，然后通过第 1000 关：过关页显示「恭喜通关全部 1000 关」，`completions` 里多一条记录
+- [ ] 控制台把 A 的 `progress` 中 `solved` 改成 1–999、`currentLevel` 改成 1000，然后通过第 1000 关：过关页显示「恭喜通关全部关卡！」，`completions` 里多一条记录
 - [ ] 管理员打开「数据统计」：通关用户、总用户、通关率的数字正确；非管理员看不到入口
 - [ ] 排行榜：A、B 的名次和通关数正确；B 不在前 100 名时底部显示自己的名次
 
@@ -137,9 +139,9 @@
 - [ ] 打开 `docs/content-review.md` 逐条校对，重点是：
   - **24 首人工补录的诗**（凭记忆按课本版本录入，可能有错字）；其中《宿新市徐公店》有「树头新绿未成阴 / 树头花落未成阴」两个版本，需要确认部编版用的是哪个
   - 诗词幼儿园到高中共 277 关：答案是否与课本一致
-  - 歇后语 106 条：学段划分是否合适、有没有不适合孩子的内容
+  - 歇后语 239 条：学段划分是否合适、有没有不适合孩子的内容
   - 成语找错字 500 关：**自动生成**的题里，错字是否像真实会犯的笔误、有没有争议写法（人工整理的常见易错只有 36 条）
-- [ ] 有问题就改 `scripts/data/` 下对应的文件，删除对应的 `database/levels/<玩法>.jsonl` 后重新生成（上线前允许），再运行 `python3 scripts/export_content_review.py` 和 `node tests/levels.test.js`
+- [ ] 有问题就改 `scripts/data/` 下对应的文件，删除对应的 `database/levels/<玩法>.json` 后重新生成（上线前允许），再运行 `python3 scripts/export_content_review.py` 和 `node tests/levels.test.js`
 
 ## 6. 提审
 

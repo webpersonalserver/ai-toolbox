@@ -1,3 +1,6 @@
 {
-  "navigationBarTitleText": "解谜达人"
+  "navigationBarTitleText": "解谜达人",
+  "usingComponents": {
+    "loading-skeleton": "/components/loading-skeleton/loading-skeleton"
+  }
 }

@@ -17,6 +17,9 @@ const PLAY_STAGES = {
 }
 
 const SHARE_PURPOSE_RESCUE = 'rescue'
+const AUTO_START_FLAG = '1'
+const CELEBRATION_MS = 1600
+const CONFETTI_PIECES = Array.from({ length: 14 }, (_, index) => index)
 
 const GUIDE_CONFIRM_TEXT = {
   BEFORE_START: '知道了，开始挑战',
@@ -59,6 +62,8 @@ Page({
     busy: false,
     rescueId: '',
     rescueSheetVisible: false,
+    celebrating: false,
+    confettiPieces: CONFETTI_PIECES,
     guideVisible: false,
     guideSections: [],
     guideConfirmText: GUIDE_CONFIRM_TEXT.REVIEW,
@@ -66,6 +71,7 @@ Page({
   },
 
   onLoad(query) {
+    this.shouldAutoStart = query.autoStart === AUTO_START_FLAG
     const levelNo = Number(query.levelNo) || 1
     const gameConfig = gameConfigOf(query.gameType)
     this.setData({ levelNo, gameType: gameConfig.gameType, game: gameConfig, hintTexts: hintTextsOf(gameConfig) })
@@ -113,9 +119,29 @@ Page({
     try {
       await ensureLogin()
       this.applyLevelDetail(await game.getLevel(this.data.gameType, this.data.levelNo))
+      this.autoStartIfRequested()
     } catch (error) {
       toastError(error)
     }
+  },
+
+  // Only a fresh level starts by itself; a failed attempt stays on the "挑战失败" card so the player sees it.
+  autoStartIfRequested() {
+    const { shouldAutoStart } = this
+    this.shouldAutoStart = false
+    if (shouldAutoStart && this.data.stage === PLAY_STAGES.READY && !this.data.attempt.failed) {
+      this.handleStart()
+    }
+  },
+
+  celebrate() {
+    clearTimeout(this.celebrationTimer)
+    this.setData({ celebrating: true })
+    this.celebrationTimer = setTimeout(() => this.setData({ celebrating: false }), CELEBRATION_MS)
+  },
+
+  onUnload() {
+    clearTimeout(this.celebrationTimer)
   },
 
   async withBusy(task) {
@@ -184,6 +210,7 @@ Page({
           milestone: result.achievement.milestone
         })
         wx.vibrateShort({ type: 'light' })
+        this.celebrate()
         return
       }
       this.setData({ attempt: result.attempt, hearts: buildHearts(result.attempt) })
@@ -248,7 +275,9 @@ Page({
 
   goNextLevel() {
     if (this.data.nextLevelNo) {
-      wx.redirectTo({ url: `/pages/game/play/play?gameType=${this.data.gameType}&levelNo=${this.data.nextLevelNo}` })
+      wx.redirectTo({
+        url: `/pages/game/play/play?gameType=${this.data.gameType}&levelNo=${this.data.nextLevelNo}&autoStart=${AUTO_START_FLAG}`
+      })
     } else {
       wx.navigateBack()
     }

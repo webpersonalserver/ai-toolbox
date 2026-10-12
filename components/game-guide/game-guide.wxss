@@ -9,7 +9,7 @@
   align-items: center;
   justify-content: center;
   padding: 0 var(--space-lg);
-  background: rgba(30, 24, 16, 0.5);
+  background: var(--color-overlay);
 }
 
 .game-guide__panel {

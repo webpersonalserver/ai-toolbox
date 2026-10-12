@@ -1,24 +1,23 @@
 const { game, toastError } = require('../../utils/api')
-const { ensureLogin, getSession } = require('../../utils/session')
+const { getSession, setSession } = require('../../utils/session')
 const { checkinToday } = require('../../utils/checkin')
 const { describeRewards, describeStaminaRecovery } = require('../../utils/items')
 const { DEFAULT_SHARE } = require('../../utils/share')
 const { showRescueNotices } = require('../../utils/rescue-notice')
 const { describeTitleProgress } = require('../../utils/milestone')
 const { GAME_ORDER, gameConfigOf } = require('../../utils/games')
+const { GUIDE_KEYS, hasSeenGuide, markGuideSeen } = require('../../utils/onboarding')
 
-const toGameCard = (gameType, levelList) => {
-  const config = gameConfigOf(gameType)
-  return {
-    ...config,
-    solvedCount: levelList.solved.length,
-    total: levelList.total,
-    titleName: levelList.achievement.title.name,
-    titleProgressText: describeTitleProgress(levelList.achievement),
-    pendingChests: levelList.achievement.milestone.pendingChests,
-    allCleared: levelList.allCleared
-  }
-}
+const toGameCard = (summary) => ({
+  ...gameConfigOf(summary.gameType),
+  solvedCount: summary.solvedCount,
+  total: summary.total,
+  currentLevel: summary.currentLevel,
+  titleName: summary.achievement.title.name,
+  titleProgressText: describeTitleProgress(summary.achievement),
+  pendingChests: summary.achievement.milestone.pendingChests,
+  allCleared: summary.allCleared
+})
 
 Page({
   data: {
@@ -27,7 +26,10 @@ Page({
     staminaRecoveryText: '',
     checkedIn: false,
     checkinRewardText: '',
-    gameCards: GAME_ORDER.map((gameType) => gameConfigOf(gameType))
+    gameCards: GAME_ORDER.map((gameType) => gameConfigOf(gameType)),
+    welcomeVisible: false,
+    profileAvatarUrl: '',
+    profileNickname: ''
   },
 
   onShow() {
@@ -36,18 +38,16 @@ Page({
 
   async refresh() {
     try {
-      await ensureLogin({ force: true })
-      const levelLists = await Promise.all(GAME_ORDER.map((gameType) => game.levelList(gameType)))
+      const { session, games, rescueNotices } = await game.overview()
+      setSession(session)
       this.syncSession()
+      const summaryByGame = Object.fromEntries(games.map((summary) => [summary.gameType, summary]))
       this.setData({
         loading: false,
-        gameCards: GAME_ORDER.map((gameType, index) => toGameCard(gameType, levelLists[index]))
+        gameCards: GAME_ORDER.filter((gameType) => summaryByGame[gameType]).map((gameType) => toGameCard(summaryByGame[gameType]))
       })
-      showRescueNotices(
-        GAME_ORDER.flatMap((gameType, index) =>
-          levelLists[index].rescueNotices.map((notice) => ({ ...notice, gameName: gameConfigOf(gameType).name }))
-        )
-      )
+      showRescueNotices(rescueNotices.map((notice) => ({ ...notice, gameName: gameConfigOf(notice.gameType).name })))
+      this.offerProfileWelcome(session.profile)
     } catch (error) {
       this.setData({ loading: false })
       toastError(error)
@@ -67,6 +67,27 @@ Page({
 
   async handleCheckin() {
     if (await checkinToday()) this.syncSession()
+  },
+
+  offerProfileWelcome(profile) {
+    if (profile.customized || hasSeenGuide(GUIDE_KEYS.PROFILE_WELCOME)) return
+    this.setData({ welcomeVisible: true, profileAvatarUrl: profile.avatarUrl, profileNickname: profile.nickname })
+  },
+
+  handleWelcomeSaved() {
+    markGuideSeen(GUIDE_KEYS.PROFILE_WELCOME)
+    this.setData({ welcomeVisible: false })
+  },
+
+  handleWelcomeSkipped() {
+    markGuideSeen(GUIDE_KEYS.PROFILE_WELCOME)
+    this.setData({ welcomeVisible: false })
+    wx.showToast({ title: `已为你取名「${this.data.profileNickname}」，可在「我的」页修改`, icon: 'none', duration: 2500 })
+  },
+
+  continueGame(event) {
+    const { gameType, levelNo } = event.currentTarget.dataset
+    wx.navigateTo({ url: `/pages/game/play/play?gameType=${gameType}&levelNo=${levelNo}&autoStart=1` })
   },
 
   openGame(event) {

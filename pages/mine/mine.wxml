@@ -1,60 +1,70 @@
 <view class="page mine">
   <view class="card mine__profile">
-    <button class="mine__avatar-btn" open-type="chooseAvatar" bind:chooseavatar="handleChooseAvatar">
-      <image wx:if="{{avatarUrl}}" class="mine__avatar" src="{{avatarUrl}}" mode="aspectFill" />
-      <view wx:else class="mine__avatar mine__avatar--empty">头像</view>
-    </button>
-    <input
-      class="mine__nickname"
-      type="nickname"
-      value="{{nickname}}"
-      placeholder="点击设置昵称"
-      maxlength="20"
-      bindinput="handleNicknameInput"
-      bindblur="handleNicknameInput"
-    />
-    <button wx:if="{{profileDirty}}" class="btn btn--primary mine__save" loading="{{saving}}" bindtap="saveProfile">保存</button>
+    <view class="mine__identity-row" hover-class="mine__profile--pressed" bindtap="openProfileEditor">
+      <image class="mine__avatar" src="{{avatarDisplay}}" mode="aspectFill" />
+      <view class="mine__identity">
+        <view class="mine__nickname {{nickname ? '' : 'mine__nickname--empty'}}">{{nicknameDisplay}}</view>
+        <view class="mine__edit">编辑资料 ›</view>
+      </view>
+    </view>
+    <view class="mine__items">
+      <item-chip item-type="stamina" value="{{items.stamina}}" />
+      <item-chip item-type="hint" value="{{items.hint}}" />
+      <text wx:if="{{staminaRecoveryText}}" class="mine__recovery">{{staminaRecoveryText}}</text>
+    </view>
   </view>
 
   <view class="card mine__title">
-    <view class="mine__title-row">
-      <view class="mine__hints-label">我的段位</view>
-      <button class="btn btn--ghost mine__share" open-type="share">晒一晒</button>
-    </view>
-    <view wx:for="{{gameTitles}}" wx:key="gameType" class="mine__game">
-      <view class="mine__game-main">
-        <view class="mine__game-name">{{item.name}}</view>
-        <view class="mine__title-name">{{item.titleName}}</view>
-        <view class="mine__title-progress">已通过 {{item.solvedCount}} 关 · {{item.titleProgressText}}</view>
+    <view class="mine__section-label">我的段位</view>
+    <view wx:if="{{!titlesExpanded}}" class="mine__title-summary" bindtap="toggleTitles">
+      <view wx:for="{{gameTitles}}" wx:key="gameType" class="mine__title-tag game-theme--{{item.gameType}}">
+        <text class="mine__title-tag-icon">{{item.icon}}</text>
+        <text class="mine__title-tag-name">{{item.titleName}}</text>
       </view>
-      <view class="mine__book" data-game-type="{{item.gameType}}" bindtap="openBook">{{item.bookName}} ›</view>
     </view>
+    <block wx:else>
+      <view wx:for="{{gameTitles}}" wx:key="gameType" class="mine__game game-theme--{{item.gameType}}">
+        <view class="mine__game-main">
+          <view class="mine__game-name">{{item.name}}</view>
+          <view class="mine__title-name">{{item.titleName}}</view>
+          <view class="mine__title-progress">已通过 {{item.solvedCount}} 关 · {{item.titleProgressText}}</view>
+        </view>
+        <view class="mine__book" data-game-type="{{item.gameType}}" bindtap="openBook">{{item.bookName}} ›</view>
+      </view>
+    </block>
+    <view class="mine__title-toggle" bindtap="toggleTitles">{{titlesExpanded ? '收起 ⌃' : '展开详情 ⌄'}}</view>
   </view>
 
-  <view class="card mine__hints">
-    <view class="mine__hints-row">
-      <view class="mine__stat">
-        <view class="mine__hints-label">体力</view>
-        <view class="mine__hints-count">{{items.stamina}}</view>
-        <view wx:if="{{staminaRecoveryText}}" class="mine__recovery">{{staminaRecoveryText}}</view>
-      </view>
-      <view class="mine__stat">
-        <view class="mine__hints-label">提示</view>
-        <view class="mine__hints-count">{{items.hint}}</view>
-      </view>
+  <view class="card mine__menu">
+    <view class="mine__cell" hover-class="mine__cell--pressed" bindtap="openRules">
+      <text>游戏规则</text>
+      <text class="mine__cell-arrow">›</text>
     </view>
-    <button class="btn {{checkedIn ? 'btn--muted' : 'btn--primary'}} mine__checkin" disabled="{{checkedIn}}" bindtap="handleCheckin">
-      {{checkedIn ? '今日已打卡' : '打卡领奖励'}}
+    <button class="mine__cell mine__cell-button" hover-class="mine__cell--pressed" open-type="share">
+      <text>晒一晒我的段位</text>
+      <text class="mine__cell-arrow">›</text>
     </button>
-    <view class="mine__rules">
-      <view wx:for="{{ruleLines}}" wx:key="index" class="mine__rule">· {{item}}</view>
+    <view wx:if="{{isAdmin}}" class="mine__cell" hover-class="mine__cell--pressed" bindtap="openAdminStats">
+      <text>数据统计</text>
+      <text class="mine__cell-arrow">›</text>
     </view>
   </view>
 
-  <view wx:if="{{isAdmin}}" class="card mine__admin" bindtap="openAdminStats">
-    <view class="mine__admin-title">数据统计</view>
-    <view class="mine__admin-desc">通关率、最近通关、每日趋势 ›</view>
-  </view>
-
-  <view class="mine__openid" bindlongpress="copyOpenid">用户编号：{{openid}}（长按复制）</view>
+  <view class="mine__openid" bindlongpress="copyOpenid">用户编号 {{openid}} · 长按复制</view>
 </view>
+
+<game-guide
+  visible="{{rulesVisible}}"
+  title="游戏规则"
+  sections="{{ruleSections}}"
+  bind:confirm="closeRules"
+  bind:close="closeRules"
+/>
+
+<profile-editor
+  visible="{{editorVisible}}"
+  avatar-url="{{avatarUrl}}"
+  nickname="{{nickname}}"
+  bind:saved="handleProfileSaved"
+  bind:cancel="closeProfileEditor"
+/>

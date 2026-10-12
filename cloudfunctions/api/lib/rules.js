@@ -1,5 +1,6 @@
 const { db } = require('./cloud')
 const { isItemType } = require('./items')
+const { isGameType } = require('./games')
 
 const RULES_DOC_ID = 'game_rules'
 
@@ -79,6 +80,9 @@ const DEFAULT_RULES = {
     staminaCost: 1,
     maxWrongAttempts: 3,
     maxHints: 3
+  },
+  levelByGame: {
+    typo: { maxWrongAttempts: 1 }
   },
   staminaRecovery: {
     enabled: true,
@@ -165,10 +169,43 @@ const writePath = (target, path, value) => {
   parent[keys[keys.length - 1]] = value
 }
 
+const LEVEL_FIELD_VALIDATORS = {
+  staminaCost: RULE_VALIDATORS['level.staminaCost'],
+  maxWrongAttempts: RULE_VALIDATORS['level.maxWrongAttempts'],
+  maxHints: RULE_VALIDATORS['level.maxHints']
+}
+
+const sanitizeLevelByGame = (levelByGame, rejected) => {
+  if (!isPlainObject(levelByGame)) {
+    rejected.push('levelByGame')
+    return {}
+  }
+  const sanitized = {}
+  Object.entries(levelByGame).forEach(([gameType, overrides]) => {
+    if (!isGameType(gameType) || !isPlainObject(overrides)) {
+      rejected.push(`levelByGame.${gameType}`)
+      return
+    }
+    sanitized[gameType] = {}
+    const defaults = DEFAULT_RULES.levelByGame[gameType] || {}
+    Object.entries(overrides).forEach(([field, value]) => {
+      const validator = LEVEL_FIELD_VALIDATORS[field]
+      if (validator && validator(value)) {
+        sanitized[gameType][field] = value
+        return
+      }
+      rejected.push(`levelByGame.${gameType}.${field}`)
+      if (field in defaults) sanitized[gameType][field] = defaults[field]
+    })
+  })
+  return sanitized
+}
+
 const replaceInvalidFields = (rules) => {
   const validated = JSON.parse(JSON.stringify(rules))
   const rejected = Object.keys(RULE_VALIDATORS).filter((path) => !RULE_VALIDATORS[path](readPath(validated, path)))
   rejected.forEach((path) => writePath(validated, path, JSON.parse(JSON.stringify(readPath(DEFAULT_RULES, path)))))
+  validated.levelByGame = sanitizeLevelByGame(validated.levelByGame, rejected)
   if (validated.ad.enabled && !validated.ad.adUnitId) {
     validated.ad.enabled = false
     rejected.push('ad.enabled (adUnitId is empty)')
@@ -211,9 +248,17 @@ const loadRules = async () => {
     const rules = replaceInvalidFields(mergeRules(DEFAULT_RULES, data))
     return { ...rules, titles: resolveTitles(rules.titles) }
   } catch (error) {
+    console.error('[rules] game_rules unavailable, using defaults:', error.message)
     return DEFAULT_RULES
   }
 }
+
+const rulesForGame = (rules, gameType) => ({
+  ...rules,
+  level: { ...rules.level, ...((rules.levelByGame || {})[gameType] || {}) }
+})
+
+const loadRulesForGame = async (gameType) => rulesForGame(await loadRules(), gameType)
 
 const sumRewardsByType = (rewards) =>
   rewards.reduce((totals, reward) => {
@@ -229,9 +274,10 @@ const toClientRules = (rules) => ({
     rewards: rules.ad.rewards
   },
   level: rules.level,
+  levelByGame: rules.levelByGame,
   staminaRecovery: rules.staminaRecovery,
   rescue: rules.rescue,
   milestone: rules.milestone
 })
 
-module.exports = { loadRules, sumRewardsByType, toClientRules, DEFAULT_RULES }
+module.exports = { loadRules, loadRulesForGame, rulesForGame, sumRewardsByType, toClientRules, DEFAULT_RULES }

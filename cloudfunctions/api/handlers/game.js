@@ -1,6 +1,6 @@
 const { db, _ } = require('../lib/cloud')
 const { ERROR_CODES, BusinessError, throwIfFailed } = require('../lib/response')
-const { loadRules } = require('../lib/rules')
+const { loadRulesForGame } = require('../lib/rules')
 const { countLevels, levelStages } = require('../lib/level-count')
 const { RESCUE_STATUS, closeOpenRescue } = require('../lib/rescue-store')
 const { isAllCleared, syncProgressAfterSolve } = require('../lib/completion')
@@ -80,24 +80,27 @@ const toLevelDetail = ({ level, progress, rules, total }) => {
 const progressRefOf = (transaction, openid, gameType) =>
   transaction.collection('progress').doc(progressDocId(openid, gameType))
 
+const RESCUE_NOTICE_LIMIT = 20
+
 const takeUnseenRescueNotices = async (openid, gameType) => {
   const rescues = db.collection('rescues')
+  const condition = { requesterOpenid: openid, status: RESCUE_STATUS.SOLVED, noticeSeen: false }
   const { data } = await rescues
-    .where({ requesterOpenid: openid, gameType, status: RESCUE_STATUS.SOLVED, noticeSeen: false })
-    .limit(20)
+    .where(gameType ? { ...condition, gameType } : condition)
+    .limit(RESCUE_NOTICE_LIMIT)
     .get()
   if (data.length) {
     await rescues
       .where({ _id: _.in(data.map((rescue) => rescue._id)) })
       .update({ data: { noticeSeen: true } })
   }
-  return data.map((rescue) => ({ levelNo: rescue.levelNo, helperName: rescue.helperName }))
+  return data.map((rescue) => ({ gameType: rescue.gameType, levelNo: rescue.levelNo, helperName: rescue.helperName }))
 }
 
 const levelList = async ({ openid, payload }) => {
   const gameType = parseGameType(payload)
   const [rules, total, stages, progress, rescueNotices] = await Promise.all([
-    loadRules(),
+    loadRulesForGame(gameType),
     countLevels(gameType),
     levelStages(gameType),
     getProgress(openid, gameType),
@@ -116,7 +119,7 @@ const levelList = async ({ openid, payload }) => {
 
 const summary = async ({ openid, payload }) => {
   const gameType = parseGameType(payload)
-  const [rules, total, progress] = await Promise.all([loadRules(), countLevels(gameType), getProgress(openid, gameType)])
+  const [rules, total, progress] = await Promise.all([loadRulesForGame(gameType), countLevels(gameType), getProgress(openid, gameType)])
   return {
     total,
     allCleared: isAllCleared(progress.solved.length, total),
@@ -127,7 +130,7 @@ const summary = async ({ openid, payload }) => {
 const claimMilestones = async ({ openid, payload }) => {
   const gameType = parseGameType(payload)
   const now = Date.now()
-  const rules = await loadRules()
+  const rules = await loadRulesForGame(gameType)
   await getProgress(openid, gameType)
   const { everyLevels } = rules.milestone
   const rewardPerChest = sumRewardsByType(rules.milestone.rewards)
@@ -187,7 +190,7 @@ const getLevelDetail = async ({ openid, payload }) => {
   const gameType = parseGameType(payload)
   const levelNo = parseLevelNo(payload)
   const [rules, progress, level, total] = await Promise.all([
-    loadRules(),
+    loadRulesForGame(gameType),
     getProgress(openid, gameType),
     getLevel(gameType, levelNo),
     countLevels(gameType)
@@ -200,7 +203,7 @@ const startAttempt = async ({ openid, payload }) => {
   const gameType = parseGameType(payload)
   const now = Date.now()
   const levelNo = parseLevelNo(payload)
-  const [rules, level, total] = await Promise.all([loadRules(), getLevel(gameType, levelNo), countLevels(gameType)])
+  const [rules, level, total] = await Promise.all([loadRulesForGame(gameType), getLevel(gameType, levelNo), countLevels(gameType)])
   await getProgress(openid, gameType)
   const staminaDelta = { [ITEM_TYPES.STAMINA]: -rules.level.staminaCost }
 
@@ -229,7 +232,7 @@ const startAttempt = async ({ openid, payload }) => {
 const submit = async ({ openid, payload }) => {
   const gameType = parseGameType(payload)
   const levelNo = parseLevelNo(payload)
-  const [rules, level, total] = await Promise.all([loadRules(), getLevel(gameType, levelNo), countLevels(gameType)])
+  const [rules, level, total] = await Promise.all([loadRulesForGame(gameType), getLevel(gameType, levelNo), countLevels(gameType)])
   const isCorrect = String(payload.answer || '') === level.answer
 
   const outcome = await db.runTransaction(async (transaction) => {
@@ -286,7 +289,7 @@ const useHint = async ({ openid, payload }) => {
   const gameType = parseGameType(payload)
   const now = Date.now()
   const levelNo = parseLevelNo(payload)
-  const [rules, level] = await Promise.all([loadRules(), getLevel(gameType, levelNo)])
+  const [rules, level] = await Promise.all([loadRulesForGame(gameType), getLevel(gameType, levelNo)])
   await getProgress(openid, gameType)
   const maxHints = maxHintsForLevel(level, rules)
   const hintDelta = { [ITEM_TYPES.HINT]: -1 }
@@ -321,7 +324,21 @@ const useHint = async ({ openid, payload }) => {
   }
 }
 
+const summarizeGame = async (openid, gameType, rules) => {
+  const [total, progress] = await Promise.all([countLevels(gameType), getProgress(openid, gameType)])
+  return {
+    gameType,
+    total,
+    currentLevel: Math.min(progress.currentLevel, total),
+    solvedCount: progress.solved.length,
+    allCleared: isAllCleared(progress.solved.length, total),
+    achievement: describeAchievement(progress, rules)
+  }
+}
+
 module.exports = {
+  takeUnseenRescueNotices,
+  summarizeGame,
   levelList,
   summary,
   claimMilestones,

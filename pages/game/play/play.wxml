@@ -1,12 +1,13 @@
-<view class="page play" wx:if="{{stage !== 'loading'}}">
+<loading-skeleton wx:if="{{stage === 'loading'}}" rows="3" />
+<view class="page play game-theme--{{gameType}}" wx:if="{{stage !== 'loading'}}">
   <view class="play__topbar">
     <view>
       <view wx:if="{{stageName}}" class="play__stage">{{stageName}}</view>
-      <view class="play__level">第 {{levelNo}} 关<text class="play__total"> / {{total}}</text></view>
+      <view class="play__level">第 {{levelNo}} 关</view>
     </view>
     <view class="play__items">
-      <view class="chip">体力 {{items.stamina}}</view>
-      <view class="chip">提示 {{items.hint}}</view>
+      <item-chip item-type="stamina" value="{{items.stamina}}" />
+      <item-chip item-type="hint" value="{{items.hint}}" />
     </view>
   </view>
 
@@ -20,9 +21,9 @@
       <view class="play__ready-desc">每次挑战有 {{attempt.maxWrongAttempts}} 次答错机会，答错用完即挑战失败。</view>
     </block>
     <button class="btn btn--primary play__start" loading="{{busy}}" bindtap="handleStart">
-      {{attempt.failed ? '再来一次' : '开始挑战'}}（体力 -{{staminaCost}}）
+      {{attempt.failed ? '再来一次' : '开始挑战'}}<image class="play__cost-icon" src="/assets/icons/stamina.png" mode="aspectFit" />-{{staminaCost}}
     </button>
-    <view wx:if="{{staminaRecoveryText}}" class="play__recovery">体力 {{staminaRecoveryText}}</view>
+    <view wx:if="{{staminaRecoveryText}}" class="play__recovery"><image class="inline-icon" src="/assets/icons/stamina.png" mode="aspectFit" />{{staminaRecoveryText}}</view>
     <button wx:if="{{attempt.failed}}" class="btn btn--ghost play__start" bindtap="handleRescue">求助好友（免费）</button>
     <view class="play__guide-link" bindtap="openGuide">玩法说明</view>
   </view>
@@ -61,10 +62,13 @@
   </block>
 
   <view wx:if="{{stage === 'solved'}}" class="card play__result">
+    <view wx:if="{{celebrating}}" class="play__confetti" aria-hidden="true">
+      <view wx:for="{{confettiPieces}}" wx:key="*this" class="play__confetti-piece"></view>
+    </view>
     <view class="play__result-badge">过关</view>
     <game-solution game-type="{{gameType}}" solution="{{solution}}" />
     <view wx:if="{{allCleared}}" class="play__all-cleared">
-      <view class="play__all-cleared-title">恭喜通关全部 {{total}} 关！</view>
+      <view class="play__all-cleared-title">恭喜通关全部关卡！</view>
       <view class="play__all-cleared-desc">更多挑战正在准备中，敬请期待</view>
     </view>
     <view wx:if="{{titleUpgrade}}" class="play__reward play__reward--title">晋升为「{{titleUpgrade}}」！</view>
@@ -75,7 +79,9 @@
     <view wx:elif="{{milestone}}" class="play__reward-hint">再通过 {{milestone.levelsToNextChest}} 关可开宝箱</view>
     <view class="play__actions">
       <button class="btn btn--muted play__action" bindtap="goLevelList">关卡列表</button>
-      <button wx:if="{{nextLevelNo}}" class="btn btn--primary play__action" bindtap="goNextLevel">下一关</button>
+      <button wx:if="{{nextLevelNo}}" class="btn btn--primary play__action" bindtap="goNextLevel">
+        下一关<image class="play__cost-icon" src="/assets/icons/stamina.png" mode="aspectFit" />-{{staminaCost}}
+      </button>
       <button wx:else class="btn btn--primary play__action" bindtap="openLeaderboard">看排行榜</button>
     </view>
   </view>

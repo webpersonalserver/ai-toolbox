@@ -1,0 +1,36 @@
+<view wx:if="{{visible}}" class="profile-sheet" bindtap="handleCancel">
+  <view class="profile-sheet__panel" catchtap="noop">
+    <view class="profile-sheet__title">{{title}}</view>
+    <view wx:if="{{intro}}" class="profile-sheet__intro">{{intro}}</view>
+
+    <button class="profile-sheet__avatar-picker" open-type="chooseAvatar" bind:chooseavatar="handleChooseAvatar">
+      <image class="profile-sheet__avatar" src="{{draftAvatarDisplay}}" mode="aspectFill" />
+      <view class="profile-sheet__avatar-badge">更换头像</view>
+    </button>
+
+    <view class="profile-sheet__field">
+      <view class="profile-sheet__label-row">
+        <text class="profile-sheet__label">昵称</text>
+        <text class="profile-sheet__counter">{{draftNicknameLength}}/{{nicknameMaxLength}}</text>
+      </view>
+      <input
+        id="profile-nickname"
+        class="profile-sheet__input"
+        type="nickname"
+        value="{{draftNickname}}"
+        placeholder="输入昵称，或点键盘上方的微信昵称"
+        placeholder-class="profile-sheet__placeholder"
+        maxlength="{{nicknameMaxLength}}"
+        bindinput="handleNicknameInput"
+        bindblur="handleNicknameInput"
+        bindnicknamereview="handleNicknameReview"
+      />
+    </view>
+    <view class="profile-sheet__tip">头像和昵称会展示在排行榜和好友求助页，请勿使用不当内容</view>
+
+    <view class="profile-sheet__actions">
+      <button class="btn btn--muted profile-sheet__action" bindtap="handleCancel">{{cancelText}}</button>
+      <button class="btn btn--primary profile-sheet__action" disabled="{{!canSave}}" loading="{{saving}}" bindtap="handleSave">保存</button>
+    </view>
+  </view>
+</view>

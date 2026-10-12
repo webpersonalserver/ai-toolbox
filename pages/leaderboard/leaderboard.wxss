@@ -72,7 +72,7 @@
   padding: 0 var(--space-xs);
   border-radius: var(--radius-sm);
   background: var(--color-primary);
-  color: #FFFFFF;
+  color: var(--color-on-accent);
   font-size: 20rpx;
 }
 
@@ -100,7 +100,7 @@
   left: 0;
   padding: var(--space-sm) var(--space-lg);
   background: var(--color-bg);
-  box-shadow: 0 -6rpx 24rpx rgba(80, 60, 30, 0.08);
+  box-shadow: 0 -6rpx 24rpx var(--color-shadow);
 }
 
 .leaderboard__mine .leaderboard__row {

@@ -91,7 +91,7 @@ const checkGame = (gameType, levels) => {
 
 let totalFailed = 0
 Object.keys(GAME_CHECKS).forEach((gameType) => {
-  const file = path.join(LEVELS_DIR, `${gameType}.jsonl`)
+  const file = path.join(LEVELS_DIR, `${gameType}.json`)
   if (!fs.existsSync(file)) {
     console.log(`FAIL ${gameType}: ${file} missing`)
     totalFailed += 1
