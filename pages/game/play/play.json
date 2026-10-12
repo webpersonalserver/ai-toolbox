@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "解谜达人",
+  "usingComponents": {
+    "char-puzzle": "/components/char-puzzle/char-puzzle",
+    "game-solution": "/components/game-solution/game-solution",
+    "game-guide": "/components/game-guide/game-guide"
+  }
+}

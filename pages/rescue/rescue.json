@@ -1,6 +1,7 @@
 {
   "navigationBarTitleText": "好友求助",
   "usingComponents": {
-    "idiom-puzzle": "/components/idiom-puzzle/idiom-puzzle"
+    "char-puzzle": "/components/char-puzzle/char-puzzle",
+    "game-solution": "/components/game-solution/game-solution"
   }
 }

@@ -2,6 +2,7 @@ const { rescue, ERROR_CODES, toastError } = require('../../utils/api')
 const { ensureLogin } = require('../../utils/session')
 const { DEFAULT_SHARE } = require('../../utils/share')
 const { FALLBACK_HELPER_NAME } = require('../../utils/rescue-notice')
+const { gameConfigOf, describePoemSource, splitTypoClue } = require('../../utils/games')
 
 const FALLBACK_REQUESTER_NAME = '你的好友'
 
@@ -43,6 +44,11 @@ const describeHelperBlock = (viewState, detail) => {
 Page({
   data: {
     loading: true,
+    gameType: '',
+    game: null,
+    poemSource: '',
+    clueChars: [],
+    clueHint: '',
     viewState: '',
     rescueId: '',
     isOwner: false,
@@ -86,6 +92,11 @@ Page({
         helperLimitMessage: detail.helperLimitMessage,
         helperAttemptsLeft: detail.helperAttemptsLeft,
         maxWrongAnswersPerHelper: detail.maxWrongAnswersPerHelper,
+        gameType: detail.gameType,
+        game: gameConfigOf(detail.gameType),
+        poemSource: describePoemSource(detail.puzzle),
+        clueChars: splitTypoClue(detail.puzzle.clue, detail.puzzle.wrongPosition),
+        clueHint: detail.puzzle.clueHint || '',
         levelNo: detail.puzzle.levelNo,
         clue: detail.puzzle.clue,
         board: detail.puzzle.board,
@@ -125,7 +136,7 @@ Page({
   },
 
   goPlay() {
-    wx.reLaunch({ url: '/pages/idiom/levels/levels' })
+    wx.reLaunch({ url: `/pages/game/levels/levels?gameType=${this.data.gameType}` })
   },
 
   onShareAppMessage() {

@@ -13,7 +13,7 @@ const {
   toPuzzle,
   toSolution
 } = require('../lib/progress')
-const { GAME_TYPE } = require('./idiom')
+const { parseGameType } = require('../lib/games')
 const { countLevels } = require('../lib/level-count')
 const { syncProgressAfterSolve } = require('../lib/completion')
 
@@ -86,22 +86,23 @@ const recordWrongAnswer = async (rescueId, helperOpenid) => {
 const helperLimitMessage = (limit) => `你今天已经帮 TA 解过 ${limit} 关了，明天再来吧`
 
 const create = async ({ openid, payload }) => {
+  const gameType = parseGameType(payload)
   const levelNo = Number(payload.levelNo)
-  const progress = await getProgress(openid, GAME_TYPE)
+  const progress = await getProgress(openid, gameType)
   assertLevelPlayable(progress, levelNo)
   const attempt = getAttempt(progress, levelNo)
   if (!attempt.active && attempt.wrongCount === 0) {
     throw new BusinessError(ERROR_CODES.RESCUE_NEEDS_ATTEMPT, '先开始挑战，卡住了再求助好友')
   }
 
-  const rescueId = rescueIdFor(openid, GAME_TYPE, levelNo)
+  const rescueId = rescueIdFor(openid, gameType, levelNo)
   if (await findDoc('rescues', rescueId)) {
     return { rescueId }
   }
   await addDocIgnoringDuplicate('rescues', {
     _id: rescueId,
     requesterOpenid: openid,
-    gameType: GAME_TYPE,
+    gameType,
     levelNo,
     status: RESCUE_STATUS.OPEN,
     helperOpenid: '',
@@ -125,6 +126,7 @@ const view = async ({ openid, payload }) => {
   const { dailyLimitPerHelper, maxWrongAnswersPerHelper } = rules.rescue
   return {
     rescueId: rescue._id,
+    gameType: rescue.gameType,
     status: rescue.status,
     isOwner,
     requester,

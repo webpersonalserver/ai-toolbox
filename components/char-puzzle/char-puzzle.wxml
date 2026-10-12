@@ -1,0 +1,21 @@
+<view class="char-puzzle">
+  <view class="char-puzzle__slots {{slotSizeClass}} {{isWrong ? 'char-puzzle__slots--wrong' : ''}}">
+    <view
+      wx:for="{{slots}}"
+      wx:key="index"
+      class="char-puzzle__slot {{item.locked ? 'char-puzzle__slot--locked' : ''}} {{item.char ? 'char-puzzle__slot--filled' : ''}}"
+      data-index="{{index}}"
+      bindtap="handleSlotTap"
+    >{{item.char}}</view>
+  </view>
+  <view class="char-puzzle__board char-puzzle__board--cols-{{columns}}">
+    <view
+      wx:for="{{boardItems}}"
+      wx:key="index"
+      class="char-puzzle__key {{item.used ? 'char-puzzle__key--used' : ''}} {{item.eliminated ? 'char-puzzle__key--eliminated' : ''}}"
+      hover-class="char-puzzle__key--pressed"
+      data-index="{{index}}"
+      bindtap="handleBoardTap"
+    >{{item.char}}</view>
+  </view>
+</view>

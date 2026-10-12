@@ -69,7 +69,10 @@
 
 ### 4.3 导入数据（格式选 JSON Lines）
 
-- [ ] `levels` ← `database/levels.jsonl`（1000 关）
+- [ ] `levels` ← `database/levels/idiom.jsonl`（1000 关）
+- [ ] `levels` ← `database/levels/poetry.jsonl`（500 关）
+- [ ] `levels` ← `database/levels/xiehouyu.jsonl`（106 关）
+- [ ] `levels` ← `database/levels/typo.jsonl`（500 关）
 - [ ] `app_config` ← `database/app_config.jsonl`（游戏规则配置，文档 `_id` 为 `game_rules`）
 
 ### 4.4 部署云函数
@@ -82,7 +85,7 @@
 
 ## 5. 真机全流程验证
 
-后端 104 个用例跑在**模拟数据库**上，以下行为只有在真实云环境里才能确认。建议用两个微信号（A、B）操作，任何一步报错，把云函数日志里的第一行错误发出来。
+后端 136 个用例跑在**模拟数据库**上，以下行为只有在真实云环境里才能确认。建议用两个微信号（A、B）操作，任何一步报错，把云函数日志里的第一行错误发出来。
 
 **账号与打卡**
 - [ ] A 首次进入：提示 10、体力 25
@@ -121,6 +124,22 @@
 - [ ] 手动测试触发器 `snapshotStats`：`stats_daily` 里出现当天的记录
 - [ ] 在 `game_rules` 里把某个数值故意改成字符串（如 `"level": {"staminaCost": "2"}`）：日志出现 `[rules] invalid config fields`，游戏仍按默认值 1 扣体力；测完改回来
 
+**诗词填空与歇后语**
+- [ ] 大厅出现三张玩法卡片；诗词和歇后语都能开始挑战、使用提示、过关
+- [ ] 诗词答题页显示学段标签（如「幼儿园 · 第 1 关」）和出处；高中段整句挖空时，5–7 个格子能完整显示
+- [ ] 关卡页的学段标签可以点击跳转；排行榜和数据统计页可以切换玩法
+- [ ] 在诗词里用掉体力，回到成语时体力同步减少（体力是共用的）
+- [ ] 成语找错字：错字标红显示；字盘是 4 列 8 个字；提示会划掉 2 个错误选项，用满 3 次后至少剩 2 个
+
+## 5.5 题库内容校对（上线前必须做）
+
+- [ ] 打开 `docs/content-review.md` 逐条校对，重点是：
+  - **24 首人工补录的诗**（凭记忆按课本版本录入，可能有错字）；其中《宿新市徐公店》有「树头新绿未成阴 / 树头花落未成阴」两个版本，需要确认部编版用的是哪个
+  - 诗词幼儿园到高中共 277 关：答案是否与课本一致
+  - 歇后语 106 条：学段划分是否合适、有没有不适合孩子的内容
+  - 成语找错字 500 关：**自动生成**的题里，错字是否像真实会犯的笔误、有没有争议写法（人工整理的常见易错只有 36 条）
+- [ ] 有问题就改 `scripts/data/` 下对应的文件，删除对应的 `database/levels/<玩法>.jsonl` 后重新生成（上线前允许），再运行 `python3 scripts/export_content_review.py` 和 `node tests/levels.test.js`
+
 ## 6. 提审
 
 - [ ] 先用**体验版**完整走一遍第 5 节
@@ -141,5 +160,5 @@
 
 - [ ] **分享卡片配图**：图片准备好后，在 `utils/share.js` 的分享配置里加 `imageUrl`（目前用的是页面截图）
 - [ ] **激励视频**：小程序累计访客满 1000 后开通流量主、新建激励视频广告位，在 `game_rules` 里填 `ad.adUnitId` 并把 `ad.enabled` 改成 `true`，不用发版
-- [ ] **题库数据许可证**：打开 [chinese-xinhua](https://github.com/pwxcoo/chinese-xinhua) 仓库，确认 LICENSE 允许商用
-- [ ] **扩充关卡**：按 README「题库」一节，在 `scripts/idioms.txt` 末尾新增档位后追加生成，再运行 `node tests/levels.test.js` 体检
+- [x] **题库数据许可证**：chinese-xinhua、chinese-poetry 均为 MIT 许可，可商用（已核实）
+- [ ] **扩充关卡**：按 README「题库 → 生成与扩充」一节，在对应清单末尾追加后重新生成，再运行 `node tests/levels.test.js` 体检

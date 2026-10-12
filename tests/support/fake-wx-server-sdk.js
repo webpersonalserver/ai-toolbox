@@ -107,6 +107,7 @@ const query = (name, where = {}, orders = [], limitCount = Infinity) => {
 
 const collection = (name) => ({
   ...query(name),
+  aggregate: () => aggregatePipeline(name),
   doc: (id) => docApi(name, id),
   add: async ({ data }) => {
     const id = data._id || `auto${++autoId}`
@@ -120,8 +121,38 @@ const collection = (name) => ({
   }
 })
 
+const aggregateCommand = {
+  min: (field) => ({ op: 'min', field: field.slice(1) }),
+  max: (field) => ({ op: 'max', field: field.slice(1) })
+}
+
+const aggregatePipeline = (name, stages = []) => ({
+  match: (condition) => aggregatePipeline(name, [...stages, { type: 'match', condition }]),
+  group: (spec) => aggregatePipeline(name, [...stages, { type: 'group', spec }]),
+  end: async () => {
+    let docs = clone(Object.values(collectionStore(name)))
+    stages.forEach((stage) => {
+      if (stage.type === 'match') docs = docs.filter((doc) => matches(doc, stage.condition))
+      if (stage.type === 'group') {
+        const groups = {}
+        const { _id: idExpression, ...accumulators } = stage.spec
+        docs.forEach((doc) => {
+          const key = doc[idExpression.slice(1)]
+          const group = (groups[key] = groups[key] || { _id: key === undefined ? null : key })
+          Object.entries(accumulators).forEach(([output, { op, field }]) => {
+            const value = doc[field]
+            group[output] = group[output] === undefined ? value : Math[op](group[output], value)
+          })
+        })
+        docs = Object.values(groups)
+      }
+    })
+    return { list: docs }
+  }
+})
+
 const database = {
-  command,
+  command: { ...command, aggregate: aggregateCommand },
   collection,
   serverDate: () => ({ __serverDate: true }),
   runTransaction: async (callback) => {

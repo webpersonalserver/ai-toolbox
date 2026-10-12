@@ -58,7 +58,7 @@
 
 .mine__title-name {
   color: var(--color-primary);
-  font-size: var(--font-title);
+  font-size: var(--font-xl);
   font-weight: 800;
   line-height: 1.3;
 }
@@ -75,11 +75,26 @@
   font-size: var(--font-sm);
 }
 
-.mine__book {
+.mine__game {
+  display: flex;
+  align-items: center;
   margin-top: var(--space-md);
   padding-top: var(--space-md);
   border-top: 2rpx solid var(--color-border);
+}
+
+.mine__game-main {
+  flex: 1;
+}
+
+.mine__game-name {
+  color: var(--color-ink-soft);
+  font-size: var(--font-sm);
+}
+
+.mine__book {
   color: var(--color-primary);
+  font-size: var(--font-sm);
   font-weight: 600;
 }
 

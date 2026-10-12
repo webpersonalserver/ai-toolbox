@@ -1,7 +1,7 @@
-const sortedTitles = (rules) => [...rules.titles].sort((left, right) => left.minSolved - right.minSolved)
+const titlesOf = (rules, gameType) => rules.titles[gameType] || []
 
-const describeTitle = (solvedCount, rules) => {
-  const titles = sortedTitles(rules)
+const describeTitle = (solvedCount, rules, gameType) => {
+  const titles = titlesOf(rules, gameType)
   let currentIndex = 0
   titles.forEach((title, index) => {
     if (solvedCount >= title.minSolved) currentIndex = index
@@ -32,7 +32,7 @@ const describeMilestone = (progress, rules) => {
 
 const describeAchievement = (progress, rules) => ({
   solvedCount: progress.solved.length,
-  title: describeTitle(progress.solved.length, rules),
+  title: describeTitle(progress.solved.length, rules, progress.gameType),
   milestone: describeMilestone(progress, rules)
 })
 

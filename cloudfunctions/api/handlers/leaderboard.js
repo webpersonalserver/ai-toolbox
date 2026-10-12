@@ -2,16 +2,16 @@ const { db, _ } = require('../lib/cloud')
 const { loadRules } = require('../lib/rules')
 const { describeTitle } = require('../lib/achievement')
 const { getProgress } = require('../lib/progress')
-const { GAME_TYPE } = require('./idiom')
+const { parseGameType } = require('../lib/games')
 
 const LEADERBOARD_CACHE_TTL_MS = 60 * 1000
 
-let cachedTopEntries = null
+const cachedTopEntriesByGame = {}
 
-const loadTopProgress = async (size) => {
+const loadTopProgress = async (gameType, size) => {
   const { data } = await db
     .collection('progress')
-    .where({ gameType: GAME_TYPE, solvedCount: _.gt(0) })
+    .where({ gameType, solvedCount: _.gt(0) })
     .orderBy('solvedCount', 'desc')
     .orderBy('lastSolvedAt', 'asc')
     .limit(size)
@@ -25,8 +25,8 @@ const loadProfiles = async (openids) => {
   return Object.fromEntries(data.map((user) => [user._id, user]))
 }
 
-const buildTopEntries = async (size, rules) => {
-  const topProgress = await loadTopProgress(size)
+const buildTopEntries = async (gameType, size, rules) => {
+  const topProgress = await loadTopProgress(gameType, size)
   const profiles = await loadProfiles(topProgress.map((progress) => progress.openid))
   return topProgress.map((progress, index) => {
     const profile = profiles[progress.openid] || {}
@@ -36,29 +36,30 @@ const buildTopEntries = async (size, rules) => {
       nickname: profile.nickname || '',
       avatarUrl: profile.avatarUrl || '',
       solvedCount: progress.solvedCount,
-      titleName: describeTitle(progress.solvedCount, rules).name
+      titleName: describeTitle(progress.solvedCount, rules, gameType).name
     }
   })
 }
 
-const getTopEntries = async (rules) => {
+const getTopEntries = async (gameType, rules) => {
   const { size } = rules.leaderboard
   const now = Date.now()
-  if (cachedTopEntries && cachedTopEntries.size === size && cachedTopEntries.expiresAt > now) {
-    return cachedTopEntries.entries
+  const cached = cachedTopEntriesByGame[gameType]
+  if (cached && cached.size === size && cached.expiresAt > now) {
+    return cached.entries
   }
-  const entries = await buildTopEntries(size, rules)
-  cachedTopEntries = { size, entries, expiresAt: now + LEADERBOARD_CACHE_TTL_MS }
+  const entries = await buildTopEntries(gameType, size, rules)
+  cachedTopEntriesByGame[gameType] = { size, entries, expiresAt: now + LEADERBOARD_CACHE_TTL_MS }
   return entries
 }
 
-const rankOf = async (progress) => {
+const rankOf = async (progress, gameType) => {
   if (!progress.solvedCount) return null
   const progressCollection = db.collection('progress')
   const [{ total: moreSolved }, { total: sameSolvedEarlier }] = await Promise.all([
-    progressCollection.where({ gameType: GAME_TYPE, solvedCount: _.gt(progress.solvedCount) }).count(),
+    progressCollection.where({ gameType, solvedCount: _.gt(progress.solvedCount) }).count(),
     progressCollection
-      .where({ gameType: GAME_TYPE, solvedCount: progress.solvedCount, lastSolvedAt: _.lt(progress.lastSolvedAt) })
+      .where({ gameType, solvedCount: progress.solvedCount, lastSolvedAt: _.lt(progress.lastSolvedAt) })
       .count()
   ])
   return moreSolved + sameSolvedEarlier + 1
@@ -73,11 +74,12 @@ const toPublicEntry = (entry, openid) => ({
   isMe: entry.openid === openid
 })
 
-const list = async ({ openid }) => {
+const list = async ({ openid, payload }) => {
+  const gameType = parseGameType(payload)
   const rules = await loadRules()
   const [topEntries, myProgress, { data: me }] = await Promise.all([
-    getTopEntries(rules),
-    getProgress(openid, GAME_TYPE),
+    getTopEntries(gameType, rules),
+    getProgress(openid, gameType),
     db.collection('users').doc(openid).get()
   ])
   const myTopEntry = topEntries.find((entry) => entry.openid === openid)
@@ -86,11 +88,11 @@ const list = async ({ openid }) => {
     size: rules.leaderboard.size,
     entries: topEntries.map((entry) => toPublicEntry(entry, openid)),
     me: {
-      rank: myTopEntry ? myTopEntry.rank : await rankOf(myProgress),
+      rank: myTopEntry ? myTopEntry.rank : await rankOf(myProgress, gameType),
       nickname: me.nickname,
       avatarUrl: me.avatarUrl,
       solvedCount,
-      titleName: describeTitle(solvedCount, rules).name,
+      titleName: describeTitle(solvedCount, rules, gameType).name,
       inTop: Boolean(myTopEntry)
     }
   }

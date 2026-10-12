@@ -1,10 +1,24 @@
-const { idiom, toastError } = require('../../utils/api')
+const { game, toastError } = require('../../utils/api')
 const { ensureLogin, getSession } = require('../../utils/session')
 const { checkinToday } = require('../../utils/checkin')
 const { describeRewards, describeStaminaRecovery } = require('../../utils/items')
 const { DEFAULT_SHARE } = require('../../utils/share')
 const { showRescueNotices } = require('../../utils/rescue-notice')
 const { describeTitleProgress } = require('../../utils/milestone')
+const { GAME_ORDER, gameConfigOf } = require('../../utils/games')
+
+const toGameCard = (gameType, levelList) => {
+  const config = gameConfigOf(gameType)
+  return {
+    ...config,
+    solvedCount: levelList.solved.length,
+    total: levelList.total,
+    titleName: levelList.achievement.title.name,
+    titleProgressText: describeTitleProgress(levelList.achievement),
+    pendingChests: levelList.achievement.milestone.pendingChests,
+    allCleared: levelList.allCleared
+  }
+}
 
 Page({
   data: {
@@ -13,7 +27,7 @@ Page({
     staminaRecoveryText: '',
     checkedIn: false,
     checkinRewardText: '',
-    idiomProgress: null
+    gameCards: GAME_ORDER.map((gameType) => gameConfigOf(gameType))
   },
 
   onShow() {
@@ -23,21 +37,17 @@ Page({
   async refresh() {
     try {
       await ensureLogin({ force: true })
-      const levelList = await idiom.levelList()
+      const levelLists = await Promise.all(GAME_ORDER.map((gameType) => game.levelList(gameType)))
       this.syncSession()
       this.setData({
         loading: false,
-        idiomProgress: {
-          currentLevel: levelList.currentLevel,
-          solvedCount: levelList.solved.length,
-          total: levelList.total,
-          titleName: levelList.achievement.title.name,
-          titleProgressText: describeTitleProgress(levelList.achievement),
-          pendingChests: levelList.achievement.milestone.pendingChests,
-          allCleared: levelList.allCleared
-        }
+        gameCards: GAME_ORDER.map((gameType, index) => toGameCard(gameType, levelLists[index]))
       })
-      showRescueNotices(levelList.rescueNotices)
+      showRescueNotices(
+        GAME_ORDER.flatMap((gameType, index) =>
+          levelLists[index].rescueNotices.map((notice) => ({ ...notice, gameName: gameConfigOf(gameType).name }))
+        )
+      )
     } catch (error) {
       this.setData({ loading: false })
       toastError(error)
@@ -63,8 +73,8 @@ Page({
     wx.navigateTo({ url: '/pages/leaderboard/leaderboard' })
   },
 
-  openIdiomGame() {
-    wx.navigateTo({ url: '/pages/idiom/levels/levels' })
+  openGame(event) {
+    wx.navigateTo({ url: `/pages/game/levels/levels?gameType=${event.currentTarget.dataset.gameType}` })
   },
 
   onShareAppMessage() {

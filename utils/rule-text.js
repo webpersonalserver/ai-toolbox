@@ -1,4 +1,5 @@
 const { ITEM_TYPES, describeAmount, describeRewards } = require('./items')
+const { hintTextsOf } = require('./games')
 
 const buildRuleLines = (rules) => {
   const lines = [
@@ -25,12 +26,13 @@ const describeStaminaSources = (rules) => {
   return `体力每 ${rules.staminaRecovery.intervalMinutes} 分钟恢复 1 点，${checkin}`
 }
 
-const buildGuideSections = (rules) => {
-  const { staminaCost, maxWrongAttempts, maxHints } = rules.level
+const buildGuideSections = (rules, gameConfig, maxHints) => {
+  const { staminaCost, maxWrongAttempts } = rules.level
+  const { hintEffect, keptAfterFailure } = hintTextsOf(gameConfig)
   return [
     { title: '开始挑战', text: `每次挑战消耗 ${staminaCost} 点体力，有 ${maxWrongAttempts} 次答错机会` },
-    { title: '挑战失败', text: `答错 ${maxWrongAttempts} 次即失败，再来一次需要重新消耗体力，已揭开的字会保留` },
-    { title: '卡住了', text: `用提示揭开一个字（每关最多 ${maxHints} 次），或者免费求助好友，好友答对你直接过关` },
+    { title: '挑战失败', text: `答错 ${maxWrongAttempts} 次即失败，再来一次需要重新消耗体力，${keptAfterFailure}会保留` },
+    { title: '卡住了', text: `用提示${hintEffect}（每关最多 ${maxHints} 次），或者免费求助好友，好友答对你直接过关` },
     { title: '补充体力', text: describeStaminaSources(rules) }
   ]
 }

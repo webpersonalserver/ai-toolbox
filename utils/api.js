@@ -45,29 +45,29 @@ const account = {
   grantAdReward: (itemType) => call('account.grantAdReward', { itemType })
 }
 
-const idiom = {
-  levelList: () => call('idiom.levelList'),
-  summary: () => call('idiom.summary'),
-  claimMilestones: () => call('idiom.claimMilestones'),
-  solvedBook: (page) => call('idiom.solvedBook', { page }),
-  getLevel: (levelNo) => call('idiom.getLevel', { levelNo }),
-  startAttempt: (levelNo) => call('idiom.startAttempt', { levelNo }),
-  submit: (levelNo, answer) => call('idiom.submit', { levelNo, answer }),
-  useHint: (levelNo) => call('idiom.useHint', { levelNo })
+const game = {
+  levelList: (gameType) => call('game.levelList', { gameType }),
+  summary: (gameType) => call('game.summary', { gameType }),
+  claimMilestones: (gameType) => call('game.claimMilestones', { gameType }),
+  solvedBook: (gameType, page) => call('game.solvedBook', { gameType, page }),
+  getLevel: (gameType, levelNo) => call('game.getLevel', { gameType, levelNo }),
+  startAttempt: (gameType, levelNo) => call('game.startAttempt', { gameType, levelNo }),
+  submit: (gameType, levelNo, answer) => call('game.submit', { gameType, levelNo, answer }),
+  useHint: (gameType, levelNo) => call('game.useHint', { gameType, levelNo })
 }
 
 const rescue = {
-  create: (levelNo) => call('rescue.create', { levelNo }),
+  create: (gameType, levelNo) => call('rescue.create', { gameType, levelNo }),
   view: (rescueId) => call('rescue.view', { rescueId }),
   answer: (rescueId, answer) => call('rescue.answer', { rescueId, answer })
 }
 
 const leaderboard = {
-  list: () => call('leaderboard.list')
+  list: (gameType) => call('leaderboard.list', { gameType })
 }
 
 const admin = {
-  stats: () => call('admin.stats')
+  stats: (gameType) => call('admin.stats', { gameType })
 }
 
-module.exports = { ERROR_CODES, ApiError, toastError, account, idiom, rescue, leaderboard, admin }
+module.exports = { ERROR_CODES, ApiError, toastError, account, game, rescue, leaderboard, admin }

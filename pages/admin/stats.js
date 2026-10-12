@@ -1,5 +1,6 @@
 const { admin, toastError } = require('../../utils/api')
 const { ensureLogin } = require('../../utils/session')
+const { GAME_ORDER, gameConfigOf } = require('../../utils/games')
 
 const PERCENT_DIGITS = 2
 const NO_NICKNAME_TEXT = '未设置昵称'
@@ -11,12 +12,21 @@ const formatDate = (dateKey) => `${dateKey.slice(0, 4)}-${dateKey.slice(4, 6)}-$
 Page({
   data: {
     loading: true,
+    gameType: GAME_ORDER[0],
+    gameTabs: GAME_ORDER.map((gameType) => gameConfigOf(gameType)),
     current: null,
     recentCompletions: [],
     dailyHistory: []
   },
 
   onShow() {
+    this.loadStats()
+  },
+
+  switchGame(event) {
+    const { gameType } = event.currentTarget.dataset
+    if (gameType === this.data.gameType) return
+    this.setData({ gameType, loading: true })
     this.loadStats()
   },
 
@@ -32,7 +42,7 @@ Page({
         wx.navigateBack()
         return
       }
-      const result = await admin.stats()
+      const result = await admin.stats(this.data.gameType)
       this.setData({
         loading: false,
         current: { ...result.current, clearRateText: formatRate(result.current.clearRate) },

@@ -1,0 +1,19 @@
+<view class="page book" wx:if="{{!loading}}">
+  <view class="book__summary">已收录 {{total}} {{game.bookUnit}}</view>
+
+  <view wx:if="{{!total}}" class="card book__empty">还没有收录内容，去闯关吧</view>
+
+  <view
+    wx:for="{{entries}}"
+    wx:key="levelNo"
+    class="card book__entry"
+    data-level-no="{{item.levelNo}}"
+    bindtap="toggleEntry"
+  >
+    <view class="book__level">第 {{item.levelNo}} 关<text wx:if="{{item.stage}}"> · {{item.stage}}</text></view>
+    <game-solution game-type="{{gameType}}" solution="{{item}}" compact="{{expandedLevelNo !== item.levelNo}}" />
+  </view>
+
+  <view wx:if="{{loadingMore}}" class="book__footer">加载中…</view>
+  <view wx:elif="{{!hasMore && total && gameType === 'idiom'}}" class="book__footer">点击词条可查看出处</view>
+</view>

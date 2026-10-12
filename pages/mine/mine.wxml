@@ -18,14 +18,17 @@
 
   <view class="card mine__title">
     <view class="mine__title-row">
-      <view>
-        <view class="mine__hints-label">猜成语段位</view>
-        <view class="mine__title-name">{{titleName}}</view>
-      </view>
+      <view class="mine__hints-label">我的段位</view>
       <button class="btn btn--ghost mine__share" open-type="share">晒一晒</button>
     </view>
-    <view class="mine__title-progress">已通过 {{solvedCount}} 关 · {{titleProgressText}}</view>
-    <view class="mine__book" bindtap="openBook">我的成语本 ›</view>
+    <view wx:for="{{gameTitles}}" wx:key="gameType" class="mine__game">
+      <view class="mine__game-main">
+        <view class="mine__game-name">{{item.name}}</view>
+        <view class="mine__title-name">{{item.titleName}}</view>
+        <view class="mine__title-progress">已通过 {{item.solvedCount}} 关 · {{item.titleProgressText}}</view>
+      </view>
+      <view class="mine__book" data-game-type="{{item.gameType}}" bindtap="openBook">{{item.bookName}} ›</view>
+    </view>
   </view>
 
   <view class="card mine__hints">

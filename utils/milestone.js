@@ -1,10 +1,10 @@
-const { idiom, toastError } = require('./api')
+const { game, toastError } = require('./api')
 const { setItems } = require('./session')
 const { describeRewards } = require('./items')
 
-const openMilestoneChests = async () => {
+const openMilestoneChests = async (gameType) => {
   try {
-    const result = await idiom.claimMilestones()
+    const result = await game.claimMilestones(gameType)
     setItems(result.items)
     wx.showModal({
       title: result.chestCount > 1 ? `打开了 ${result.chestCount} 个宝箱` : '宝箱打开啦',

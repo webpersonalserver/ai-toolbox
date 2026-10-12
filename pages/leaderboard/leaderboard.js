@@ -1,6 +1,7 @@
 const { leaderboard, toastError } = require('../../utils/api')
 const { ensureLogin } = require('../../utils/session')
 const { DEFAULT_SHARE } = require('../../utils/share')
+const { GAME_ORDER, gameConfigOf } = require('../../utils/games')
 
 const ANONYMOUS_NAME = '匿名玩家'
 const PODIUM_SIZE = 3
@@ -20,13 +21,26 @@ const withDisplayName = (entry) => {
 Page({
   data: {
     loading: true,
+    gameType: '',
+    gameTabs: GAME_ORDER.map((gameType) => gameConfigOf(gameType)),
     size: 0,
     entries: [],
     me: null,
     podiumSize: PODIUM_SIZE
   },
 
+  onLoad(query) {
+    this.setData({ gameType: gameConfigOf(query.gameType).gameType })
+  },
+
   onShow() {
+    this.loadLeaderboard()
+  },
+
+  switchGame(event) {
+    const { gameType } = event.currentTarget.dataset
+    if (gameType === this.data.gameType) return
+    this.setData({ gameType, loading: true })
     this.loadLeaderboard()
   },
 
@@ -37,7 +51,7 @@ Page({
   async loadLeaderboard() {
     try {
       await ensureLogin()
-      const result = await leaderboard.list()
+      const result = await leaderboard.list(this.data.gameType)
       this.setData({
         loading: false,
         size: result.size,
@@ -53,6 +67,6 @@ Page({
   onShareAppMessage() {
     const { me } = this.data
     if (!me || !me.rank) return DEFAULT_SHARE
-    return { ...DEFAULT_SHARE, title: `我在猜成语排行榜第 ${me.rank} 名，已闯过 ${me.solvedCount} 关，来挑战我！` }
+    return { ...DEFAULT_SHARE, title: `我在${gameConfigOf(this.data.gameType).name}排行榜第 ${me.rank} 名，已闯过 ${me.solvedCount} 关，来挑战我！` }
   }
 })

@@ -1,9 +1,9 @@
 {
   "pages": [
     "pages/index/index",
-    "pages/idiom/levels/levels",
-    "pages/idiom/play/play",
-    "pages/idiom/book/book",
+    "pages/game/levels/levels",
+    "pages/game/play/play",
+    "pages/game/book/book",
     "pages/leaderboard/leaderboard",
     "pages/admin/stats",
     "pages/rescue/rescue",

@@ -3,7 +3,7 @@ const { isItemType } = require('./items')
 
 const RULES_DOC_ID = 'game_rules'
 
-const BASELINE_TITLES = [
+const IDIOM_BASELINE_TITLES = [
   { name: '蒙童', minSolved: 0 },
   { name: '童生', minSolved: 10 },
   { name: '秀才', minSolved: 30 },
@@ -20,6 +20,48 @@ const BASELINE_TITLES = [
   { name: '翰林', minSolved: 900 },
   { name: '大学士', minSolved: 1000 }
 ]
+
+const POETRY_BASELINE_TITLES = [
+  { name: '学童', minSolved: 0 },
+  { name: '诗童', minSolved: 10 },
+  { name: '吟者', minSolved: 30 },
+  { name: '诗友', minSolved: 60 },
+  { name: '诗客', minSolved: 100 },
+  { name: '词人', minSolved: 160 },
+  { name: '诗家', minSolved: 240 },
+  { name: '诗翁', minSolved: 320 },
+  { name: '诗仙', minSolved: 400 },
+  { name: '诗圣', minSolved: 500 }
+]
+
+const XIEHOUYU_BASELINE_TITLES = [
+  { name: '听众', minSolved: 0 },
+  { name: '学徒', minSolved: 5 },
+  { name: '票友', minSolved: 15 },
+  { name: '说书人', minSolved: 30 },
+  { name: '评书家', minSolved: 50 },
+  { name: '名角', minSolved: 75 },
+  { name: '曲艺大师', minSolved: 100 }
+]
+
+const TYPO_BASELINE_TITLES = [
+  { name: '书童', minSolved: 0 },
+  { name: '识字郎', minSolved: 10 },
+  { name: '校对员', minSolved: 30 },
+  { name: '小编辑', minSolved: 60 },
+  { name: '编辑', minSolved: 100 },
+  { name: '主编', minSolved: 160 },
+  { name: '总编', minSolved: 240 },
+  { name: '活字典', minSolved: 350 },
+  { name: '字圣', minSolved: 500 }
+]
+
+const BASELINE_TITLES_BY_GAME = {
+  idiom: IDIOM_BASELINE_TITLES,
+  poetry: POETRY_BASELINE_TITLES,
+  xiehouyu: XIEHOUYU_BASELINE_TITLES,
+  typo: TYPO_BASELINE_TITLES
+}
 
 const DEFAULT_RULES = {
   signupItems: { hint: 10, stamina: 25 },
@@ -54,7 +96,7 @@ const DEFAULT_RULES = {
       { type: 'stamina', amount: 3 }
     ]
   },
-  titles: BASELINE_TITLES,
+  titles: BASELINE_TITLES_BY_GAME,
   maintenance: {
     itemLogRetentionDays: 180,
     dailyRecordRetentionDays: 7
@@ -139,9 +181,9 @@ const replaceInvalidFields = (rules) => {
 
 const isSameTitle = (left, right) => left.name === right.name && left.minSolved === right.minSolved
 
-const isAppendOnlyExtension = (titles) => {
-  if (!Array.isArray(titles) || titles.length < BASELINE_TITLES.length) return false
-  if (!BASELINE_TITLES.every((title, index) => isSameTitle(title, titles[index]))) return false
+const isAppendOnlyExtension = (titles, baseline) => {
+  if (!Array.isArray(titles) || titles.length < baseline.length) return false
+  if (!baseline.every((title, index) => isSameTitle(title, titles[index]))) return false
   const names = new Set(titles.map((title) => title.name))
   const thresholdsIncrease = titles.every(
     (title, index) => index === 0 || (Number.isInteger(title.minSolved) && title.minSolved > titles[index - 1].minSolved)
@@ -149,10 +191,18 @@ const isAppendOnlyExtension = (titles) => {
   return names.size === titles.length && thresholdsIncrease
 }
 
-const resolveTitles = (titles) => {
-  if (isAppendOnlyExtension(titles)) return titles
-  console.error('[rules] titles config rejected: keep the baseline unchanged and only append higher tiers', titles)
-  return BASELINE_TITLES
+const resolveTitles = (titlesByGame) => {
+  const configured = isPlainObject(titlesByGame) ? titlesByGame : {}
+  return Object.fromEntries(
+    Object.entries(BASELINE_TITLES_BY_GAME).map(([gameType, baseline]) => {
+      const titles = configured[gameType]
+      if (isAppendOnlyExtension(titles, baseline)) return [gameType, titles]
+      if (titles !== baseline) {
+        console.error(`[rules] titles.${gameType} rejected: keep the baseline unchanged and only append higher tiers`, titles)
+      }
+      return [gameType, baseline]
+    })
+  )
 }
 
 const loadRules = async () => {
