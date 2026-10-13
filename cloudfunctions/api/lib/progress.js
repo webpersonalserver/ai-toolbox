@@ -72,16 +72,27 @@ const describeAttempt = (attempt, rules) => {
 
 const hintsUsedOnLevel = (progress, levelNo) => (progress.hintsUsed || {})[levelNo] || 0
 
-const markLevelSolved = async (openid, gameType, levelNo) => {
-  await getProgress(openid, gameType)
-  await db.collection('progress').doc(progressDocId(openid, gameType)).update({
+/**
+ * Marks a level solved inside the caller's transaction, writing the solved list, solvedCount and lastSolvedAt
+ * together so the count used by the leaderboard and clear stats can never drift from the list.
+ */
+const solveLevelInTransaction = async (transaction, openid, gameType, levelNo) => {
+  const progressRef = transaction.collection('progress').doc(progressDocId(openid, gameType))
+  const { data: progress } = await progressRef.get()
+  if (progress.solved.includes(levelNo)) return { alreadySolved: true, solvedCount: progress.solved.length }
+  const wrongCount = ((progress.attempts || {})[levelNo] || {}).wrongCount || 0
+  const solvedCount = progress.solved.length + 1
+  await progressRef.update({
     data: {
       solved: _.addToSet(levelNo),
+      solvedCount,
       currentLevel: _.max(levelNo + 1),
-      [`attempts.${levelNo}.active`]: false,
+      [`attempts.${levelNo}`]: _.set({ active: false, wrongCount }),
+      lastSolvedAt: db.serverDate(),
       updatedAt: db.serverDate()
     }
   })
+  return { alreadySolved: false, solvedCountBefore: solvedCount - 1, solvedCount, wrongCount }
 }
 
 const toPuzzle = (level) => ({
@@ -110,7 +121,7 @@ module.exports = {
   describeAttempt,
   isLevelSolved,
   hintsUsedOnLevel,
-  markLevelSolved,
+  solveLevelInTransaction,
   toPuzzle,
   toSolution
 }

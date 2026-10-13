@@ -258,7 +258,7 @@ Page({
       let answersHonors = null
       if (this.correctCount) {
         const answersReport = await trackReport(
-          practice.report({ practiceId: PRACTICE_ID, tier: this.config.tier, solvedDelta: this.correctCount, streak: 0, streakRunId: newRunId() })
+          practice.report({ practiceId: PRACTICE_ID, tier: this.config.tier, solvedDelta: this.correctCount, streak: 0, streakRunId: newRunId(), reportId: newRunId() })
         )
         answersHonors = answersReport.honors
       }

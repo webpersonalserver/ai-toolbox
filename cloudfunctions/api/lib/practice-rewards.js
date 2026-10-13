@@ -15,7 +15,7 @@ const isPracticeId = (practiceId) => PRACTICE_IDS.includes(practiceId)
 
 const milestoneKeyOf = (milestone) => (milestone.type === MILESTONE_TYPES.GRANDMASTER ? milestone.type : `${milestone.type}:${milestone.row}`)
 
-const isPracticeTier = (practiceId, tier) => isPracticeId(practiceId) && PRACTICE_TIERS[practiceId].includes(tier)
+const isPracticeTier = (practiceId, tier) => (PRACTICE_TIERS[practiceId] || []).includes(tier)
 
 const chestsOf = (source, rewards, count) => Array.from({ length: Math.max(count, 0) }, () => ({ source, rewards }))
 

@@ -4,8 +4,8 @@ const {
   saveBestStreak,
   isSoundEnabled,
   setSoundEnabled,
-  saveUnreportedSolved,
-  takeUnreportedSolved
+  saveUnsentReports,
+  takeUnsentReports
 } = require('../../../utils/practice/records')
 const { nextSolvedChest, nextStreakChest, expectsChest, expectsFlower, isDailyCapReached } = require('../../../utils/practice/rewards')
 const { practice } = require('../../../utils/api')
@@ -42,6 +42,8 @@ const milestoneTitleOf = (streak) => {
   if (streak > 100 && streak % MILESTONE_EVERY_AFTER_HUNDRED === 0) return `连对 ${streak} 题！`
   return ''
 }
+
+const newReportId = () => `r${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`
 
 const newRunId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`
 
@@ -98,7 +100,8 @@ Page({
     this.honorPresenter = createHonorPresenter(this)
     this.hasReportedAnswer = false
     this.streakRunId = newRunId()
-    this.unreportedSolved = takeUnreportedSolved(this.config.tier)
+    this.unreportedSolved = 0
+    this.unsentReports = takeUnsentReports(this.config.tier, newReportId)
     this.reportedStreak = 0
     this.reportQueue = Promise.resolve()
     this.rewardState = null
@@ -127,12 +130,12 @@ Page({
   async loadRewardState() {
     try {
       const stats = await practice.stats(PRACTICE_ID)
-      this.rewardState = { rules: stats.rewardRules, flowerRules: stats.flowerRules, totalSolved: stats.totalSolved + this.unreportedSolved, earnedToday: stats.earnedToday }
+      this.rewardState = { rules: stats.rewardRules, flowerRules: stats.flowerRules, totalSolved: stats.totalSolved + this.pendingSolved(), earnedToday: stats.earnedToday }
       const bestStreak = Math.max(this.data.bestStreak, stats.tiers[this.config.tier].bestStreak)
       this.bestAtStart = Math.max(this.bestAtStart, bestStreak)
       this.setData({ bestStreak, chestCount: stats.pendingChestCount })
       this.refreshRewardBar()
-      if (this.unreportedSolved) this.report()
+      if (this.unsentReports.length) this.sendReports()
     } catch (error) {
       console.error('[practice] stats unavailable, rewards hidden for now', error)
     }
@@ -170,48 +173,75 @@ Page({
     return { chest, shouldReport: isFirstAnswer || chest || expectsFlower(flowerRules, moment) }
   },
 
+  // Answers counted here but not yet confirmed by the cloud (still to package, or packaged and unsent).
+  pendingSolved() {
+    return this.unreportedSolved + this.unsentReports.reduce((total, report) => total + report.solvedDelta, 0)
+  },
+
+  // Packages the answers since the last report, then sends every unconfirmed report in order.
   report() {
-    const solvedDelta = this.unreportedSolved
     const streak = this.data.streak
-    this.unreportedSolved = 0
-    if (solvedDelta) this.hasReportedAnswer = true
-    this.reportedStreak = Math.max(this.reportedStreak, streak)
-    const payload = { practiceId: PRACTICE_ID, tier: this.config.tier, solvedDelta, streak, streakRunId: this.streakRunId }
-    this.reportQueue = this.reportQueue
-      .then(() => practice.report(payload))
-      .then((result) => {
-        this.applyReport(result)
-        return true
+    if (this.unreportedSolved || streak > this.reportedStreak) {
+      this.unsentReports.push({
+        practiceId: PRACTICE_ID,
+        tier: this.config.tier,
+        solvedDelta: this.unreportedSolved,
+        streak,
+        streakRunId: this.streakRunId,
+        reportId: newReportId()
       })
-      .catch((error) => {
-        console.error('[practice] report failed, will retry with the next one', error)
-        this.unreportedSolved += solvedDelta
-        if (!this.reportFailureShown) {
-          this.reportFailureShown = true
-          wx.showToast({ title: '网络不太好，答题记录稍后补上', icon: 'none' })
+      if (this.unreportedSolved) this.hasReportedAnswer = true
+      this.unreportedSolved = 0
+      this.reportedStreak = Math.max(this.reportedStreak, streak)
+    }
+    return this.sendReports()
+  },
+
+  // Resolves true when nothing is left unsent. A failed report stays queued and is resent as is next time.
+  sendReports() {
+    this.reportQueue = this.reportQueue.then(async () => {
+      while (this.unsentReports.length) {
+        const next = this.unsentReports[0]
+        let result
+        try {
+          result = await practice.report(next)
+        } catch (error) {
+          console.error('[practice] report failed, will resend the same report later', error)
+          if (!this.reportFailureShown) {
+            this.reportFailureShown = true
+            wx.showToast({ title: '网络不太好，答题记录稍后补上', icon: 'none' })
+          }
+          return false
         }
-        return false
-      })
+        this.unsentReports.shift()
+        try {
+          this.applyReport(result)
+        } catch (error) {
+          console.error('[practice] report saved, but refreshing the page failed', error)
+        }
+      }
+      return true
+    })
     return trackReport(this.reportQueue)
   },
 
   applyReport({ newChests, stats, honors }) {
     this.honorPresenter.present(honors)
     if (this.rewardState) {
-      this.rewardState.totalSolved = stats.totalSolved + this.unreportedSolved
+      this.rewardState.totalSolved = stats.totalSolved + this.pendingSolved()
       this.rewardState.earnedToday = stats.earnedToday
     }
     this.setData({ chestCount: stats.pendingChestCount, chestBump: false }, () => this.setData({ chestBump: newChests.length > 0 }))
     this.refreshRewardBar()
   },
 
+  // Unconfirmed reports are saved first, so closing the app mid-request loses nothing; the next visit resends them.
   reportOnLeave() {
-    if (!this.unreportedSolved && this.data.streak <= this.reportedStreak) return
+    if (!this.unreportedSolved && this.data.streak <= this.reportedStreak && !this.unsentReports.length) return
     const tier = this.config.tier
-    saveUnreportedSolved(tier, this.unreportedSolved)
-    this.report().then((reported) => {
-      if (reported) saveUnreportedSolved(tier, this.unreportedSolved)
-    })
+    const sending = this.report()
+    saveUnsentReports(tier, this.unsentReports)
+    sending.then(() => saveUnsentReports(tier, this.unsentReports))
   },
 
   handleMedalClose() {

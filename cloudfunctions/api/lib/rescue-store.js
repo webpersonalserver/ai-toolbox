@@ -1,5 +1,8 @@
 const { db } = require('./cloud')
 const { hashedId } = require('./hashed-id')
+const { solveLevelInTransaction } = require('./progress')
+const { recordCompletionIfCleared } = require('./completion')
+const { countLevels } = require('./level-count')
 
 const RESCUE_STATUS = {
   OPEN: 'open',
@@ -20,4 +23,15 @@ const closeOpenRescue = async (openid, gameType, levelNo) => {
   }
 }
 
-module.exports = { RESCUE_STATUS, rescueIdFor, closeOpenRescue }
+// A solved rescue must mean the requester's level is solved. Repairs rescues solved before the two writes
+// shared one transaction, where the level could stay locked. Cheap when nothing is missing.
+const ensureRescuedLevelSolved = async (rescue) => {
+  const solved = await db.runTransaction((transaction) =>
+    solveLevelInTransaction(transaction, rescue.requesterOpenid, rescue.gameType, rescue.levelNo)
+  )
+  if (!solved.alreadySolved) {
+    await recordCompletionIfCleared(rescue.requesterOpenid, rescue.gameType, solved.solvedCount, await countLevels(rescue.gameType))
+  }
+}
+
+module.exports = { RESCUE_STATUS, rescueIdFor, closeOpenRescue, ensureRescuedLevelSolved }

@@ -28,6 +28,8 @@
     </view>
     <view class="leaderboard__score">{{item.solvedCount}}<text class="leaderboard__unit"> 关</text></view>
   </view>
+
+  <view wx:if="{{openSeatsText}}" class="card leaderboard__open-seats">{{openSeatsText}}</view>
 </view>
 
 <view wx:if="{{!loading && me && !me.inTop}}" class="leaderboard__mine">

@@ -22,8 +22,8 @@ const issueDoubleOffer = async (openid, rewards, source, rules, { minAmount = 1 
   const total = positive.reduce((sum, reward) => sum + reward.amount, 0)
   if (!rules.ad.enabled || !rules.ad.adUnitId || !positive.length || total < minAmount) return ''
   const token = crypto.randomBytes(TOKEN_BYTES).toString('hex')
-  await ensureTodayRecord(openid)
-  await db.collection('daily').doc(dailyDocId(openid)).update({
+  const dateKey = await ensureTodayRecord(openid)
+  await db.collection('daily').doc(dailyDocId(openid, dateKey)).update({
     data: { [`doubleOffers.${token}`]: _.set({ source, rewards: positive, used: false }), updatedAt: db.serverDate() }
   })
   return token
@@ -32,9 +32,9 @@ const issueDoubleOffer = async (openid, rewards, source, rules, { minAmount = 1 
 const claimDoubleOffer = async (openid, token, rules, now = Date.now()) => {
   if (typeof token !== 'string' || !TOKEN_PATTERN.test(token)) throw new BusinessError(ERROR_CODES.BAD_REQUEST, '翻倍凭证不正确')
   if (!rules.ad.enabled) throw new BusinessError(ERROR_CODES.AD_UNAVAILABLE, '视频奖励暂未开放')
-  await ensureTodayRecord(openid)
+  const dateKey = await ensureTodayRecord(openid)
   const outcome = await db.runTransaction(async (transaction) => {
-    const dailyRef = transaction.collection('daily').doc(dailyDocId(openid))
+    const dailyRef = transaction.collection('daily').doc(dailyDocId(openid, dateKey))
     const { data: todayRecord } = await dailyRef.get()
     const offer = (todayRecord.doubleOffers || {})[token]
     if (!offer) return { failure: { code: ERROR_CODES.AD_UNAVAILABLE, message: '这份奖励已经过期了' } }

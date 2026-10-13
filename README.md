@@ -289,7 +289,7 @@
 ## 测试
 
 ```
-node tests/api.test.js      # 后端：用内存版数据库跑完整业务流程（231 个用例）
+node tests/api.test.js      # 后端：用内存版数据库跑完整业务流程（243 个用例）
 node tests/practice.test.js # 趣味练习：每档 6000 道题检查范围、等式、题型分布
 node tests/multiplication.test.js # 乘法口诀：45 句口诀写法、练功队列、考核出题
 node tests/templates.test.js # 页面模板体检：模板不能为空、绑定的函数要存在、不能用 ||

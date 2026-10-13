@@ -62,6 +62,7 @@
 
 .btn.welfare__action {
   flex-shrink: 0;
+  margin-left: var(--space-md);
   width: auto;
   min-width: 160rpx;
   padding: 0 var(--space-md);
@@ -71,6 +72,8 @@
 }
 
 .welfare__done {
+  flex-shrink: 0;
+  margin-left: var(--space-md);
   color: var(--color-ink-faint);
   font-size: var(--font-sm);
 }

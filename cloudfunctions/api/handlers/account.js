@@ -121,9 +121,9 @@ const checkin = async ({ openid }) => {
   const now = Date.now()
   const rules = await loadRules()
   const deltas = sumRewardsByType(rules.checkinRewards)
-  await ensureTodayRecord(openid)
+  const dateKey = await ensureTodayRecord(openid)
   const outcome = await db.runTransaction(async (transaction) => {
-    const dailyRef = transaction.collection('daily').doc(dailyDocId(openid))
+    const dailyRef = transaction.collection('daily').doc(dailyDocId(openid, dateKey))
     const { data: todayRecord } = await dailyRef.get()
     if (todayRecord.checkedIn) {
       return { failure: { code: ERROR_CODES.ALREADY_CHECKED_IN, message: '今天已经打过卡了' } }
@@ -150,9 +150,9 @@ const grantAdReward = async ({ openid, payload }) => {
   }
   const dailyLimit = rules.ad.dailyLimits[itemType]
   const isUnlimited = dailyLimit === null
-  await ensureTodayRecord(openid)
+  const dateKey = await ensureTodayRecord(openid)
   const outcome = await db.runTransaction(async (transaction) => {
-    const dailyRef = transaction.collection('daily').doc(dailyDocId(openid))
+    const dailyRef = transaction.collection('daily').doc(dailyDocId(openid, dateKey))
     const { data: todayRecord } = await dailyRef.get()
     const rewardedCount = adRewardCountOf(todayRecord, itemType)
     if (!isUnlimited && rewardedCount >= (dailyLimit || 0)) {

@@ -2,33 +2,36 @@ const { db } = require('./cloud')
 const { todayInChina } = require('./date')
 const { ALL_ITEM_TYPES } = require('./items')
 
-const dailyDocId = (openid) => `${openid}_${todayInChina()}`
+const dailyDocId = (openid, dateKey = todayInChina()) => `${openid}_${dateKey}`
 
-const getTodayRecord = async (openid) => {
+const getTodayRecord = async (openid, dateKey = todayInChina()) => {
   try {
-    const { data } = await db.collection('daily').doc(dailyDocId(openid)).get()
+    const { data } = await db.collection('daily').doc(dailyDocId(openid, dateKey)).get()
     return data
   } catch (error) {
     return null
   }
 }
 
-const ensureTodayRecord = async (openid) => {
-  if (await getTodayRecord(openid)) return
+// Resolves the date key it made sure of; read that same key in the transaction, so a request crossing midnight
+// does not ensure one day's record and then look for the next day's.
+const ensureTodayRecord = async (openid, dateKey = todayInChina()) => {
+  if (await getTodayRecord(openid, dateKey)) return dateKey
   try {
     await db.collection('daily').add({
       data: {
-        _id: dailyDocId(openid),
+        _id: dailyDocId(openid, dateKey),
         openid,
-        date: todayInChina(),
+        date: dateKey,
         checkedIn: false,
         checkinRewards: [],
         adRewardCounts: {}
       }
     })
   } catch (duplicateError) {
-    return
+    return dateKey
   }
+  return dateKey
 }
 
 const adRewardCountOf = (todayRecord, itemType) =>

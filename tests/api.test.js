@@ -519,6 +519,52 @@ const startedAttempt = { active: true, wrongCount: 0 }
   r = await call('v1', 'admin.stats', { gameType: 'idiom' })
   assert(r.code === 0 && r.data.adStats.length >= 1 && r.data.adStats[0].views === adsAfter.views.stamina + adsAfter.views.hint + adsAfter.views.double && r.data.adStats[0].viewsPerViewer > 0, 'admin stats include daily video numbers', r.data.adStats)
   S.app_config = {}
+  // review fixes: solves are transactional, rescues can't leave a level stuck, reports are idempotent, bad payloads are 4xx
+  const startLevel = async (openid, levelNo) => call(openid, 'game.startAttempt', { gameType: 'idiom', levelNo })
+  await call('f1', 'account.login'); await call('f2', 'account.login')
+  await startLevel('f1', 1)
+  r = await call('f1', 'game.submit', { gameType: 'idiom', levelNo: 1, answer: levels[0].answer })
+  assert(r.data.correct && S.progress.f1_idiom.solvedCount === 1 && S.progress.f1_idiom.solved.length === 1 && S.progress.f1_idiom.lastSolvedAt, 'solve writes solvedCount and lastSolvedAt with the solved list', S.progress.f1_idiom)
+  S.progress.f1_idiom.solvedCount = 0
+  await call('f1', 'game.overview')
+  assert(S.progress.f1_idiom.solvedCount === 1, 'a drifted solvedCount is repaired when the lobby loads', S.progress.f1_idiom)
+  // requester solved it alone but the rescue stayed open: the helper is told so and the daily help is not used up
+  await startLevel('f1', 2)
+  r = await call('f1', 'rescue.create', { gameType: 'idiom', levelNo: 2 }); const openRescueId = r.data.rescueId
+  S.progress.f1_idiom.solved.push(2); S.progress.f1_idiom.solvedCount = 2; S.progress.f1_idiom.currentLevel = 3
+  r = await call('f2', 'rescue.answer', { rescueId: openRescueId, answer: levels[1].answer })
+  const pairAfter = Object.values(S.rescue_help_pairs).find((pair) => pair.requesterOpenid === 'f1' && pair.helperOpenid === 'f2')
+  assert(r.code === 40008 && r.message.includes('自己解开') && S.rescues[openRescueId].status === 'closedByRequester' && (!pairAfter || pairAfter.count === 0), 'answering a rescue the requester already solved closes it without using the helper quota', { r, pairAfter })
+  // a helper solves: the requester's level is solved in the same transaction
+  await startLevel('f1', 3)
+  r = await call('f1', 'rescue.create', { gameType: 'idiom', levelNo: 3 }); const helpRescueId = r.data.rescueId
+  r = await call('f2', 'rescue.answer', { rescueId: helpRescueId, answer: levels[2].answer })
+  assert(r.data.correct && S.progress.f1_idiom.solved.includes(3) && S.progress.f1_idiom.solvedCount === 3, 'helper solve marks the level and count together', S.progress.f1_idiom)
+  // repair: a rescue marked solved while the level stayed locked (written by the old code) heals on the next lobby load
+  await startLevel('f1', 4)
+  r = await call('f1', 'rescue.create', { gameType: 'idiom', levelNo: 4 }); const stuckRescueId = r.data.rescueId
+  Object.assign(S.rescues[stuckRescueId], { status: 'solved', helperOpenid: 'f2', helperName: '好友', noticeSeen: false })
+  r = await call('f1', 'game.overview')
+  assert(r.data.rescueNotices.some((notice) => notice.levelNo === 4) && S.progress.f1_idiom.solved.includes(4) && S.progress.f1_idiom.solvedCount === 4, 'a stuck solved rescue repairs the level when its notice is shown', S.progress.f1_idiom)
+  await startLevel('f1', 5)
+  r = await call('f1', 'rescue.create', { gameType: 'idiom', levelNo: 5 }); const stuck2 = r.data.rescueId
+  Object.assign(S.rescues[stuck2], { status: 'solved', noticeSeen: true })
+  r = await call('f1', 'rescue.create', { gameType: 'idiom', levelNo: 5 })
+  assert(r.code === 40004 && S.progress.f1_idiom.solved.includes(5), 'asking again for a stuck level repairs it instead of returning the dead rescue', r)
+  // practice reports carry a reportId: a resend is not counted twice
+  const sendReport = (reportId, solvedDelta) => call('f1', 'practice.report', { practiceId: 'arithmetic', tier: 10, solvedDelta, streak: 0, streakRunId: 'f-run', reportId })
+  r = await sendReport('rep1', 20); const totalAfterFirst = r.data.stats.totalSolved
+  r = await sendReport('rep1', 20)
+  assert(r.code === 0 && r.data.stats.totalSolved === totalAfterFirst && r.data.newChests.length === 0 && r.data.honors === null, 'a resent report is ignored', r.data)
+  r = await sendReport('rep2', 1); assert(r.data.stats.totalSolved === totalAfterFirst + 1, 'a new report still counts', r.data.stats)
+  r = await sendReport('bad id!', 1); assert(r.code === 40000, 'malformed reportId rejected', r)
+  // payload shapes that used to crash with 500
+  r = await main({ action: 'game.getLevel', payload: null }); assert(r.code === 40000, 'null payload is a 400, not a 500', r)
+  sdk.testing.actAs('f1')
+  r = await main({ action: 'practice.report', payload: { practiceId: 'multiplication', tier: 10, solvedDelta: 1, streak: 0, streakRunId: 'x' } }); assert(r.code === 40000, 'practice report for a practice without tiers is a 400', r)
+  // one date key per request
+  const { dailyDocId } = require(path.join(API_ROOT, 'lib', 'daily'))
+  assert(dailyDocId('f1', '20261013') === 'f1_20261013', 'daily records can be addressed by an explicit date key', null)
   // stamina recovery rules, with fixed clocks: one point per 30 minutes, at most 15 per Beijing day
   const { settleStamina } = require(path.join(API_ROOT, 'lib', 'items'))
   const recovery = { enabled: true, intervalMinutes: 30, dailyCap: 15, pendingCap: 1000 }

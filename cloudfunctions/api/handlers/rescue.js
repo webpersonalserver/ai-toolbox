@@ -3,19 +3,19 @@ const { ERROR_CODES, BusinessError, throwIfFailed } = require('../lib/response')
 const { loadRules } = require('../lib/rules')
 const { todayInChina } = require('../lib/date')
 const { hashedId } = require('../lib/hashed-id')
-const { RESCUE_STATUS, rescueIdFor } = require('../lib/rescue-store')
+const { RESCUE_STATUS, rescueIdFor, ensureRescuedLevelSolved } = require('../lib/rescue-store')
 const {
   getProgress,
   getLevel,
   assertLevelPlayable,
   getAttempt,
-  markLevelSolved,
+  solveLevelInTransaction,
   toPuzzle,
   toSolution
 } = require('../lib/progress')
 const { parseGameType } = require('../lib/games')
 const { countLevels } = require('../lib/level-count')
-const { syncProgressAfterSolve } = require('../lib/completion')
+const { recordCompletionIfCleared } = require('../lib/completion')
 
 const EMPTY_PROFILE = { nickname: '', avatarUrl: '' }
 
@@ -90,13 +90,18 @@ const create = async ({ openid, payload }) => {
   const levelNo = Number(payload.levelNo)
   const progress = await getProgress(openid, gameType)
   assertLevelPlayable(progress, levelNo)
+  const rescueId = rescueIdFor(openid, gameType, levelNo)
+  const existing = await findDoc('rescues', rescueId)
+  if (existing && existing.status === RESCUE_STATUS.SOLVED) {
+    await ensureRescuedLevelSolved(existing)
+    throw new BusinessError(ERROR_CODES.LEVEL_ALREADY_SOLVED, '好友已经帮你解开这一关啦，刷新一下看看')
+  }
   const attempt = getAttempt(progress, levelNo)
   if (!attempt.active && attempt.wrongCount === 0) {
     throw new BusinessError(ERROR_CODES.RESCUE_NEEDS_ATTEMPT, '先开始挑战，卡住了再求助好友')
   }
 
-  const rescueId = rescueIdFor(openid, gameType, levelNo)
-  if (await findDoc('rescues', rescueId)) {
+  if (existing) {
     return { rescueId }
   }
   await addDocIgnoringDuplicate('rescues', {
@@ -183,6 +188,12 @@ const answer = async ({ openid, payload }) => {
     if (pair.count >= dailyLimitPerHelper) {
       return { failure: { code: ERROR_CODES.RESCUE_HELPER_DAILY_LIMIT, message: helperLimitMessage(dailyLimitPerHelper) } }
     }
+    // The requester's level is solved in the same transaction, so a rescue can never be "solved" while the level stays locked.
+    const solved = await solveLevelInTransaction(transaction, rescue.requesterOpenid, rescue.gameType, rescue.levelNo)
+    if (solved.alreadySolved) {
+      await rescueRef.update({ data: { status: RESCUE_STATUS.CLOSED_BY_REQUESTER, closedAt: db.serverDate() } })
+      return { requesterSolvedAlready: true }
+    }
     await rescueRef.update({
       data: {
         status: RESCUE_STATUS.SOLVED,
@@ -192,11 +203,13 @@ const answer = async ({ openid, payload }) => {
       }
     })
     await pairRef.update({ data: { count: _.inc(1) } })
-    return {}
+    return { solvedCount: solved.solvedCount }
   })
   throwIfFailed(outcome)
-  await markLevelSolved(rescue.requesterOpenid, rescue.gameType, rescue.levelNo)
-  await syncProgressAfterSolve(rescue.requesterOpenid, rescue.gameType, await countLevels(rescue.gameType))
+  if (outcome.requesterSolvedAlready) {
+    throw new BusinessError(ERROR_CODES.RESCUE_CLOSED, closedRescueMessage({ status: RESCUE_STATUS.CLOSED_BY_REQUESTER }))
+  }
+  await recordCompletionIfCleared(rescue.requesterOpenid, rescue.gameType, outcome.solvedCount, await countLevels(rescue.gameType))
   return { correct: true, solution: toSolution(level) }
 }
 

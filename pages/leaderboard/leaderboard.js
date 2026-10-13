@@ -19,6 +19,12 @@ const withDisplayName = (entry) => {
   }
 }
 
+// While the board has empty places, say so: anyone who has cleared one level is already on it.
+const describeOpenSeats = (size, taken) => {
+  if (!taken || taken >= size) return ''
+  return `榜单刚开张，还有 ${size - taken} 个空位，闯过 1 关就能上榜！`
+}
+
 Page({
   data: {
     loading: true,
@@ -26,6 +32,7 @@ Page({
     gameTabs: GAME_ORDER.map((gameType) => gameConfigOf(gameType)),
     size: 0,
     entries: [],
+    openSeatsText: '',
     me: null,
     podiumSize: PODIUM_SIZE
   },
@@ -56,6 +63,7 @@ Page({
         loading: false,
         size: result.size,
         entries: result.entries.map(withDisplayName),
+        openSeatsText: describeOpenSeats(result.size, result.entries.length),
         me: withDisplayName(result.me)
       })
     } catch (error) {

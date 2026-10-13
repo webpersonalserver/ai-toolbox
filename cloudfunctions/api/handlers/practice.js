@@ -23,6 +23,8 @@ const {
 const MAX_SOLVED_PER_REPORT = 500
 const MAX_REPORTED_STREAK = 100000
 const MAX_RUN_ID_LENGTH = 64
+const REPORT_ID_PATTERN = /^[0-9a-zA-Z_-]{1,64}$/
+const REMEMBERED_REPORT_IDS = 20
 const MILESTONE_PRACTICE_ID = 'multiplication'
 const EXAM_QUESTION_COUNT = 20
 const EXAM_POINTS_PER_QUESTION = 5
@@ -46,8 +48,9 @@ const parsePracticeId = (payload) => {
 
 const parseReport = (payload) => {
   const practiceId = parsePracticeId(payload)
-  const { tier, solvedDelta, streak, streakRunId } = payload
+  const { tier, solvedDelta, streak, streakRunId, reportId = '' } = payload
   const isValid =
+    (reportId === '' || (typeof reportId === 'string' && REPORT_ID_PATTERN.test(reportId))) &&
     isPracticeTier(practiceId, tier) &&
     isIntegerBetween(solvedDelta, 0, MAX_SOLVED_PER_REPORT) &&
     isIntegerBetween(streak, 0, MAX_REPORTED_STREAK) &&
@@ -55,7 +58,7 @@ const parseReport = (payload) => {
     streakRunId.length > 0 &&
     streakRunId.length <= MAX_RUN_ID_LENGTH
   if (!isValid) throw new BusinessError(ERROR_CODES.BAD_REQUEST, '练习数据不正确')
-  return { practiceId, tier, solvedDelta, streak, streakRunId }
+  return { practiceId, tier, solvedDelta, streak, streakRunId, reportId }
 }
 
 const emptyStats = (openid, practiceId) => ({
@@ -133,15 +136,33 @@ const stats = async ({ openid, payload }) => {
 
 const countCrossings = (every, from, to) => Math.floor(to / every) - Math.floor(from / every)
 
+// Honors are a bonus on top of the report: if they fail, the answers are already counted and must not be resent.
+const applyHonorsSafely = async (openid, options, rules) => {
+  try {
+    return await applyHonors(openid, options, rules)
+  } catch (error) {
+    console.error('[practice] honors failed, answers already counted', error)
+    return null
+  }
+}
+
+/**
+ * Counts answered questions. Each report carries a reportId and the cloud remembers the last few, so a report
+ * the client resends (it timed out after the cloud had saved it) is not counted twice.
+ */
 const report = async ({ openid, payload }) => {
-  const { practiceId, tier, solvedDelta, streak, streakRunId } = parseReport(payload)
+  const { practiceId, tier, solvedDelta, streak, streakRunId, reportId } = parseReport(payload)
   const rules = await loadRules()
-  await Promise.all([ensureTodayRecord(openid), ensureStats(openid, practiceId)])
+  const [dateKey] = await Promise.all([ensureTodayRecord(openid), ensureStats(openid, practiceId)])
   const outcome = await db.runTransaction(async (transaction) => {
     const statsRef = transaction.collection('practice_stats').doc(statsDocId(openid, practiceId))
-    const dailyRef = transaction.collection('daily').doc(dailyDocId(openid))
+    const dailyRef = transaction.collection('daily').doc(dailyDocId(openid, dateKey))
     const [{ data: rawStats }, { data: todayRecord }] = await Promise.all([statsRef.get(), dailyRef.get()])
     const storedStats = withDefaults(rawStats, openid, practiceId)
+    const recentReportIds = storedStats.recentReportIds || []
+    if (reportId && recentReportIds.includes(reportId)) {
+      return { duplicate: true, newChests: [], missedByCap: false, stats: toStatsView(storedStats, practiceId, practiceEarnedOf(todayRecord), rules), flowerEvents: [] }
+    }
 
     const tierKey = tierKeyOf(tier)
     const tierStats = storedStats.tiers[tierKey] || { solved: 0, bestStreak: 0 }
@@ -168,6 +189,7 @@ const report = async ({ openid, payload }) => {
         streakRun: _.set(nextStats.streakRun),
         pendingChestCount: nextStats.pendingChestCount,
         pendingRewards: _.set(nextStats.pendingRewards),
+        recentReportIds: _.set(reportId ? [...recentReportIds, reportId].slice(-REMEMBERED_REPORT_IDS) : recentReportIds),
         updatedAt: db.serverDate()
       }
     })
@@ -181,8 +203,8 @@ const report = async ({ openid, payload }) => {
     ].filter((event) => event.count > 0)
     return { newChests: chests, missedByCap, stats: toStatsView(nextStats, practiceId, earnedToday, rules), flowerEvents }
   })
-  const { flowerEvents, ...result } = outcome
-  const honors = await applyHonors(openid, { flowerEvents, practiced: solvedDelta > 0 }, rules)
+  const { flowerEvents, duplicate, ...result } = outcome
+  const honors = duplicate ? null : await applyHonorsSafely(openid, { flowerEvents, practiced: solvedDelta > 0 }, rules)
   return { ...result, honors }
 }
 
@@ -222,7 +244,7 @@ const syncProgress = async ({ openid, payload }) => {
     return { progress: toClientProgress(progress), newChests: chests, pendingChestCount, flowerEvents }
   })
   const { flowerEvents, ...result } = outcome
-  const honors = await applyHonors(openid, { flowerEvents, practiced: payload.practiced === true }, rules)
+  const honors = await applyHonorsSafely(openid, { flowerEvents, practiced: payload.practiced === true }, rules)
   return { ...result, honors }
 }
 
@@ -277,7 +299,7 @@ const reportExam = async ({ openid, payload }) => {
   })
   throwIfFailed(outcome)
   const reason = examFlowerReasonOf(score)
-  const honorsResult = await applyHonors(openid, { flowerEvents: reason ? [{ reason, count: 1 }] : [], practiced: true }, rules)
+  const honorsResult = await applyHonorsSafely(openid, { flowerEvents: reason ? [{ reason, count: 1 }] : [], practiced: true }, rules)
   return { ...outcome, honors: honorsResult }
 }
 

@@ -55,7 +55,9 @@ exports.main = async (event) => {
   if (!OPENID) {
     return fail(ERROR_CODES.BAD_REQUEST, '缺少用户身份')
   }
-  const { action, payload = {} } = event
+  const { action } = event
+  // Handlers read payload fields directly; anything but a plain object (null, array, string) becomes {}.
+  const payload = event.payload !== null && typeof event.payload === 'object' && !Array.isArray(event.payload) ? event.payload : {}
   const handler = ROUTES[action]
   if (!handler) {
     return fail(ERROR_CODES.BAD_REQUEST, `未知操作: ${action}`)

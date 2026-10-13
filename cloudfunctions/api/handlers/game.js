@@ -2,8 +2,8 @@ const { db, _ } = require('../lib/cloud')
 const { ERROR_CODES, BusinessError, throwIfFailed } = require('../lib/response')
 const { loadRulesForGame } = require('../lib/rules')
 const { countLevels, levelStages } = require('../lib/level-count')
-const { RESCUE_STATUS, closeOpenRescue } = require('../lib/rescue-store')
-const { isAllCleared, syncProgressAfterSolve } = require('../lib/completion')
+const { RESCUE_STATUS, closeOpenRescue, ensureRescuedLevelSolved } = require('../lib/rescue-store')
+const { isAllCleared, recordCompletionIfCleared, healProgress } = require('../lib/completion')
 const { ITEM_TYPES, changeItemsInTransaction } = require('../lib/items')
 const { ITEM_LOG_REASONS, writeItemLogs } = require('../lib/item-log')
 const { throwInsufficientItem } = require('../lib/item-next-step')
@@ -33,6 +33,7 @@ const {
   getAttempt,
   describeAttempt,
   isLevelSolved,
+  solveLevelInTransaction,
   hintsUsedOnLevel,
   toPuzzle,
   toSolution
@@ -93,6 +94,7 @@ const takeUnseenRescueNotices = async (openid, gameType) => {
     .limit(RESCUE_NOTICE_LIMIT)
     .get()
   if (data.length) {
+    await Promise.all(data.map(ensureRescuedLevelSolved))
     await rescues
       .where({ _id: _.in(data.map((rescue) => rescue._id)) })
       .update({ data: { noticeSeen: true } })
@@ -256,19 +258,11 @@ const submit = async ({ openid, payload }) => {
       return { failure: { code: ERROR_CODES.ATTEMPT_NOT_ACTIVE, message: '请先开始挑战' } }
     }
     if (isCorrect) {
-      const solvedCountAfter = progress.solved.length + 1
-      await progressRef.update({
-        data: {
-          solved: _.addToSet(levelNo),
-          currentLevel: _.max(levelNo + 1),
-          [`attempts.${levelNo}`]: _.set({ active: false, wrongCount: attempt.wrongCount }),
-          updatedAt: db.serverDate()
-        }
-      })
+      const solved = await solveLevelInTransaction(transaction, openid, gameType, levelNo)
       return {
         attempt: { active: false, wrongCount: attempt.wrongCount },
-        solvedCountBefore: progress.solved.length,
-        solvedCountAfter
+        solvedCountBefore: solved.solvedCountBefore,
+        solvedCountAfter: solved.solvedCount
       }
     }
     const wrongCount = attempt.wrongCount + 1
@@ -284,7 +278,10 @@ const submit = async ({ openid, payload }) => {
   await closeOpenRescue(openid, gameType, levelNo)
   const titleBefore = describeTitle(outcome.solvedCountBefore, rules, gameType)
   const titleAfter = describeTitle(outcome.solvedCountAfter, rules, gameType)
-  const { progress, allCleared } = await syncProgressAfterSolve(openid, gameType, total)
+  const [allCleared, progress] = await Promise.all([
+    recordCompletionIfCleared(openid, gameType, outcome.solvedCountAfter, total),
+    getProgress(openid, gameType)
+  ])
   return {
     correct: true,
     solution: toSolution(level),
@@ -337,6 +334,9 @@ const useHint = async ({ openid, payload }) => {
 
 const summarizeGame = async (openid, gameType, rules) => {
   const [total, progress] = await Promise.all([countLevels(gameType), getProgress(openid, gameType)])
+  if (progress.solvedCount !== progress.solved.length || isAllCleared(progress.solved.length, total)) {
+    await healProgress(openid, gameType, progress, total)
+  }
   return {
     gameType,
     total,

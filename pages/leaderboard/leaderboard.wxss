@@ -13,6 +13,14 @@
   text-align: center;
 }
 
+.leaderboard__open-seats {
+  margin-top: var(--space-md);
+  background: var(--color-gold-soft);
+  color: var(--color-primary-deep);
+  font-weight: 800;
+  text-align: center;
+}
+
 .leaderboard__row {
   display: flex;
   align-items: center;
