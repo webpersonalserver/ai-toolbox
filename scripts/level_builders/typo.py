@@ -157,7 +157,7 @@ def build_candidates(data_dir, char_rarity, is_common_char):
                 problems.append(f"{word}: not enough common homophones of {right} for an {BOARD_SIZE}-char board")
             continue
         board, elimination_order = board_result
-        explanation = idiom_builder.clean_text(item["explanation"], word)
+        explanation = idiom_builder.explanation_of(word)
         fields = {
             "answer": right,
             "clue": wrong_form,

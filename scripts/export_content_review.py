@@ -1,4 +1,4 @@
-"""Write docs/content-review.md: the poetry/xiehouyu content that needs a human proofread.
+"""Write docs/content-review.md: the level content that needs a human proofread (poetry, xiehouyu, typo, idiom wording).
 
 Usage: python3 scripts/export_content_review.py
 """
@@ -72,6 +72,17 @@ def typo_section(levels):
     return lines
 
 
+def idiom_section(explanations):
+    lines = ["## 四、成语释义（自己改写的表述）", "",
+             "为避免使用词典原文，1015 个成语的释义都改写成了自己的表述（`scripts/data/idiom_explanations.json`），",
+             "猜成语和找错字共用。请重点看：意思是否准确、孩子能不能看懂、有没有歧义。",
+             "改动后运行 `python3 scripts/apply_idiom_explanations.py` 写回题库，再重新导入 `idiom.json` 和 `typo.json`。", "",
+             "| 成语 | 释义 |", "|---|---|"]
+    lines += [f"| {idiom} | {text} |" for idiom, text in explanations.items()]
+    lines.append("")
+    return lines
+
+
 def main():
     supplement = json.loads((ROOT / "scripts" / "data" / "poetry_supplement.json").read_text(encoding="utf-8"))
     lines = [
@@ -79,11 +90,14 @@ def main():
         "",
         "> 由 `python3 scripts/export_content_review.py` 生成，改动题库后重新生成。",
         "> 发现问题时修改 `scripts/data/` 下对应的清单或补录文件，再删除 `database/levels/<玩法>.json` 重新生成（**仅限上线前**；上线后只能追加）。",
+        "> 成语释义例外：改 `scripts/data/idiom_explanations.json` 后用 `scripts/apply_idiom_explanations.py` 原地替换，上线后也可以改。",
         "",
     ]
     lines += poetry_section(read_levels("poetry"), supplement)
     lines += xiehouyu_section(read_levels("xiehouyu"))
     lines += typo_section(read_levels("typo"))
+    explanations = json.loads((ROOT / "scripts" / "data" / "idiom_explanations.json").read_text(encoding="utf-8"))
+    lines += idiom_section(explanations)
     OUTPUT.write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(f"wrote {OUTPUT.relative_to(ROOT)}")
 

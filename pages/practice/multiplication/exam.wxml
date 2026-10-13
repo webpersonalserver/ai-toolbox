@@ -1,7 +1,7 @@
 <view wx:if="{{!started}}" class="page exam-intro">
   <view class="exam-intro__card">
     <view class="exam-intro__icon">⚔️</view>
-    <view class="exam-intro__title">华山论剑</view>
+    <view class="exam-intro__title">九九论剑</view>
     <view class="exam-intro__rules">
       <view>· 共 {{questionCount}} 题，九重口诀随机出</view>
       <view>· 只有 {{lives}} 条命，答错一题少一条</view>

@@ -32,7 +32,7 @@
   <view class="kungfu__exam {{exam.passed ? 'kungfu__exam--passed' : ''}}" hover-class="kungfu__row--pressed" bindtap="openExam">
     <view class="kungfu__exam-icon">⚔️</view>
     <view class="kungfu__exam-body">
-      <view class="kungfu__exam-title">闭关考核 · 华山论剑</view>
+      <view class="kungfu__exam-title">闭关考核 · 九九论剑</view>
       <view class="kungfu__exam-rule">{{examRule}}</view>
       <view wx:if="{{exam.passed}}" class="kungfu__exam-pass">🏅 {{exam.passText}}</view>
       <view wx:else class="kungfu__exam-advice">{{exam.adviceText}}</view>

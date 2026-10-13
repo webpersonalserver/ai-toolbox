@@ -22,6 +22,36 @@ def load_text_fixes():
 
 TEXT_FIXES = load_text_fixes()
 
+OWN_EXPLANATIONS_FILE = DATA_DIR / "idiom_explanations.json"
+
+
+def load_own_explanations():
+    return json.loads(OWN_EXPLANATIONS_FILE.read_text(encoding="utf-8")) if OWN_EXPLANATIONS_FILE.exists() else {}
+
+
+OWN_EXPLANATIONS = load_own_explanations()
+
+
+# Modern authors who died less than 50 years ago (2026): quotes from their works are still under copyright,
+# so a derivation citing them is left out. Classical sources and authors in the public domain are kept.
+PROTECTED_AUTHORS = ("毛泽东", "郭沫若", "冰心", "茅盾", "孙犁", "姚雪垠", "叶圣陶", "曹禺", "巴金", "夏衍", "丁玲",
+                     "沈从文", "钱钟书", "周立波", "柳青", "魏巍", "刘绍棠", "沙汀", "艾芜", "马烽", "欧阳山", "曲波",
+                     "杨沫", "知侠", "峻青", "浩然", "陈登科", "王愿坚", "周恩来", "朱德", "邓小平", "秦牧")
+
+
+def derivation_of(raw_derivation, word):
+    text = clean_text(raw_derivation, word)
+    return "" if text.startswith(PROTECTED_AUTHORS) else text
+
+
+def explanation_of(word):
+    """Our own wording of an idiom's meaning. Dictionary explanations may only be read to look up the meaning;
+    their text is never shipped (copyright), so a new idiom needs an entry in idiom_explanations.json first."""
+    text = OWN_EXPLANATIONS.get(word)
+    if not text:
+        sys.exit(f"[idiom] {word} has no explanation in {OWN_EXPLANATIONS_FILE.name}; write one in our own words first")
+    return text
+
 
 def clean_text(text, word=None):
     text = re.sub(r"[“”\"]", "", text or "")
@@ -77,7 +107,7 @@ def build_candidates(data_dir, char_rarity, is_common_char):
             if not item or len(word) != ANSWER_LENGTH or not CJK_ONLY.match(word):
                 missing.append(word)
                 continue
-            explanation = clean_text(item["explanation"], word)
+            explanation = explanation_of(word)
             candidates.append(Candidate(
                 key=word,
                 tier=tier_index,
@@ -89,7 +119,7 @@ def build_candidates(data_dir, char_rarity, is_common_char):
                     "pinyin": item["pinyin"],
                     "clue": overrides.get(word) or mask_answer(explanation, word, is_common_char),
                     "explanation": explanation,
-                    "derivation": clean_text(item["derivation"], word),
+                    "derivation": derivation_of(item["derivation"], word),
                 },
             ))
     if missing:

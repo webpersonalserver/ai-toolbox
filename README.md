@@ -189,11 +189,11 @@
 - 第二个练习「乘法口诀 · 九九神功」（进度正本在云端 `practice_stats` 的 `progress` 字段，本机 `practice.multiplication.progress.v1` 只是缓存）：
   - 宝箱（`game_rules.practice.multiplication`，进福利袋自己领）：每重第一次练成 5 体力、第一次三星 1 提示、第一次神功大成 10 体力 + 3 提示。每项终身只发一次，不受每日上限限制（总量有限）；重复通过考核不发奖
   - 同步（`practice.syncProgress`）：练成、考核通过、打开秘籍总览时，把本机进度发给云端；云端只升不降地合并（练成取「或」、星星和最好成绩取最大、最快用时取最小），存下并返回合并结果，再按合并后的进度发新宝箱。换手机打开总览就能拿回进度；断网时先存在本机，下次同步补上
-  - 九重秘籍：第 n 重是小九九的第 n 行（1×n … n×n，共 45 句），每重一个招式名（入门心法、两仪掌 … 九阳神功）。练成上一重才解锁下一重
+  - 九重秘籍：第 n 重是小九九的第 n 行（1×n … n×n，共 45 句），每重一个招式名（入门心法、两仪掌 … 九九归一）。练成上一重才解锁下一重
   - 研读：每句口诀配算式和 a 行 b 列的圆点图，加一句「心法要诀」记忆窍门；念一句点一下卡片
   - 练功：每句口诀考两次（算结果，再考接口诀或求乘数）；同一题错 2 次揭晓答案，并在 3 题后再考一次；练完按出错次数评 1～3 星
   - 境界：按练成的重数升级（初入江湖 → 初窥门径 → 小有所成 → 融会贯通 → 炉火纯青 → 登峰造极），通过考核为「神功大成」
-  - 闭关考核（华山论剑）：随时可以进入，25 题、3 条命，6～9 的口诀出现概率翻倍，答错不能重答；闯完即神功大成（卷轴 + 印章 + 锣声），记录通过次数和最快用时
+  - 闭关考核（九九论剑）：随时可以进入，25 题、3 条命，6～9 的口诀出现概率翻倍，答错不能重答；闯完即神功大成（卷轴 + 印章 + 锣声），记录通过次数和最快用时
 - 荣誉（纯表扬，不发道具，面向小朋友；云端 `practice_stats` 里 `_id = <openid>_honors` 的一条记录，`lib/honors.js`）：
   - 🌺 小红花（数量在 `game_rules.honors.flowers` 里配置）：加减运算每答对 10 题 +1、一轮连对到 10 题 +1；九九神功每重念完口诀 +1、练成 +1、三星 +1；每天第一次练习 +1
   - 🏅 奖章 17 枚：加减运算 10 枚（含考试 3 枚）、九九神功 5 枚、坚持练习 2 枚（连续 3 / 7 天，按北京时间算）。奖章由云端根据已有统计计算，达标即解锁，不能重复解锁
@@ -289,7 +289,7 @@
 ## 测试
 
 ```
-node tests/api.test.js      # 后端：用内存版数据库跑完整业务流程（157 个用例）
+node tests/api.test.js      # 后端：用内存版数据库跑完整业务流程（231 个用例）
 node tests/practice.test.js # 趣味练习：每档 6000 道题检查范围、等式、题型分布
 node tests/multiplication.test.js # 乘法口诀：45 句口诀写法、练功队列、考核出题
 node tests/templates.test.js # 页面模板体检：模板不能为空、绑定的函数要存在、不能用 ||
@@ -297,7 +297,7 @@ node tests/boundaries.test.js # 迁移边界：云开发专属调用只能出现
 node tests/levels.test.js   # 题库体检（四个玩法）：编号连续、字盘包含答案、题面与答案能还原原句、学段连续
 ```
 
-改云函数或扩关卡之后都要跑这两条。`tests/support/fake-wx-server-sdk.js` 模拟了用到的数据库能力，事务通过"快照 + 回滚"实现，**不能替代真机验证**。
+提交前运行 `node tests/run-all.js`，按顺序跑完上面全部 6 组，遇到失败会停下并列出失败项。`tests/support/fake-wx-server-sdk.js` 模拟了用到的数据库能力，事务通过"快照 + 回滚"实现，**不能替代真机验证**。
 
 ## 题库
 
@@ -313,9 +313,16 @@ node tests/levels.test.js   # 题库体检（四个玩法）：编号连续、�
 - 字盘固定 24 个字 = 答案 + 干扰字（取自同玩法其他关卡的答案用字）。以关卡内容作随机种子，每次生成结果都一样
 - **内容需要人工校对**：运行 `python3 scripts/export_content_review.py` 生成 `docs/content-review.md`
 
-### 数据来源（均为 MIT 许可，可商用）
+### 数据来源与版权
 
-- [chinese-xinhua](https://github.com/pwxcoo/chinese-xinhua)：`idiom.json`（成语）、`xiehouyu.json`（歇后语）、`word.json`（汉字拼音，用于找同音字）
+两个开源项目都是 MIT 许可，但 MIT 只覆盖项目作者自己的整理工作，**不覆盖它们收录的词典原文**。所以：
+
+- **成语释义全部是我们自己写的**（`scripts/data/idiom_explanations.json`，1015 条）。词典原文只用来查含义，不进题库；生成脚本遇到没有自写释义的成语会直接报错。已发布的关卡用 `python3 scripts/apply_idiom_explanations.py` 原地替换（只改释义和题面，关卡编号、答案、字盘不变），改完要把 `idiom.json`、`typo.json` 重新导入云数据库
+- **成语出处**：古籍原句属于公有领域，保留；引用的是去世不满 50 年的现代作者作品的，出处留空（`level_builders/idiom.py` 的 `PROTECTED_AUTHORS`）
+- **诗词**：只用了唐宋诗词原句、标题和作者，属于公有领域，没有用现代注释或赏析
+- **歇后语**：民间俗语，只用了「谜面——谜底」和谐音标注
+
+- [chinese-xinhua](https://github.com/pwxcoo/chinese-xinhua)：`idiom.json`（成语，只用来查含义、拼音和出处）、`xiehouyu.json`（歇后语）、`word.json`（汉字拼音，用于找同音字）
 - 新华成语数据里的录入乱码（「◇」= 被吞掉的「，后」，以及个别 ↑ ◆ ★）在 `scripts/data/idiom_text_fixes.json` 里统一修正
 - [chinese-poetry](https://github.com/chinese-poetry/chinese-poetry)：蒙学版《唐诗三百首》《千家诗》、全唐诗版《唐诗三百首》、《宋词三百首》、《全唐诗》、《全宋词》
 - 原始数据下载到 `.cache/`（已加入 `.gitignore`，不入库），下载方式见 `scripts/build_levels.py` 顶部说明

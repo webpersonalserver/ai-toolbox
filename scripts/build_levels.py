@@ -6,7 +6,7 @@ Usage:
 Games: idiom | poetry | xiehouyu | typo. Output: database/levels/<game>.json.
 poetry needs OpenCC, so run it with .cache/venv/bin/python.
 
-Source data (downloaded into --data-dir, not committed):
+Source data (downloaded into --data-dir, not committed; dictionary text is only used to look meanings up — shipped explanations come from scripts/data/idiom_explanations.json):
     xinhua/idiom.json, xinhua/xiehouyu.json, xinhua/word.json   https://github.com/pwxcoo/chinese-xinhua (MIT)
     poetry/...                                https://github.com/chinese-poetry/chinese-poetry (MIT)
 """
