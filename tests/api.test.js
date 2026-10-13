@@ -73,9 +73,12 @@ const startedAttempt = { active: true, wrongCount: 0 }
   S.users.u1.items.stamina = 0; S.users.u1.staminaAnchorAt = Date.now()
   r = await call('u1', 'game.startAttempt', { gameType: 'idiom', levelNo: 2 }); assert(r.data.next === 'waitRecovery', 'ad off -> wait recovery', r)
   S.users.u1.staminaAnchorAt = Date.now() - 65 * MIN
-  r = await call('u1', 'account.login'); assert(r.data.items.stamina === 2 && r.data.items.nextStaminaAt > Date.now(), 'recovers 2 after 65min', r.data.items)
+  r = await call('u1', 'account.login'); assert(r.data.items.stamina === 0 && r.data.items.staminaPending === 2 && r.data.items.nextStaminaAt > Date.now(), 'recovered stamina waits as pending (2 after 65min)', r.data.items)
   S.users.u1.staminaAnchorAt = Date.now() - 100 * 30 * MIN
-  r = await call('u1', 'account.login'); assert(r.data.items.stamina === 10 && r.data.items.nextStaminaAt === null, 'recovery capped at 10', r.data.items)
+  r = await call('u1', 'account.login'); assert(r.data.items.stamina === 0 && r.data.items.staminaPending === 10 && r.data.items.nextStaminaAt === null, 'pending capped so held + pending <= 10', r.data.items)
+  r = await call('u1', 'game.startAttempt', { gameType: 'idiom', levelNo: 2 }); assert(r.code === 40001 && r.data.next === 'claimRecovery' && r.data.pendingStamina === 10, 'no stamina but pending -> suggest claiming', r)
+  r = await call('u1', 'account.claimRecoveredStamina'); assert(r.code === 0 && r.data.claimed === 10 && r.data.items.stamina === 10 && r.data.items.staminaPending === 0, 'claim moves pending into stamina', r.data)
+  r = await call('u1', 'account.claimRecoveredStamina'); assert(r.code === 40016, 'nothing left to claim', r)
   r = await call('u1', 'game.startAttempt', { gameType: 'idiom', levelNo: 2 }); assert(r.data.items.stamina === 9 && r.data.items.nextStaminaAt > Date.now() + 29 * MIN, 'spend from cap restarts timer', r.data.items)
   S.app_config = { game_rules: { _id: 'game_rules', ad: { enabled: true, adUnitId: 'adunit-test', dailyLimits: { stamina: 1 } }, staminaRecovery: { enabled: false }, level: { staminaCost: 2 } } }
   S.users.u1.items.stamina = 0
@@ -129,12 +132,12 @@ const startedAttempt = { active: true, wrongCount: 0 }
   await call('u5', 'game.startAttempt', { gameType: 'idiom', levelNo: 10 })
   r = await call('u5', 'game.submit', { gameType: 'idiom', levelNo: 10, answer: levels[9].answer }); assert(r.data.correct && r.data.titleUpgrade === '童生' && r.data.achievement.milestone.pendingChests === 1, 'solve 10th -> title upgrade + chest', r)
   const before = { ...S.users.u5.items }
-  r = await call('u5', 'game.claimMilestones', { gameType: 'idiom' }); assert(r.code === 0 && r.data.chestCount === 1 && r.data.items.hint === before.hint + 2 && r.data.items.stamina === before.stamina + 3, 'claim chest', r)
+  r = await call('u5', 'game.claimMilestones', { gameType: 'idiom' }); assert(r.code === 0 && r.data.chestCount === 1 && r.data.items.hint === before.hint + 2 && r.data.items.stamina === before.stamina + 10 && r.data.chests[0].chestNo === 1, 'first chest: 10 stamina + 2 hints', r.data)
   r = await call('u5', 'game.claimMilestones', { gameType: 'idiom' }); assert(r.code === 40012, 'chest claimed once', r)
   S.progress['u5_idiom'].solved = Array.from({ length: 29 }, (_, i) => i + 1)
   r = await call('u5', 'game.levelList', { gameType: 'idiom' }); assert(r.data.achievement.milestone.pendingChests === 1 && r.data.achievement.milestone.levelsToNextChest === 1, 'pending after more solves', r.data.achievement)
   S.progress['u5_idiom'].solved.push(30)
-  r = await call('u5', 'game.claimMilestones', { gameType: 'idiom' }); assert(r.data.chestCount === 2 && r.data.rewards.find((x) => x.type === 'hint').amount === 4, 'claim multiple chests at once', r)
+  r = await call('u5', 'game.claimMilestones', { gameType: 'idiom' }); assert(r.data.chestCount === 2 && r.data.rewards.find((x) => x.type === 'hint').amount === 4 && r.data.rewards.find((x) => x.type === 'stamina').amount === 26, 'chests 2 and 3 summed (12 + 14 stamina)', r.data)
   r = await call('u5', 'game.solvedBook', { gameType: 'idiom', page: 1 }); assert(r.data.total === 30 && r.data.entries.length === 20 && r.data.entries[0].levelNo === 1 && r.data.entries[0].answer === levels[0].answer && r.data.hasMore, 'book page 1', r.data.total)
   r = await call('u5', 'game.solvedBook', { gameType: 'idiom', page: 2 }); assert(r.data.entries.length === 10 && !r.data.hasMore, 'book page 2', r.data.entries.length)
   const baseline = DEFAULT_RULES.titles.idiom
@@ -336,6 +339,80 @@ const startedAttempt = { active: true, wrongCount: 0 }
   r = await call('legacy', 'account.login'); assert(r.data.profile.nickname && S.users.legacy.nickname === r.data.profile.nickname && r.data.profile.customized === false, 'legacy empty nickname backfilled', r.data.profile)
   r = await call('n1', 'account.updateProfile', { nickname: '真名字', avatarUrl: '' }); assert(r.code === 0 && r.data.customized === true, 'saving profile marks it customized', r.data)
   r = await call('n1', 'account.login'); assert(r.data.profile.customized === true && r.data.profile.nickname === '真名字', 'customized flag persists', r.data.profile)
+  // tiered chests: big chest every 5th, configurable rules
+  S.app_config = {}
+  await call('k1', 'account.login'); await call('k1', 'game.summary', { gameType: 'idiom' })
+  S.progress['k1_idiom'].solved = Array.from({ length: 30 }, (_, i) => i + 1)
+  S.progress['k1_idiom'].milestoneClaimedSolvedCount = 40
+  r = await call('k1', 'game.summary', { gameType: 'idiom' })
+  assert(r.data.achievement.milestone.nextChestNo === 5 && r.data.achievement.milestone.nextChestIsBig && r.data.achievement.milestone.nextChestRewards[0].amount === 36, 'next chest preview shows the big chest', r.data.achievement.milestone)
+  S.progress['k1_idiom'].solved = Array.from({ length: 50 }, (_, i) => i + 1)
+  r = await call('k1', 'game.claimMilestones', { gameType: 'idiom' })
+  assert(r.data.chests.length === 1 && r.data.chests[0].isBig && r.data.rewards.find((x) => x.type === 'stamina').amount === 36 && r.data.rewards.find((x) => x.type === 'hint').amount === 6, 'fifth chest is doubled', r.data)
+  S.app_config = { game_rules: { _id: 'game_rules', milestone: { rewardRules: { stamina: { base: 20, step: '2' } }, bigChest: { multiplier: 3 } } } }
+  S.progress['k1_idiom'].solved = Array.from({ length: 60 }, (_, i) => i + 1)
+  r = await call('k1', 'game.claimMilestones', { gameType: 'idiom' })
+  assert(r.data.chests[0].chestNo === 6 && r.data.rewards.find((x) => x.type === 'stamina').amount === 30, 'override base 20 + default step 2 (string step rejected), capped at 30', r.data)
+  S.app_config = {}
+  // practice rewards: earned as chests in the welfare bag, claimed by the user; daily caps apply when earning
+  await call('p1', 'account.login')
+  const report = (payload) => call('p1', 'practice.report', { practiceId: 'arithmetic', tier: 10, solvedDelta: 0, streak: 0, streakRunId: 'run-a', ...payload })
+  const pendingAmount = (stats, type) => (stats.pendingRewards.find((reward) => reward.type === type) || {}).amount || 0
+  r = await call('p1', 'practice.stats', { practiceId: 'arithmetic' })
+  assert(r.code === 0 && r.data.totalSolved === 0 && r.data.tiers[100].solved === 0 && r.data.pendingChestCount === 0 && r.data.rewardRules.dailyCaps.stamina === 15, 'practice stats start empty with rules', r.data)
+  r = await call('p1', 'practice.stats', { practiceId: 'chess' }); assert(r.code === 40000, 'unknown practice rejected', r)
+  r = await report({ tier: 30 }); assert(r.code === 40000, 'unknown tier rejected', r)
+  r = await report({ solvedDelta: -1 }); assert(r.code === 40000, 'negative solved rejected', r)
+  r = await report({ solvedDelta: 501 }); assert(r.code === 40000, 'oversized report rejected', r)
+  r = await call('p1', 'practice.claimChests', { practiceId: 'arithmetic' }); assert(r.code === 40016, 'nothing to claim before earning', r)
+  const staminaBeforePractice = S.users.p1.items.stamina
+  r = await report({ solvedDelta: 19, streak: 9 })
+  assert(r.code === 0 && r.data.newChests.length === 0 && r.data.stats.tiers[10].solved === 19 && r.data.stats.tiers[10].bestStreak === 9, '19 solved, streak 9: no chest yet', r.data)
+  r = await report({ solvedDelta: 1, streak: 10 })
+  assert(r.data.newChests.length === 2 && r.data.newChests.some((chest) => chest.source === 'solved') && r.data.newChests.some((chest) => chest.source === 'streak') && r.data.stats.pendingChestCount === 2 && pendingAmount(r.data.stats, 'stamina') === 4, '20th solved and streak 10 each earn a chest', r.data)
+  assert(S.users.p1.items.stamina === staminaBeforePractice, 'chests are not auto-claimed', S.users.p1.items)
+  r = await report({ solvedDelta: 0, streak: 10 }); assert(r.data.newChests.length === 0, 'same streak threshold not paid twice in one run', r.data)
+  r = await report({ solvedDelta: 0, streak: 10, streakRunId: 'run-b' }); assert(r.data.newChests.length === 1 && r.data.newChests[0].rewards[0].amount === 2, 'new run can earn streak 10 again', r.data)
+  r = await report({ tier: 100, solvedDelta: 3, streak: 3, streakRunId: 'run-c' })
+  assert(r.data.stats.tiers[100].solved === 3 && r.data.stats.tiers[10].solved === 20 && r.data.stats.totalSolved === 23, 'solved counted per tier and in total', r.data.stats)
+  r = await call('p1', 'game.overview')
+  assert(r.data.practices.length === 2 && r.data.practices[0].pendingChestCount === 3 && r.data.practices[1].pendingChestCount === 0, 'overview lists pending practice chests for the welfare bag', r.data.practices)
+  r = await report({ solvedDelta: 0, streak: 150, streakRunId: 'run-d' })
+  assert(r.data.missedByCap && r.data.stats.earnedToday.stamina === 15 && r.data.stats.earnedToday.hint === 3 && pendingAmount(r.data.stats, 'stamina') === 15 && pendingAmount(r.data.stats, 'hint') === 3, 'streak 150 earns up to the daily caps', r.data.stats)
+  const chestsAtCap = r.data.stats.pendingChestCount
+  r = await report({ solvedDelta: 100, streak: 160, streakRunId: 'run-d' })
+  assert(r.data.newChests.length === 0 && r.data.missedByCap && r.data.stats.totalSolved === 123 && r.data.stats.pendingChestCount === chestsAtCap, 'after caps: stats still grow, no new chests', r.data)
+  const hintBeforeClaim = S.users.p1.items.hint
+  r = await call('p1', 'practice.claimChests', { practiceId: 'arithmetic' })
+  assert(r.code === 0 && r.data.chestCount === chestsAtCap && r.data.items.stamina === staminaBeforePractice + 15 && r.data.items.hint === hintBeforeClaim + 3, 'claim opens all practice chests at once', r.data)
+  r = await call('p1', 'practice.claimChests', { practiceId: 'arithmetic' }); assert(r.code === 40016, 'chests claim only once', r)
+  assert(Object.values(S.item_logs).some((log) => log.openid === 'p1' && log.reason === 'practice' && log.practiceId === 'arithmetic'), 'practice rewards logged', null)
+  // multiplication: progress lives in the cloud (forward-only merge); each achievement pays one chest, ever
+  const emptyExam = { passed: false, passCount: 0, attempts: 0, bestCorrect: 0, fastestSeconds: 0, passedAt: 0 }
+  const syncKungfu = (openid, progress) => call(openid, 'practice.syncProgress', { practiceId: 'multiplication', progress })
+  r = await syncKungfu('p1', { rows: { 10: { studied: true, mastered: true, stars: 3 } }, exam: emptyExam }); assert(r.code === 40000, 'row out of range rejected', r)
+  r = await syncKungfu('p1', { rows: { 1: { studied: true, mastered: true, stars: 4 } }, exam: emptyExam }); assert(r.code === 40000, 'stars above 3 rejected', r)
+  r = await syncKungfu('p1', { rows: {}, exam: { ...emptyExam, passedAt: Date.now() + 7 * 24 * 60 * MIN } }); assert(r.code === 40000, 'future pass time rejected', r)
+  r = await call('p1', 'practice.syncProgress', { practiceId: 'arithmetic', progress: { rows: {}, exam: emptyExam } }); assert(r.code === 40000, 'progress sync only for multiplication', r)
+  r = await syncKungfu('p1', { rows: {}, exam: emptyExam })
+  assert(r.code === 0 && r.data.newChests.length === 0 && r.data.progress.rows[5].mastered === false, 'empty progress syncs with no chests', r.data)
+  r = await syncKungfu('p1', { rows: { 1: { studied: true, mastered: true, stars: 3 }, 2: { studied: true, mastered: false, stars: 0 } }, exam: { ...emptyExam, attempts: 1 } })
+  assert(r.data.newChests.length === 2 && r.data.pendingChestCount === 2, 'first mastery + first 3 stars earn two chests', r.data)
+  const passedAt = Date.now() - 60 * MIN
+  r = await syncKungfu('p1', { rows: { 1: { studied: true, mastered: true, stars: 1 }, 2: { studied: true, mastered: true, stars: 2 } }, exam: { passed: true, passCount: 1, attempts: 2, bestCorrect: 25, fastestSeconds: 200, passedAt } })
+  assert(r.data.newChests.length === 2 && r.data.newChests.some((chest) => chest.source === 'grandmaster') && r.data.pendingChestCount === 4, 'only new achievements pay (row 2 mastered, grandmaster), even past the daily cap', r.data)
+  assert(r.data.progress.rows[1].stars === 3 && r.data.progress.rows[1].mastered && r.data.progress.exam.fastestSeconds === 200, 'merge keeps best stars, never downgrades', r.data.progress)
+  r = await syncKungfu('p1', { rows: {}, exam: { passed: true, passCount: 1, attempts: 1, bestCorrect: 23, fastestSeconds: 150, passedAt: passedAt + 10 * MIN } })
+  assert(r.data.newChests.length === 0 && r.data.progress.rows[2].mastered && r.data.progress.exam.fastestSeconds === 150 && r.data.progress.exam.passedAt === passedAt && r.data.progress.exam.bestCorrect === 25, 'a fresh device gets the cloud progress back; fastest time and first pass merge', r.data.progress.exam)
+  r = await call('p1', 'game.overview')
+  assert(r.data.practices[1].practiceId === 'multiplication' && r.data.practices[1].pendingChestCount === 4, 'multiplication chests listed for the welfare bag', r.data.practices)
+  const staminaBeforeKungfu = S.users.p1.items.stamina
+  r = await call('p1', 'practice.claimChests', { practiceId: 'multiplication' })
+  assert(r.code === 0 && r.data.chestCount === 4 && r.data.items.stamina === staminaBeforeKungfu + 16, 'claim multiplication chests: 3 + 3 + 10 stamina', r.data)
+  S.app_config = { game_rules: { _id: 'game_rules', practice: { solvedRewards: [{ every: 0, rewards: [] }], dailyCaps: { stamina: 1 } } } }
+  r = await call('p1', 'practice.stats', { practiceId: 'arithmetic' })
+  assert(r.data.rewardRules.solvedRewards[0].every === 20 && r.data.rewardRules.dailyCaps.stamina === 1, 'invalid practice override falls back, valid cap applies', r.data.rewardRules)
+  S.app_config = {}
   console.log('logs:', Object.values(S.item_logs).filter((l) => l.openid === 'u1').map((l) => `${l.reason}:${l.itemType}${l.delta > 0 ? '+' : ''}${l.delta}`).join(' '))
   console.log(`\n${passed} passed, ${failed} failed`)
   process.exitCode = failed ? 1 : 0

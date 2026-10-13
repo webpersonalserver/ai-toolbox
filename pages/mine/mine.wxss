@@ -28,10 +28,6 @@
   border-top: 2rpx solid var(--color-border);
 }
 
-.mine__recovery {
-  color: var(--color-ink-faint);
-  font-size: 22rpx;
-}
 
 .mine__section-label {
   color: var(--color-ink-soft);
@@ -164,10 +160,13 @@
 }
 
 .mine__title-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10rpx;
   margin-top: var(--space-md);
   color: var(--color-ink-faint);
   font-size: var(--font-sm);
-  text-align: center;
 }
 
 .mine__game {
@@ -191,4 +190,24 @@
   color: var(--game-color-deep);
   font-size: var(--font-sm);
   font-weight: 600;
+}
+
+.mine__cell-side {
+  display: flex;
+  align-items: center;
+}
+
+.mine__badge {
+  min-width: 36rpx;
+  height: 36rpx;
+  margin-right: var(--space-sm);
+  padding: 0 10rpx;
+  border-radius: 999rpx;
+  background: var(--color-primary);
+  color: var(--color-on-accent);
+  font-size: 22rpx;
+  font-weight: 800;
+  line-height: 36rpx;
+  text-align: center;
+  box-sizing: border-box;
 }

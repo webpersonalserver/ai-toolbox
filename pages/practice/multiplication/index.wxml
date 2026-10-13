@@ -1,0 +1,42 @@
+<view class="page kungfu">
+  <view class="kungfu__hero">
+    <view class="kungfu__hero-label">当前境界</view>
+    <view class="kungfu__realm">{{realm}}</view>
+    <view class="kungfu__hero-progress">已练成 {{masteredCount}} / {{rowCount}} 重</view>
+  </view>
+
+  <view wx:if="{{pendingChestCount}}" class="kungfu__chests" hover-class="kungfu__row--pressed" bindtap="openWelfare">
+    🎁 有 {{pendingChestCount}} 个练功宝箱待打开，去福利袋 ›
+  </view>
+  <view wx:else class="kungfu__reward-rule">每练成一重得一个宝箱，三星再得一个，神功大成得大宝箱</view>
+
+  <view class="kungfu__grid">
+    <view
+      wx:for="{{rows}}"
+      wx:key="row"
+      class="kungfu__row {{item.mastered ? 'kungfu__row--mastered' : ''}} {{item.unlocked ? '' : 'kungfu__row--locked'}}"
+      hover-class="kungfu__row--pressed"
+      data-row="{{item.row}}"
+      data-unlocked="{{item.unlocked}}"
+      bindtap="openRow"
+    >
+      <view class="kungfu__ordinal">{{item.ordinal}}</view>
+      <view class="kungfu__technique">{{item.name}}</view>
+      <view wx:if="{{item.unlocked}}" class="kungfu__stars">
+        <text wx:for="{{starSlots}}" wx:for-item="slot" wx:key="*this" class="{{slot <= item.stars ? 'kungfu__star--earned' : 'kungfu__star'}}">★</text>
+      </view>
+      <view wx:else class="kungfu__lock">🔒</view>
+    </view>
+  </view>
+
+  <view class="kungfu__exam {{exam.passed ? 'kungfu__exam--passed' : ''}}" hover-class="kungfu__row--pressed" bindtap="openExam">
+    <view class="kungfu__exam-icon">⚔️</view>
+    <view class="kungfu__exam-body">
+      <view class="kungfu__exam-title">闭关考核 · 华山论剑</view>
+      <view class="kungfu__exam-rule">{{examRule}}</view>
+      <view wx:if="{{exam.passed}}" class="kungfu__exam-pass">🏅 {{exam.passText}}</view>
+      <view wx:else class="kungfu__exam-advice">{{exam.adviceText}}</view>
+    </view>
+    <view class="kungfu__exam-arrow">›</view>
+  </view>
+</view>

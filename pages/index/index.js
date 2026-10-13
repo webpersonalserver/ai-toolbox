@@ -1,7 +1,7 @@
 const { game, toastError } = require('../../utils/api')
 const { getSession, setSession } = require('../../utils/session')
 const { checkinToday } = require('../../utils/checkin')
-const { describeRewards, describeStaminaRecovery } = require('../../utils/items')
+const { describeRewards } = require('../../utils/items')
 const { DEFAULT_SHARE } = require('../../utils/share')
 const { showRescueNotices } = require('../../utils/rescue-notice')
 const { describeTitleProgress } = require('../../utils/milestone')
@@ -23,7 +23,6 @@ Page({
   data: {
     loading: true,
     items: { hint: 0, stamina: 0 },
-    staminaRecoveryText: '',
     checkedIn: false,
     checkinRewardText: '',
     gameCards: GAME_ORDER.map((gameType) => gameConfigOf(gameType)),
@@ -59,7 +58,6 @@ Page({
     if (!session) return
     this.setData({
       items: session.items,
-      staminaRecoveryText: describeStaminaRecovery(session.items),
       checkedIn: session.today.checkedIn,
       checkinRewardText: describeRewards(session.rules.checkinRewards)
     })

@@ -7,6 +7,14 @@
     "pages/leaderboard/leaderboard",
     "pages/admin/stats",
     "pages/rescue/rescue",
+    "pages/welfare/welfare",
+    "pages/practice/index",
+    "pages/practice/arithmetic/tiers",
+    "pages/practice/arithmetic/play",
+    "pages/practice/multiplication/index",
+    "pages/practice/multiplication/study",
+    "pages/practice/multiplication/train",
+    "pages/practice/multiplication/exam",
     "pages/mine/mine"
   ],
   "window": {
@@ -27,6 +35,12 @@
         "text": "大厅",
         "iconPath": "assets/tabbar/hall-normal.png",
         "selectedIconPath": "assets/tabbar/hall-active.png"
+      },
+      {
+        "pagePath": "pages/practice/index",
+        "text": "趣味",
+        "iconPath": "assets/tabbar/practice-normal.png",
+        "selectedIconPath": "assets/tabbar/practice-active.png"
       },
       {
         "pagePath": "pages/leaderboard/leaderboard",

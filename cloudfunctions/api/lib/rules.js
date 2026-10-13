@@ -95,10 +95,33 @@ const DEFAULT_RULES = {
   },
   milestone: {
     everyLevels: 10,
-    rewards: [
-      { type: 'hint', amount: 2 },
-      { type: 'stamina', amount: 3 }
-    ]
+    rewardRules: {
+      stamina: { base: 10, step: 2, everyChests: 1, max: 30 },
+      hint: { base: 2, step: 1, everyChests: 3, max: 6 }
+    },
+    bigChest: { everyChests: 5, multiplier: 2 }
+  },
+  practice: {
+    solvedRewards: [
+      { every: 20, rewards: [{ type: 'stamina', amount: 2 }] },
+      { every: 100, rewards: [{ type: 'hint', amount: 1 }] }
+    ],
+    streakRewards: {
+      milestones: [
+        { streak: 10, rewards: [{ type: 'stamina', amount: 2 }] },
+        { streak: 20, rewards: [{ type: 'hint', amount: 1 }] },
+        { streak: 30, rewards: [{ type: 'stamina', amount: 3 }] },
+        { streak: 50, rewards: [{ type: 'hint', amount: 2 }] }
+      ],
+      repeatEvery: 50,
+      repeatRewards: [{ type: 'stamina', amount: 3 }]
+    },
+    dailyCaps: { stamina: 15, hint: 3 },
+    multiplication: {
+      rowMastered: [{ type: 'stamina', amount: 3 }],
+      rowPerfect: [{ type: 'hint', amount: 1 }],
+      grandmaster: [{ type: 'stamina', amount: 10 }, { type: 'hint', amount: 3 }]
+    }
   },
   titles: BASELINE_TITLES_BY_GAME,
   maintenance: {
@@ -135,6 +158,18 @@ const isRewardList = (value) =>
   Array.isArray(value) &&
   value.every((reward) => isPlainObject(reward) && isItemType(reward.type) && isPositiveInteger(reward.amount))
 
+const isSolvedRewardRules = (value) =>
+  Array.isArray(value) && value.every((rule) => isPlainObject(rule) && isPositiveInteger(rule.every) && isRewardList(rule.rewards))
+const isStreakMilestones = (value) =>
+  Array.isArray(value) &&
+  value.every(
+    (milestone, index) =>
+      isPlainObject(milestone) &&
+      isPositiveInteger(milestone.streak) &&
+      isRewardList(milestone.rewards) &&
+      (index === 0 || milestone.streak > value[index - 1].streak)
+  )
+
 const RULE_VALIDATORS = {
   'signupItems.hint': isNonNegativeInteger,
   'signupItems.stamina': isNonNegativeInteger,
@@ -154,9 +189,27 @@ const RULE_VALIDATORS = {
   'rescue.dailyLimitPerHelper': isNonNegativeInteger,
   'rescue.maxWrongAnswersPerHelper': isPositiveInteger,
   'milestone.everyLevels': isPositiveInteger,
-  'milestone.rewards': isRewardList,
+  'milestone.rewardRules.stamina.base': isNonNegativeInteger,
+  'milestone.rewardRules.stamina.step': isNonNegativeInteger,
+  'milestone.rewardRules.stamina.everyChests': isPositiveInteger,
+  'milestone.rewardRules.stamina.max': isNonNegativeInteger,
+  'milestone.rewardRules.hint.base': isNonNegativeInteger,
+  'milestone.rewardRules.hint.step': isNonNegativeInteger,
+  'milestone.rewardRules.hint.everyChests': isPositiveInteger,
+  'milestone.rewardRules.hint.max': isNonNegativeInteger,
+  'milestone.bigChest.everyChests': isPositiveInteger,
+  'milestone.bigChest.multiplier': isPositiveInteger,
   'maintenance.itemLogRetentionDays': isPositiveInteger,
   'maintenance.dailyRecordRetentionDays': isPositiveInteger,
+  'practice.solvedRewards': isSolvedRewardRules,
+  'practice.streakRewards.milestones': isStreakMilestones,
+  'practice.streakRewards.repeatEvery': isNonNegativeInteger,
+  'practice.streakRewards.repeatRewards': isRewardList,
+  'practice.dailyCaps.hint': isNonNegativeInteger,
+  'practice.dailyCaps.stamina': isNonNegativeInteger,
+  'practice.multiplication.rowMastered': isRewardList,
+  'practice.multiplication.rowPerfect': isRewardList,
+  'practice.multiplication.grandmaster': isRewardList,
   'admin.openids': isStringList,
   'leaderboard.size': isLeaderboardSize
 }
@@ -277,7 +330,13 @@ const toClientRules = (rules) => ({
   levelByGame: rules.levelByGame,
   staminaRecovery: rules.staminaRecovery,
   rescue: rules.rescue,
-  milestone: rules.milestone
+  milestone: {
+    everyLevels: rules.milestone.everyLevels,
+    bigChest: rules.milestone.bigChest,
+    firstChestRewards: Object.entries(rules.milestone.rewardRules)
+      .map(([type, rule]) => ({ type, amount: Math.min(rule.max, rule.base) }))
+      .filter((reward) => reward.amount > 0)
+  }
 })
 
 module.exports = { loadRules, loadRulesForGame, rulesForGame, sumRewardsByType, toClientRules, DEFAULT_RULES }

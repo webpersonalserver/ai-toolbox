@@ -4,6 +4,7 @@ const { ITEM_TYPES } = require('./items')
 const { ERROR_CODES, BusinessError } = require('./response')
 
 const ITEM_NEXT_STEPS = {
+  CLAIM_RECOVERY: 'claimRecovery',
   CHECKIN: 'checkin',
   AD: 'ad',
   RESCUE: 'rescue',
@@ -16,11 +17,14 @@ const FALLBACK_STEP_BY_ITEM = {
   [ITEM_TYPES.STAMINA]: ITEM_NEXT_STEPS.WAIT_RECOVERY
 }
 
-const resolveNextStep = async (openid, itemType, rules) => {
+const resolveNextStep = async (openid, itemType, rules, items) => {
   const today = describeTodayStatus(await getTodayRecord(openid), rules)
   const checkinReward = sumRewardsByType(rules.checkinRewards)[itemType] || 0
   let next = FALLBACK_STEP_BY_ITEM[itemType]
-  if (!today.checkedIn && checkinReward > 0) {
+  const pendingStamina = itemType === ITEM_TYPES.STAMINA && items ? items.staminaPending : 0
+  if (pendingStamina > 0) {
+    next = ITEM_NEXT_STEPS.CLAIM_RECOVERY
+  } else if (!today.checkedIn && checkinReward > 0) {
     next = ITEM_NEXT_STEPS.CHECKIN
   } else if (today.adRemaining[itemType] > 0) {
     next = ITEM_NEXT_STEPS.AD
@@ -31,12 +35,13 @@ const resolveNextStep = async (openid, itemType, rules) => {
     itemType,
     next,
     checkinReward,
-    adReward: rules.ad.rewards[itemType] || 0
+    adReward: rules.ad.rewards[itemType] || 0,
+    pendingStamina
   }
 }
 
 const throwInsufficientItem = async (openid, itemType, rules, items) => {
-  const nextStep = await resolveNextStep(openid, itemType, rules)
+  const nextStep = await resolveNextStep(openid, itemType, rules, items)
   throw new BusinessError(ERROR_CODES.INSUFFICIENT_ITEM, '道具不足', { ...nextStep, items })
 }
 

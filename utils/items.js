@@ -23,7 +23,5 @@ const describeRewards = (rewards) =>
 
 const minutesUntil = (timestamp) => Math.max(Math.ceil((timestamp - Date.now()) / MINUTE_MS), 1)
 
-const describeStaminaRecovery = (items) =>
-  items && items.nextStaminaAt ? `${minutesUntil(items.nextStaminaAt)} 分钟后 +1` : ''
 
-module.exports = { ITEM_TYPES, ITEM_META, describeAmount, describeRewards, minutesUntil, describeStaminaRecovery }
+module.exports = { ITEM_TYPES, ITEM_META, describeAmount, describeRewards, minutesUntil }

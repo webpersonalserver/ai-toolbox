@@ -1,0 +1,68 @@
+<view class="page drill">
+  <view class="drill__topbar">
+    <view class="drill__streak {{streakBump ? 'drill__streak--bump' : ''}} {{streak >= 5 ? 'drill__streak--hot' : ''}}">
+      <text class="drill__streak-label">连对</text>
+      <text class="drill__streak-value">{{streak}}</text>
+      <text wx:if="{{streak >= hotStreak}}" class="drill__fire">🔥</text>
+    </view>
+    <view class="drill__meta">
+      <view class="drill__best">最佳 {{bestStreak}}</view>
+      <view class="drill__stars {{streakBump ? 'drill__stars--bump' : ''}}">⭐ × {{starCount}}</view>
+    </view>
+    <view class="drill__sound" bindtap="toggleSound">{{soundEnabled ? '声音 开' : '声音 关'}}</view>
+  </view>
+
+  <view wx:if="{{rewardBar}}" class="drill__reward {{rewardBar.capReached ? 'drill__reward--done' : ''}}">
+    <view class="drill__reward-main">
+      <view class="drill__reward-text">{{rewardBar.solvedText}}</view>
+      <view class="drill__reward-track">
+        <view class="drill__reward-fill" style="width: {{rewardBar.progressPercent}}%"></view>
+      </view>
+      <view class="drill__reward-streak">{{rewardBar.streakText}}</view>
+    </view>
+    <view class="drill__chest {{chestBump ? 'drill__chest--bump' : ''}}" bindtap="openWelfare">
+      <text class="drill__chest-icon">🎁</text>
+      <text class="drill__chest-count">{{chestCount}}</text>
+    </view>
+  </view>
+
+  <view wx:if="{{recordBroken}}" class="drill__record">新纪录 · 连对 {{streak}} 题</view>
+
+  <view class="card drill__equation drill__equation--{{inputState}}">
+    <view wx:for="{{tokens}}" wx:key="index" class="drill__token">
+      <view wx:if="{{item.kind === 'blank'}}" class="drill__blank drill__blank--{{inputState}}">
+        <text wx:if="{{input}}">{{input}}</text>
+        <text wx:else class="drill__blank-mark">?</text>
+      </view>
+      <view wx:else class="drill__value {{item.kind === 'symbol' ? 'drill__value--symbol' : ''}}">{{item.text}}</view>
+      <view wx:if="{{item.dots.length}}" class="drill__dots">
+        <view wx:for="{{item.dots}}" wx:for-item="dot" wx:key="*this" class="drill__dot"></view>
+      </view>
+    </view>
+  </view>
+
+  <view class="drill__feedback">{{feedbackLine}}</view>
+
+  <view class="drill__keypad">
+    <view
+      wx:for="{{keypad}}"
+      wx:key="*this"
+      class="drill__key drill__key--{{item}} {{locked ? 'drill__key--locked' : ''}}"
+      hover-class="drill__key--pressed"
+      data-key="{{item}}"
+      bindtap="handleKey"
+    >
+      <text wx:if="{{item === 'delete'}}">⌫</text>
+      <text wx:elif="{{item === 'confirm'}}">确定</text>
+      <text wx:else>{{item}}</text>
+    </view>
+  </view>
+</view>
+
+<practice-cheer
+  visible="{{cheer.visible}}"
+  title="{{cheer.title}}"
+  subtitle="{{cheer.subtitle}}"
+  mascot="{{cheer.mascot}}"
+  big="{{cheer.big}}"
+/>

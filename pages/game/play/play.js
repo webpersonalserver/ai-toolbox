@@ -1,13 +1,15 @@
 const { game, rescue, toastError } = require('../../../utils/api')
 const { ensureLogin, getSession } = require('../../../utils/session')
 const { runWithItem } = require('../../../utils/item-flow')
-const { describeStaminaRecovery } = require('../../../utils/items')
+const { describeRewards } = require('../../../utils/items')
 const { DEFAULT_SHARE, buildRescueShare } = require('../../../utils/share')
-const { openMilestoneChests } = require('../../../utils/milestone')
+const { HIDDEN_REWARD_POPUP, openMilestoneChests } = require('../../../utils/milestone')
 const { buildGuideSections } = require('../../../utils/rule-text')
 const { GUIDE_KEYS, hasSeenGuide, markGuideSeen } = require('../../../utils/onboarding')
 const { gameConfigOf, hintTextsOf, describePoemSource, splitTypoClue } = require('../../../utils/games')
 const { openLeaderboardTab } = require('../../../utils/navigation')
+const { splitClue } = require('../../../utils/clue')
+const { withMinimumDuration } = require('../../../utils/min-duration')
 
 const PLAY_STAGES = {
   LOADING: 'loading',
@@ -19,6 +21,7 @@ const PLAY_STAGES = {
 const SHARE_PURPOSE_RESCUE = 'rescue'
 const AUTO_START_FLAG = '1'
 const CELEBRATION_MS = 1600
+const MIN_CHECKING_MS = 550
 const CONFETTI_PIECES = Array.from({ length: 14 }, (_, index) => index)
 
 const GUIDE_CONFIRM_TEXT = {
@@ -49,20 +52,23 @@ Page({
     eliminated: [],
     clueChars: [],
     clueHint: '',
+    clueSegments: [],
+    clueHintSegments: [],
     hintsUsed: 0,
     maxHints: 0,
     items: { hint: 0, stamina: 0 },
-    staminaRecoveryText: '',
     solution: null,
     nextLevelNo: null,
     titleUpgrade: '',
     allCleared: false,
     milestone: null,
+    nextChestText: '',
     submitting: false,
     busy: false,
     rescueId: '',
     rescueSheetVisible: false,
     celebrating: false,
+    rewardPopup: HIDDEN_REWARD_POPUP,
     confettiPieces: CONFETTI_PIECES,
     guideVisible: false,
     guideSections: [],
@@ -86,7 +92,7 @@ Page({
   syncItems() {
     const session = getSession()
     if (!session) return
-    this.setData({ items: session.items, staminaRecoveryText: describeStaminaRecovery(session.items) })
+    this.setData({ items: session.items })
   },
 
   applyLevelDetail(detail) {
@@ -107,6 +113,8 @@ Page({
       eliminated: puzzle.eliminated || [],
       clueChars: splitTypoClue(puzzle.clue, puzzle.wrongPosition),
       clueHint: puzzle.clueHint || '',
+      clueSegments: splitClue(puzzle.clue),
+      clueHintSegments: splitClue(puzzle.clueHint),
       hintsUsed: detail.hintsUsed,
       maxHints: detail.maxHints,
       solution: detail.solution,
@@ -199,7 +207,11 @@ Page({
     if (this.data.submitting) return
     this.setData({ submitting: true })
     try {
-      const result = await game.submit(this.data.gameType, this.data.levelNo, event.detail.answer)
+      wx.vibrateShort({ type: 'light' })
+      const result = await withMinimumDuration(
+        () => game.submit(this.data.gameType, this.data.levelNo, event.detail.answer),
+        MIN_CHECKING_MS
+      )
       if (result.correct) {
         this.setData({
           stage: PLAY_STAGES.SOLVED,
@@ -207,7 +219,8 @@ Page({
           nextLevelNo: result.nextLevelNo,
           titleUpgrade: result.titleUpgrade || '',
           allCleared: result.allCleared,
-          milestone: result.achievement.milestone
+          milestone: result.achievement.milestone,
+          nextChestText: describeRewards(result.achievement.milestone.nextChestRewards)
         })
         wx.vibrateShort({ type: 'light' })
         this.celebrate()
@@ -260,11 +273,15 @@ Page({
 
   handleOpenChests() {
     return this.withBusy(async () => {
-      const result = await openMilestoneChests(this.data.gameType)
-      if (!result) return
+      const popup = await openMilestoneChests(this.data.gameType)
+      if (!popup) return
       this.syncItems()
-      this.setData({ 'milestone.pendingChests': 0 })
+      this.setData({ 'milestone.pendingChests': 0, rewardPopup: popup })
     })
+  },
+
+  closeRewardPopup() {
+    this.setData({ rewardPopup: HIDDEN_REWARD_POPUP })
   },
 
   noop() {},

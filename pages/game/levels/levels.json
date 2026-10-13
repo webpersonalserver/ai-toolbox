@@ -1,6 +1,7 @@
 {
   "navigationBarTitleText": "解谜达人",
   "usingComponents": {
-    "loading-skeleton": "/components/loading-skeleton/loading-skeleton"
+    "loading-skeleton": "/components/loading-skeleton/loading-skeleton",
+    "reward-popup": "/components/reward-popup/reward-popup"
   }
 }

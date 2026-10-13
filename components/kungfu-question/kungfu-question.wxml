@@ -1,0 +1,49 @@
+<view wx:if="{{question}}" class="kq">
+  <view class="card kq__board kq__board--{{state}}">
+    <block wx:if="{{question.type === 'verse'}}">
+      <view class="kq__verse-label">接口诀</view>
+      <view class="kq__verse">
+        <text class="kq__verse-head">{{question.head}}</text>
+        <view class="kq__blank kq__blank--verse kq__blank--{{state}}">
+          <text wx:if="{{input}}">{{input}}</text>
+          <text wx:else class="kq__blank-mark">？</text>
+        </view>
+      </view>
+    </block>
+    <view wx:else class="kq__equation">
+      <block wx:for="{{tokens}}" wx:key="index">
+        <view wx:if="{{item.kind === 'blank'}}" class="kq__blank kq__blank--{{state}}">
+          <text wx:if="{{input}}">{{input}}</text>
+          <text wx:else class="kq__blank-mark">?</text>
+        </view>
+        <view wx:else class="kq__value kq__value--{{item.kind}}">{{item.text}}</view>
+      </block>
+    </view>
+    <view wx:if="{{state === 'revealed'}}" class="kq__reveal">记住：{{question.fact.verse}}（{{question.fact.small}} × {{question.fact.large}} = {{question.fact.product}}）</view>
+  </view>
+
+  <view wx:if="{{question.type === 'verse'}}" class="kq__choices">
+    <view
+      wx:for="{{question.choices}}"
+      wx:key="*this"
+      class="kq__choice {{pickedChoice === item ? 'kq__choice--' + state : ''}} {{locked ? 'kq__key--locked' : ''}}"
+      hover-class="kq__key--pressed"
+      data-choice="{{item}}"
+      bindtap="pickChoice"
+    >{{item}}</view>
+  </view>
+  <view wx:else class="kq__keypad">
+    <view
+      wx:for="{{keypad}}"
+      wx:key="*this"
+      class="kq__key kq__key--{{item}} {{locked ? 'kq__key--locked' : ''}}"
+      hover-class="kq__key--pressed"
+      data-key="{{item}}"
+      bindtap="handleKey"
+    >
+      <text wx:if="{{item === 'delete'}}">⌫</text>
+      <text wx:elif="{{item === 'confirm'}}">出招</text>
+      <text wx:else>{{item}}</text>
+    </view>
+  </view>
+</view>

@@ -10,7 +10,7 @@
     <view class="mine__items">
       <item-chip item-type="stamina" value="{{items.stamina}}" />
       <item-chip item-type="hint" value="{{items.hint}}" />
-      <text wx:if="{{staminaRecoveryText}}" class="mine__recovery">{{staminaRecoveryText}}</text>
+      <stamina-recovery items="{{items}}" bind:claimed="syncSession" />
     </view>
   </view>
 
@@ -32,10 +32,20 @@
         <view class="mine__book" data-game-type="{{item.gameType}}" bindtap="openBook">{{item.bookName}} ›</view>
       </view>
     </block>
-    <view class="mine__title-toggle" bindtap="toggleTitles">{{titlesExpanded ? '收起 ⌃' : '展开详情 ⌄'}}</view>
+    <view class="mine__title-toggle" bindtap="toggleTitles">
+      <text>{{titlesExpanded ? '收起' : '展开详情'}}</text>
+      <view class="chevron {{titlesExpanded ? 'chevron--up' : ''}}"></view>
+    </view>
   </view>
 
   <view class="card mine__menu">
+    <view class="mine__cell" hover-class="mine__cell--pressed" bindtap="openWelfare">
+      <text>福利袋</text>
+      <view class="mine__cell-side">
+        <text wx:if="{{unclaimedWelfare > 0}}" class="mine__badge">{{unclaimedWelfare}}</text>
+        <text class="mine__cell-arrow">›</text>
+      </view>
+    </view>
     <view class="mine__cell" hover-class="mine__cell--pressed" bindtap="openRules">
       <text>游戏规则</text>
       <text class="mine__cell-arrow">›</text>

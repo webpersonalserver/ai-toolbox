@@ -5,6 +5,7 @@ const { watchRewardedAd } = require('./rewarded-ad')
 const { ITEM_META, describeAmount, minutesUntil } = require('./items')
 
 const ITEM_NEXT_STEPS = {
+  CLAIM_RECOVERY: 'claimRecovery',
   CHECKIN: 'checkin',
   AD: 'ad',
   RESCUE: 'rescue',
@@ -20,6 +21,19 @@ const confirm = (title, content, confirmText) =>
 const notify = (title, content) => wx.showModal({ title, content, showCancel: false, confirmText: '知道了' })
 
 const titleOf = (itemType) => `${ITEM_META[itemType].label}不足`
+
+const claimRecovery = async ({ pendingStamina }) => {
+  const agreed = await confirm('体力不足', `有 ${pendingStamina} 点恢复的体力还没领取，现在领取？`, '领取')
+  if (!agreed) return false
+  try {
+    const result = await account.claimRecoveredStamina()
+    setItems(result.items)
+    return true
+  } catch (error) {
+    toastError(error)
+    return false
+  }
+}
 
 const earnByCheckin = async ({ itemType, checkinReward }) => {
   const agreed = await confirm(titleOf(itemType), `今天还没打卡，打卡可领 ${describeAmount(itemType, checkinReward)}`, '去打卡')
@@ -48,7 +62,7 @@ const earnByAd = async ({ itemType, adReward }) => {
 const explainStaminaRecovery = async () => {
   const { items } = await ensureLogin({ force: true })
   const content = items.nextStaminaAt
-    ? `${minutesUntil(items.nextStaminaAt)} 分钟后恢复 1 点体力，休息一下再来吧`
+    ? `${minutesUntil(items.nextStaminaAt)} 分钟后恢复 1 点体力，恢复的体力可以在顶部领取`
     : '体力会慢慢恢复，休息一下再来吧'
   notify('体力不足', content)
 }
@@ -71,6 +85,9 @@ const runWithItem = async (action) => {
     const step = error.data
     let earned = false
     switch (step.next) {
+      case ITEM_NEXT_STEPS.CLAIM_RECOVERY:
+        earned = await claimRecovery(step)
+        break
       case ITEM_NEXT_STEPS.CHECKIN:
         earned = await earnByCheckin(step)
         break

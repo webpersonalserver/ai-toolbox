@@ -1,0 +1,85 @@
+<loading-skeleton wx:if="{{loading}}" rows="3" />
+<view class="page welfare" wx:else>
+  <view class="welfare__summary">
+    <text wx:if="{{unclaimedCount}}">有 {{unclaimedCount}} 份福利等你领取</text>
+    <text wx:else>福利都领完啦，继续闯关攒宝箱吧</text>
+  </view>
+
+  <view class="card welfare__row">
+    <view class="welfare__icon welfare__icon--checkin">签</view>
+    <view class="welfare__body">
+      <view class="welfare__name">每日打卡</view>
+      <view class="welfare__desc">{{checkinRewardText}}</view>
+    </view>
+    <button
+      wx:if="{{!checkedIn}}"
+      class="btn btn--primary welfare__action"
+      loading="{{busyKey === 'checkin'}}"
+      bindtap="claimCheckin"
+    >领取</button>
+    <view wx:else class="welfare__done">明天再来</view>
+  </view>
+
+  <view class="card welfare__row">
+    <image class="welfare__icon welfare__icon--image" src="/assets/icons/stamina.png" mode="aspectFit" />
+    <view class="welfare__body">
+      <view class="welfare__name">恢复的体力</view>
+      <view class="welfare__desc">
+        <stamina-recovery items="{{items}}" show-claim="{{false}}" />
+      </view>
+    </view>
+    <button
+      wx:if="{{items.staminaPending > 0}}"
+      class="btn btn--primary welfare__action"
+      loading="{{busyKey === 'recovery'}}"
+      bindtap="claimRecovery"
+    >领取</button>
+  </view>
+
+  <view class="welfare__section-title">闯关宝箱</view>
+  <view
+    wx:for="{{chestRows}}"
+    wx:key="gameType"
+    class="card welfare__row game-theme--{{item.gameType}}"
+  >
+    <view class="welfare__icon welfare__icon--game">{{item.icon}}</view>
+    <view class="welfare__body">
+      <view class="welfare__name">{{item.name}}</view>
+      <view wx:if="{{item.pendingChests > 0}}" class="welfare__desc welfare__desc--highlight">{{item.pendingChests}} 个宝箱待打开</view>
+      <view wx:else class="welfare__desc">再通过 {{item.levelsToNextChest}} 关开{{item.nextChestIsBig ? '大' : ''}}宝箱</view>
+    </view>
+    <button
+      wx:if="{{item.pendingChests > 0}}"
+      class="btn btn--primary welfare__action"
+      loading="{{busyKey === 'chest-' + item.gameType}}"
+      data-game-type="{{item.gameType}}"
+      bindtap="openChests"
+    >开宝箱</button>
+  </view>
+
+  <view class="welfare__section-title">练习宝箱</view>
+  <view wx:for="{{practiceChestRows}}" wx:key="practiceId" class="card welfare__row">
+    <view class="welfare__icon welfare__icon--practice">{{item.icon}}</view>
+    <view class="welfare__body">
+      <view class="welfare__name">{{item.name}}</view>
+      <view wx:if="{{item.pendingChestCount > 0}}" class="welfare__desc welfare__desc--highlight">{{item.pendingChestCount}} 个宝箱待打开 · {{item.rewardText}}</view>
+      <view wx:else class="welfare__desc">{{item.chestHint}}</view>
+    </view>
+    <button
+      wx:if="{{item.pendingChestCount > 0}}"
+      class="btn btn--primary welfare__action"
+      loading="{{busyKey === 'practice-' + item.practiceId}}"
+      data-practice-id="{{item.practiceId}}"
+      bindtap="openPracticeChests"
+    >开宝箱</button>
+  </view>
+</view>
+
+<reward-popup
+  visible="{{rewardPopup.visible}}"
+  title="{{rewardPopup.title}}"
+  subtitle="{{rewardPopup.subtitle}}"
+  badge="{{rewardPopup.badge}}"
+  rewards="{{rewardPopup.rewards}}"
+  bind:close="closeRewardPopup"
+/>

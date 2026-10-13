@@ -1,0 +1,239 @@
+.reward-popup {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--space-lg);
+  background: var(--color-overlay);
+  animation: reward-popup-fade 0.2s ease-out;
+}
+
+.reward-popup__stage {
+  position: relative;
+  width: 100%;
+  padding-top: 220rpx;
+}
+
+.reward-popup__rays {
+  position: absolute;
+  top: 40rpx;
+  left: 50%;
+  width: 640rpx;
+  height: 640rpx;
+  margin-left: -320rpx;
+  animation: reward-popup-spin 12s linear infinite;
+}
+
+.reward-popup__ray {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 56rpx;
+  height: 320rpx;
+  margin-left: -28rpx;
+  border-radius: 28rpx 28rpx 0 0;
+  background: var(--color-gold);
+  opacity: 0.35;
+  transform-origin: 50% 100%;
+}
+
+.reward-popup__ray--0 { transform: rotate(0deg); }
+.reward-popup__ray--1 { transform: rotate(30deg); }
+.reward-popup__ray--2 { transform: rotate(60deg); }
+.reward-popup__ray--3 { transform: rotate(90deg); }
+.reward-popup__ray--4 { transform: rotate(120deg); }
+.reward-popup__ray--5 { transform: rotate(150deg); }
+.reward-popup__ray--6 { transform: rotate(180deg); }
+.reward-popup__ray--7 { transform: rotate(210deg); }
+.reward-popup__ray--8 { transform: rotate(240deg); }
+.reward-popup__ray--9 { transform: rotate(270deg); }
+.reward-popup__ray--10 { transform: rotate(300deg); }
+.reward-popup__ray--11 { transform: rotate(330deg); }
+
+.reward-popup__chest {
+  position: absolute;
+  top: 120rpx;
+  left: 50%;
+  z-index: 2;
+  width: 220rpx;
+  height: 180rpx;
+  margin-left: -110rpx;
+  animation: reward-popup-drop 0.6s cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+
+.reward-popup__lid {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 220rpx;
+  height: 70rpx;
+  border: 6rpx solid var(--color-primary-deep);
+  border-radius: 40rpx 40rpx 10rpx 10rpx;
+  background: var(--color-primary);
+  box-sizing: border-box;
+  transform-origin: 10% 100%;
+  animation: reward-popup-lid 0.5s 0.45s ease-out forwards;
+}
+
+.reward-popup__body {
+  position: absolute;
+  top: 62rpx;
+  left: 0;
+  width: 220rpx;
+  height: 118rpx;
+  border: 6rpx solid var(--color-primary-deep);
+  border-radius: 10rpx 10rpx 28rpx 28rpx;
+  background: var(--color-primary);
+  box-sizing: border-box;
+}
+
+.reward-popup__band {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 36rpx;
+  height: 100%;
+  margin-left: -18rpx;
+  background: var(--color-gold);
+}
+
+.reward-popup__lock {
+  position: absolute;
+  top: 16rpx;
+  left: 50%;
+  width: 44rpx;
+  height: 44rpx;
+  margin-left: -22rpx;
+  border: 6rpx solid var(--color-primary-deep);
+  border-radius: 12rpx;
+  background: var(--color-gold);
+  box-sizing: border-box;
+}
+
+.reward-popup__glow {
+  position: absolute;
+  top: 40rpx;
+  left: 50%;
+  width: 160rpx;
+  height: 60rpx;
+  margin-left: -80rpx;
+  border-radius: 50%;
+  background: var(--color-gold-soft);
+  opacity: 0;
+  animation: reward-popup-glow 0.6s 0.7s ease-out forwards;
+}
+
+.reward-popup__card {
+  position: relative;
+  z-index: 1;
+  padding: 120rpx var(--space-lg) var(--space-lg);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: 0 10rpx 0 var(--color-border);
+  text-align: center;
+  animation: reward-popup-rise 0.45s 0.15s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+.reward-popup__badge {
+  display: inline-block;
+  margin-bottom: var(--space-xs);
+  padding: 2rpx 20rpx;
+  border-radius: 999rpx;
+  background: var(--color-gold);
+  color: var(--color-ink);
+  font-size: var(--font-sm);
+  font-weight: 800;
+}
+
+.reward-popup__title {
+  font-size: var(--font-xl);
+  font-weight: 800;
+  letter-spacing: 2rpx;
+}
+
+.reward-popup__subtitle {
+  margin-top: 4rpx;
+  color: var(--color-ink-soft);
+  font-size: var(--font-sm);
+}
+
+.reward-popup__rewards {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-md);
+  margin: var(--space-lg) 0;
+}
+
+.reward-popup__reward {
+  width: 200rpx;
+  padding: var(--space-md) 0;
+  border-radius: var(--radius-md);
+  background: var(--color-primary-soft);
+  box-shadow: 0 6rpx 0 var(--color-border);
+  animation: reward-popup-reward 0.45s cubic-bezier(0.2, 1.6, 0.4, 1) both;
+}
+
+.reward-popup__reward--0 { animation-delay: 0.85s; }
+.reward-popup__reward--1 { animation-delay: 1.05s; }
+.reward-popup__reward--2 { animation-delay: 1.25s; }
+
+.reward-popup__reward-icon {
+  width: 80rpx;
+  height: 80rpx;
+}
+
+.reward-popup__reward-amount {
+  color: var(--color-primary-deep);
+  font-size: 52rpx;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.reward-popup__reward-label {
+  color: var(--color-ink-soft);
+  font-size: var(--font-sm);
+}
+
+.reward-popup__confirm {
+  animation: reward-popup-reward 0.4s 1.3s ease-out both;
+}
+
+@keyframes reward-popup-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes reward-popup-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes reward-popup-drop {
+  0% { transform: translateY(-200rpx) scale(0.6); opacity: 0; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes reward-popup-lid {
+  0% { transform: rotate(0deg) translateY(0); }
+  100% { transform: rotate(-28deg) translateY(-24rpx); }
+}
+
+@keyframes reward-popup-glow {
+  0% { opacity: 0; transform: scale(0.4); }
+  100% { opacity: 0.9; transform: scale(1.4); }
+}
+
+@keyframes reward-popup-rise {
+  0% { transform: translateY(80rpx) scale(0.9); opacity: 0; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes reward-popup-reward {
+  0% { transform: scale(0.3); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}

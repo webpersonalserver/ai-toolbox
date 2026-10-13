@@ -1,0 +1,67 @@
+.practice__header {
+  margin-bottom: var(--space-lg);
+}
+
+.practice__title {
+  font-size: var(--font-title);
+  font-weight: 800;
+  letter-spacing: 4rpx;
+}
+
+.practice__subtitle {
+  color: var(--color-ink-soft);
+  font-size: var(--font-sm);
+}
+
+.practice__card {
+  display: flex;
+  align-items: center;
+  margin-bottom: var(--space-md);
+}
+
+.practice__card--pressed {
+  opacity: 0.85;
+}
+
+.practice__icon {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 112rpx;
+  height: 112rpx;
+  margin-right: var(--space-md);
+  border-radius: var(--radius-md);
+  background: var(--color-success);
+  box-shadow: 0 8rpx 0 var(--color-success-deep);
+  color: var(--color-on-accent);
+  font-size: var(--font-xl);
+  font-weight: 900;
+}
+
+.practice__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.practice__name {
+  font-size: var(--font-lg);
+  font-weight: 800;
+}
+
+.practice__intro {
+  color: var(--color-ink-soft);
+  font-size: var(--font-sm);
+}
+
+.practice__arrow {
+  color: var(--color-ink-faint);
+  font-size: var(--font-xl);
+}
+
+.practice__more {
+  margin-top: var(--space-lg);
+  color: var(--color-ink-faint);
+  font-size: var(--font-sm);
+  text-align: center;
+}

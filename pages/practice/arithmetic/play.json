@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "加减运算",
+  "disableScroll": true,
+  "usingComponents": {
+    "practice-cheer": "/components/practice-cheer/practice-cheer"
+  }
+}

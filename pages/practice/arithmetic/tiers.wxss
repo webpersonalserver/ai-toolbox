@@ -1,0 +1,59 @@
+.tiers__hint {
+  margin-bottom: var(--space-lg);
+  color: var(--color-ink-soft);
+  font-size: var(--font-sm);
+}
+
+.tiers__card {
+  display: flex;
+  align-items: center;
+  margin-bottom: var(--space-lg);
+  padding: var(--space-xl) var(--space-lg);
+}
+
+.tiers__card--pressed {
+  transform: translateY(6rpx);
+  box-shadow: none;
+}
+
+.tiers__card--10 { background: var(--color-success-soft); }
+.tiers__card--20 { background: var(--color-gold-soft); }
+.tiers__card--100 { background: var(--color-primary-soft); }
+
+.tiers__main {
+  flex: 1;
+}
+
+.tiers__label {
+  font-size: var(--font-title);
+  font-weight: 900;
+}
+
+.tiers__example {
+  color: var(--color-ink-soft);
+  font-size: var(--font-md);
+  letter-spacing: 2rpx;
+}
+
+.tiers__solved {
+  margin-top: 4rpx;
+  color: var(--color-primary-deep);
+  font-size: 22rpx;
+  font-weight: 700;
+}
+
+.tiers__record {
+  text-align: center;
+}
+
+.tiers__record-value {
+  color: var(--color-primary-deep);
+  font-size: var(--font-title);
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.tiers__record-label {
+  color: var(--color-ink-soft);
+  font-size: 22rpx;
+}

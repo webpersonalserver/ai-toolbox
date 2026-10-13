@@ -2,7 +2,7 @@
   display: flex;
   justify-content: center;
   gap: var(--space-md);
-  margin-bottom: var(--space-xl);
+  margin-bottom: var(--space-sm);
 }
 
 .char-puzzle__slots--wrong {
@@ -125,4 +125,78 @@
   0%, 100% { transform: translateX(0); }
   20%, 60% { transform: translateX(-16rpx); }
   40%, 80% { transform: translateX(16rpx); }
+}
+
+.char-puzzle__slots--checking .char-puzzle__slot {
+  border-color: var(--game-color);
+  animation: char-puzzle-wave 0.9s ease-in-out infinite;
+}
+
+.char-puzzle__slots--checking .char-puzzle__slot:nth-child(2) { animation-delay: 0.1s; }
+.char-puzzle__slots--checking .char-puzzle__slot:nth-child(3) { animation-delay: 0.2s; }
+.char-puzzle__slots--checking .char-puzzle__slot:nth-child(4) { animation-delay: 0.3s; }
+.char-puzzle__slots--checking .char-puzzle__slot:nth-child(5) { animation-delay: 0.4s; }
+.char-puzzle__slots--checking .char-puzzle__slot:nth-child(6) { animation-delay: 0.5s; }
+.char-puzzle__slots--checking .char-puzzle__slot:nth-child(7) { animation-delay: 0.6s; }
+
+.char-puzzle__thinking {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 72rpx;
+  margin-bottom: var(--space-md);
+  opacity: 0;
+  transform: translateY(10rpx) scale(0.95);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.char-puzzle__thinking--visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.char-puzzle__thinking-avatar {
+  width: 56rpx;
+  height: 56rpx;
+  margin-right: 12rpx;
+  border-radius: 50%;
+}
+
+.char-puzzle__thinking-bubble {
+  display: flex;
+  align-items: center;
+  padding: 8rpx 22rpx;
+  border-radius: 999rpx 999rpx 999rpx 8rpx;
+  background: var(--color-surface);
+  box-shadow: 0 4rpx 0 var(--color-border);
+  color: var(--color-ink-soft);
+  font-size: var(--font-sm);
+  font-weight: 700;
+}
+
+.char-puzzle__dots {
+  display: flex;
+  margin-left: 8rpx;
+}
+
+.char-puzzle__dot {
+  width: 8rpx;
+  height: 8rpx;
+  margin: 0 3rpx;
+  border-radius: 50%;
+  background: var(--game-color);
+  animation: char-puzzle-dot 1s ease-in-out infinite;
+}
+
+.char-puzzle__dot:nth-child(2) { animation-delay: 0.15s; }
+.char-puzzle__dot:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes char-puzzle-wave {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-14rpx); }
+}
+
+@keyframes char-puzzle-dot {
+  0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-6rpx); }
 }

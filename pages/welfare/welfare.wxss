@@ -1,0 +1,86 @@
+.welfare__summary {
+  margin-bottom: var(--space-md);
+  color: var(--color-ink-soft);
+  font-size: var(--font-sm);
+}
+
+.welfare__row {
+  display: flex;
+  align-items: center;
+  margin-bottom: var(--space-md);
+}
+
+.welfare__icon {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 88rpx;
+  height: 88rpx;
+  margin-right: var(--space-md);
+  border-radius: var(--radius-md);
+  color: var(--color-on-accent);
+  font-size: var(--font-lg);
+  font-weight: 800;
+}
+
+.welfare__icon--checkin {
+  background: var(--color-success);
+  box-shadow: 0 6rpx 0 var(--color-border);
+}
+
+.welfare__icon--image {
+  background: var(--color-gold-soft);
+  padding: 14rpx;
+  box-sizing: border-box;
+}
+
+.welfare__icon--game {
+  background: var(--game-color);
+  box-shadow: 0 6rpx 0 var(--game-color-deep);
+}
+
+.welfare__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.welfare__name {
+  font-size: var(--font-md);
+  font-weight: 800;
+}
+
+.welfare__desc {
+  color: var(--color-ink-soft);
+  font-size: var(--font-sm);
+}
+
+.welfare__desc--highlight {
+  color: var(--game-color-deep);
+  font-weight: 700;
+}
+
+.btn.welfare__action {
+  flex-shrink: 0;
+  width: 160rpx;
+  height: 68rpx;
+  line-height: 68rpx;
+  font-size: var(--font-sm);
+}
+
+.welfare__done {
+  color: var(--color-ink-faint);
+  font-size: var(--font-sm);
+}
+
+.welfare__section-title {
+  margin: var(--space-lg) 0 var(--space-md);
+  color: var(--color-ink-soft);
+  font-size: var(--font-sm);
+  font-weight: 700;
+}
+
+.welfare__icon--practice {
+  background: var(--color-success);
+  box-shadow: 0 6rpx 0 var(--color-success-deep);
+}

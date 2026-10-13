@@ -6,7 +6,9 @@ const ITEM_LOG_REASONS = {
   AD: 'ad',
   USE: 'use',
   MILESTONE: 'milestone',
-  REFUND: 'refund'
+  RECOVERY: 'recovery',
+  REFUND: 'refund',
+  PRACTICE: 'practice'
 }
 
 const writeItemLogs = async (openid, deltas, reason, extra = {}) => {

@@ -1,0 +1,24 @@
+<view class="page practice">
+  <view class="practice__header">
+    <view class="practice__title">趣味练习</view>
+    <view class="practice__subtitle">不限次数，想练多久练多久</view>
+  </view>
+
+  <view
+    wx:for="{{practices}}"
+    wx:key="id"
+    class="card practice__card"
+    hover-class="practice__card--pressed"
+    data-url="{{item.entryUrl}}"
+    bindtap="openPractice"
+  >
+    <view class="practice__icon">{{item.icon}}</view>
+    <view class="practice__body">
+      <view class="practice__name">{{item.name}}</view>
+      <view class="practice__intro">{{item.intro}}</view>
+    </view>
+    <view class="practice__arrow">›</view>
+  </view>
+
+  <view class="practice__more">更多练习正在准备中</view>
+</view>

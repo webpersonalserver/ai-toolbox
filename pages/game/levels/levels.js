@@ -2,7 +2,7 @@ const { game, toastError } = require('../../../utils/api')
 const { ensureLogin } = require('../../../utils/session')
 const { showRescueNotices } = require('../../../utils/rescue-notice')
 const { DEFAULT_SHARE } = require('../../../utils/share')
-const { openMilestoneChests, describeTitleProgress } = require('../../../utils/milestone')
+const { HIDDEN_REWARD_POPUP, openMilestoneChests, describeTitleProgress } = require('../../../utils/milestone')
 const { gameConfigOf } = require('../../../utils/games')
 const { openLeaderboardTab } = require('../../../utils/navigation')
 
@@ -53,7 +53,8 @@ Page({
     titleName: '',
     titleProgressText: '',
     pendingChests: 0,
-    openingChests: false
+    openingChests: false,
+    rewardPopup: HIDDEN_REWARD_POPUP
   },
 
   onLoad(query) {
@@ -109,8 +110,13 @@ Page({
   async handleOpenChests() {
     if (this.data.openingChests) return
     this.setData({ openingChests: true })
-    const result = await openMilestoneChests(this.data.gameType)
-    this.setData({ openingChests: false, pendingChests: result ? 0 : this.data.pendingChests })
+    const popup = await openMilestoneChests(this.data.gameType)
+    this.setData({ openingChests: false })
+    if (popup) this.setData({ pendingChests: 0, rewardPopup: popup })
+  },
+
+  closeRewardPopup() {
+    this.setData({ rewardPopup: HIDDEN_REWARD_POPUP })
   },
 
   openLeaderboard() {

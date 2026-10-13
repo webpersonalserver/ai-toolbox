@@ -62,18 +62,20 @@
 }
 
 .play__hearts {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-sm);
   margin-bottom: var(--space-sm);
-  text-align: center;
 }
 
 .play__heart {
-  margin: 0 var(--space-xs);
-  color: var(--game-color);
-  font-size: var(--font-xl);
+  width: 52rpx;
+  height: 52rpx;
+  transition: transform 0.2s ease;
 }
 
 .play__heart--lost {
-  color: var(--color-border);
+  transform: scale(0.85);
 }
 
 .play__ready {

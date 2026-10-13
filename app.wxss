@@ -11,6 +11,7 @@ page {
   --color-primary-soft: #FFE6D3;
   --color-success: #27A086;
   --color-success-soft: #D8F5EE;
+  --color-success-deep: #1F8069;
   --color-border: #F1E3CC;
   --color-gold: #FFC93C;
   --color-gold-soft: #FFF1C7;
@@ -176,4 +177,41 @@ page {
   height: 28rpx;
   margin-right: 6rpx;
   vertical-align: -4rpx;
+}
+
+/* A character hidden from the clue, drawn as a coloured token so it does not read as a blank. */
+.clue-mask {
+  display: inline-block;
+  width: 1.25em;
+  height: 1.25em;
+  margin: 0 3rpx;
+  border-radius: 10rpx;
+  background: var(--game-color-soft);
+  color: var(--game-color-deep);
+  font-size: 0.85em;
+  font-weight: 800;
+  line-height: 1.25em;
+  text-align: center;
+  vertical-align: 0.05em;
+}
+
+.clue-mask--small {
+  border-radius: 6rpx;
+}
+
+/* Rounded chevron drawn with two borders; rotates to point up when expanded. */
+.chevron {
+  width: 14rpx;
+  height: 14rpx;
+  margin-top: -6rpx;
+  border-right: 4rpx solid currentColor;
+  border-bottom: 4rpx solid currentColor;
+  border-radius: 0 0 4rpx 0;
+  transform: rotate(45deg);
+  transition: transform 0.2s ease, margin-top 0.2s ease;
+}
+
+.chevron--up {
+  margin-top: 8rpx;
+  transform: rotate(225deg);
 }

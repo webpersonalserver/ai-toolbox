@@ -6,7 +6,7 @@
       <item-chip item-type="hint" value="{{items.hint}}" />
     </view>
   </view>
-  <view wx:if="{{staminaRecoveryText}}" class="hall__recovery"><image class="inline-icon" src="/assets/icons/stamina.png" mode="aspectFit" />{{staminaRecoveryText}}</view>
+  <view class="hall__recovery"><stamina-recovery items="{{items}}" bind:claimed="syncSession" /></view>
 
   <view class="card hall__checkin">
     <view>

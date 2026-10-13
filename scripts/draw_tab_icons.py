@@ -39,7 +39,16 @@ def draw_mine(draw, color, filled):
     draw.rounded_rectangle(scaled(12, 46, 69, 72), radius=13 * SUPERSAMPLE, outline=color, width=STROKE, fill=color if filled else None)
 
 
-ICONS = {"hall": draw_hall, "leaderboard": draw_leaderboard, "mine": draw_mine}
+def draw_practice(draw, color, filled):
+    blocks = (scaled(10, 42, 38, 70), scaled(43, 42, 71, 70), scaled(26.5, 11, 54.5, 39))
+    for block in blocks:
+        draw.rounded_rectangle(block, radius=7 * SUPERSAMPLE, outline=color, width=STROKE, fill=color if filled else None)
+    if filled:
+        for x, y in ((24, 56), (57, 56), (40.5, 25)):
+            draw.ellipse(scaled(x - 4, y - 4, x + 4, y + 4), fill=CUTOUT)
+
+
+ICONS = {"hall": draw_hall, "practice": draw_practice, "leaderboard": draw_leaderboard, "mine": draw_mine}
 
 
 def render(draw_icon, color, filled):

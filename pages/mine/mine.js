@@ -1,10 +1,10 @@
 const { game, toastError } = require('../../utils/api')
 const { getSession, setSession } = require('../../utils/session')
-const { describeStaminaRecovery } = require('../../utils/items')
 const { buildRuleSections } = require('../../utils/rule-text')
 const { DEFAULT_SHARE } = require('../../utils/share')
 const { describeTitleProgress } = require('../../utils/milestone')
 const { GAME_ORDER, gameConfigOf } = require('../../utils/games')
+const { countUnclaimedWelfare } = require('../../utils/welfare')
 
 
 const DEFAULT_AVATAR = '/assets/icons/default-avatar.png'
@@ -17,10 +17,10 @@ Page({
     nickname: '',
     avatarUrl: '',
     items: { hint: 0, stamina: 0 },
-    staminaRecoveryText: '',
     rulesVisible: false,
     ruleSections: [],
     gameTitles: [],
+    unclaimedWelfare: 0,
     titlesExpanded: false,
     isAdmin: false,
     openid: '',
@@ -32,11 +32,12 @@ Page({
 
   async onShow() {
     try {
-      const { session, games } = await game.overview()
+      const { session, games, practices } = await game.overview()
       setSession(session)
       this.syncSession()
       const summaryByGame = Object.fromEntries(games.map((summary) => [summary.gameType, summary]))
       this.setData({
+        unclaimedWelfare: countUnclaimedWelfare(session, games, practices),
         gameTitles: GAME_ORDER.filter((gameType) => summaryByGame[gameType]).map((gameType) => ({
           ...gameConfigOf(gameType),
           titleName: summaryByGame[gameType].achievement.title.name,
@@ -59,7 +60,6 @@ Page({
       nicknameDisplay: profile.nickname || EMPTY_NICKNAME_TEXT,
       avatarDisplay: displayAvatarOf(profile.avatarUrl),
       items,
-      staminaRecoveryText: describeStaminaRecovery(items),
       ruleSections: buildRuleSections(rules)
     })
   },
@@ -89,6 +89,10 @@ Page({
 
   copyOpenid() {
     wx.setClipboardData({ data: this.data.openid })
+  },
+
+  openWelfare() {
+    wx.navigateTo({ url: '/pages/welfare/welfare' })
   },
 
   openRules() {

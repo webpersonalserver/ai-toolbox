@@ -3,6 +3,10 @@ const { ensureLogin } = require('../../utils/session')
 const { DEFAULT_SHARE } = require('../../utils/share')
 const { FALLBACK_HELPER_NAME } = require('../../utils/rescue-notice')
 const { gameConfigOf, describePoemSource, splitTypoClue } = require('../../utils/games')
+const { splitClue } = require('../../utils/clue')
+const { withMinimumDuration } = require('../../utils/min-duration')
+
+const MIN_CHECKING_MS = 550
 
 const FALLBACK_REQUESTER_NAME = '你的好友'
 
@@ -49,6 +53,8 @@ Page({
     poemSource: '',
     clueChars: [],
     clueHint: '',
+    clueSegments: [],
+    clueHintSegments: [],
     viewState: '',
     rescueId: '',
     isOwner: false,
@@ -97,6 +103,8 @@ Page({
         poemSource: describePoemSource(detail.puzzle),
         clueChars: splitTypoClue(detail.puzzle.clue, detail.puzzle.wrongPosition),
         clueHint: detail.puzzle.clueHint || '',
+        clueSegments: splitClue(detail.puzzle.clue),
+        clueHintSegments: splitClue(detail.puzzle.clueHint),
         levelNo: detail.puzzle.levelNo,
         clue: detail.puzzle.clue,
         board: detail.puzzle.board,
@@ -113,7 +121,7 @@ Page({
     if (this.data.submitting) return
     this.setData({ submitting: true })
     try {
-      const result = await rescue.answer(this.data.rescueId, event.detail.answer)
+      const result = await withMinimumDuration(() => rescue.answer(this.data.rescueId, event.detail.answer), MIN_CHECKING_MS)
       if (result.correct) {
         this.setData({ viewState: VIEW_STATES.SOLVED, helpedByMe: true, solution: result.solution })
       } else if (result.attemptsLeft <= 0) {

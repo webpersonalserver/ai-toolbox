@@ -7,12 +7,14 @@ const maintenance = require('./handlers/maintenance')
 const admin = require('./handlers/admin')
 const leaderboard = require('./handlers/leaderboard')
 const overview = require('./handlers/overview')
+const practice = require('./handlers/practice')
 
 const ROUTES = {
   'account.login': account.login,
   'account.updateProfile': account.updateProfile,
   'account.checkin': account.checkin,
   'account.grantAdReward': account.grantAdReward,
+  'account.claimRecoveredStamina': account.claimRecoveredStamina,
   'game.overview': overview.overview,
   'game.levelList': game.levelList,
   'game.summary': game.summary,
@@ -25,6 +27,10 @@ const ROUTES = {
   'rescue.create': rescue.create,
   'rescue.view': rescue.view,
   'rescue.answer': rescue.answer,
+  'practice.stats': practice.stats,
+  'practice.report': practice.report,
+  'practice.syncProgress': practice.syncProgress,
+  'practice.claimChests': practice.claimChests,
   'leaderboard.list': leaderboard.list,
   'admin.stats': admin.stats
 }

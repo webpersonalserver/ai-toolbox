@@ -1,0 +1,20 @@
+<view wx:if="{{visible}}" class="cheer {{big ? 'cheer--big' : ''}}" aria-live="assertive">
+  <view class="cheer__flash"></view>
+  <view class="cheer__sun">
+    <view wx:for="{{sunRays}}" wx:key="id" class="cheer__ray" style="{{item.style}}"></view>
+  </view>
+  <view class="cheer__burst">
+    <view wx:for="{{sparks}}" wx:key="id" class="cheer__spark-arm" style="{{item.style}}">
+      <view class="cheer__spark" style="{{item.innerStyle}}"></view>
+    </view>
+  </view>
+  <view class="cheer__center">
+    <view wx:if="{{mascot}}" class="cheer__mascot">{{mascot}}</view>
+    <view class="cheer__title">{{title}}</view>
+    <view wx:if="{{subtitle}}" class="cheer__subtitle">{{subtitle}}</view>
+  </view>
+  <view class="cheer__confetti">
+    <view wx:for="{{confettiPieces}}" wx:key="id" class="cheer__piece" style="{{item.style}}"></view>
+  </view>
+  <view wx:if="{{flyingStar}}" class="cheer__flying-star">⭐</view>
+</view>

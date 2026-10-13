@@ -1,0 +1,64 @@
+.train {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  box-sizing: border-box;
+}
+
+.train__heading {
+  font-size: var(--font-xl);
+  font-weight: 900;
+  letter-spacing: 4rpx;
+}
+
+.train__progress-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-top: var(--space-sm);
+}
+
+.train__track {
+  flex: 1;
+  height: 18rpx;
+  border-radius: 999rpx;
+  background: var(--color-surface-muted);
+  overflow: hidden;
+}
+
+.train__fill {
+  height: 100%;
+  border-radius: 999rpx;
+  background: var(--color-primary);
+  transition: width 0.4s ease-out;
+}
+
+.train__progress-text {
+  color: var(--color-ink-soft);
+  font-size: var(--font-sm);
+  font-weight: 700;
+}
+
+.train__combo {
+  display: inline-block;
+  margin-top: var(--space-sm);
+  padding: 4rpx 20rpx;
+  border-radius: 999rpx;
+  background: var(--color-gold);
+  font-weight: 900;
+  animation: train-pop 0.4s cubic-bezier(0.2, 1.8, 0.4, 1);
+}
+
+.train__feedback {
+  min-height: 48rpx;
+  margin: var(--space-md) 0;
+  color: var(--color-primary-deep);
+  font-size: var(--font-md);
+  font-weight: 800;
+  text-align: center;
+}
+
+@keyframes train-pop {
+  0% { transform: scale(0.6); }
+  100% { transform: scale(1); }
+}

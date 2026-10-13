@@ -5,7 +5,9 @@ Colors follow the 奶油糖果 palette in app.wxss.
 """
 from pathlib import Path
 
-from PIL import Image, ImageDraw
+import math
+
+from PIL import Image, ImageDraw, ImageFilter
 
 ROOT = Path(__file__).resolve().parent.parent
 OUTPUT_DIR = ROOT / "assets" / "icons"
@@ -16,6 +18,10 @@ LEMON_DEEP = (217, 150, 20, 255)
 ORANGE = (255, 138, 61, 255)
 ORANGE_DEEP = (217, 106, 34, 255)
 CREAM = (255, 230, 211, 255)
+CORAL = (255, 107, 107, 255)
+CORAL_DEEP = (217, 76, 76, 255)
+HEART_EMPTY = (241, 227, 204, 255)
+HEART_EMPTY_DEEP = (226, 208, 180, 255)
 INK = (61, 44, 30, 255)
 WHITE = (255, 255, 255, 255)
 
@@ -56,6 +62,37 @@ def draw_hint(size=96):
     finish(image, size, "hint.png")
 
 
+HEART_CURVE_STEPS = 240
+HEART_ROUNDING = 9
+
+
+def heart_mask(size, offset_y=0):
+    """Classic parametric heart, then a morphological opening to round off the bottom tip."""
+    scale = size * SUPERSAMPLE / 36
+    centre_x, centre_y = size * SUPERSAMPLE / 2, size * SUPERSAMPLE * 0.46 + offset_y * SUPERSAMPLE
+    points = []
+    for step in range(HEART_CURVE_STEPS):
+        t = 2 * math.pi * step / HEART_CURVE_STEPS
+        x = 16 * math.sin(t) ** 3
+        y = 13 * math.cos(t) - 5 * math.cos(2 * t) - 2 * math.cos(3 * t) - math.cos(4 * t)
+        points.append((centre_x + x * scale, centre_y - y * scale))
+    mask = Image.new("L", (size * SUPERSAMPLE, size * SUPERSAMPLE), 0)
+    ImageDraw.Draw(mask).polygon(points, fill=255)
+    kernel = HEART_ROUNDING * SUPERSAMPLE + 1
+    return mask.filter(ImageFilter.MinFilter(kernel)).filter(ImageFilter.MaxFilter(kernel))
+
+
+def draw_heart(name, fill, shadow, size=96, highlight=True):
+    image, _ = new_canvas(size)
+    for color, offset in ((shadow, 4), (fill, 0)):
+        layer = Image.new("RGBA", image.size, color)
+        image.paste(layer, (0, 0), heart_mask(size, offset))
+    if highlight:
+        s = SUPERSAMPLE
+        ImageDraw.Draw(image).ellipse([24 * s, 26 * s, 36 * s, 38 * s], fill=WHITE)
+    finish(image, size, name)
+
+
 def draw_default_avatar(size=240):
     image, draw = new_canvas(size)
     s = SUPERSAMPLE
@@ -77,6 +114,8 @@ def main():
     draw_stamina()
     draw_hint()
     draw_default_avatar()
+    draw_heart("heart-full.png", CORAL, CORAL_DEEP)
+    draw_heart("heart-empty.png", HEART_EMPTY, HEART_EMPTY_DEEP, highlight=False)
 
 
 if __name__ == "__main__":

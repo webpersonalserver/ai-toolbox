@@ -1,0 +1,34 @@
+<view wx:if="{{visible}}" class="reward-popup" catchtouchmove="noop">
+  <view class="reward-popup__stage">
+    <view class="reward-popup__rays" aria-hidden="true">
+      <view wx:for="{{rays}}" wx:key="*this" class="reward-popup__ray reward-popup__ray--{{item}}"></view>
+    </view>
+
+    <view class="reward-popup__chest" aria-hidden="true">
+      <view class="reward-popup__lid"></view>
+      <view class="reward-popup__body">
+        <view class="reward-popup__band"></view>
+        <view class="reward-popup__lock"></view>
+      </view>
+      <view class="reward-popup__glow"></view>
+    </view>
+
+    <view class="reward-popup__card">
+      <view wx:if="{{badge}}" class="reward-popup__badge">{{badge}}</view>
+      <view class="reward-popup__title">{{title}}</view>
+      <view wx:if="{{subtitle}}" class="reward-popup__subtitle">{{subtitle}}</view>
+      <view class="reward-popup__rewards">
+        <view
+          wx:for="{{rewardCards}}"
+          wx:key="type"
+          class="reward-popup__reward reward-popup__reward--{{index}}"
+        >
+          <image class="reward-popup__reward-icon" src="{{item.icon}}" mode="aspectFit" />
+          <view class="reward-popup__reward-amount">+{{item.amount}}</view>
+          <view class="reward-popup__reward-label">{{item.label}}</view>
+        </view>
+      </view>
+      <button class="btn btn--primary reward-popup__confirm" bindtap="handleConfirm">{{confirmText}}</button>
+    </view>
+  </view>
+</view>

@@ -5,6 +5,8 @@
     "game-solution": "/components/game-solution/game-solution",
     "game-guide": "/components/game-guide/game-guide",
     "item-chip": "/components/item-chip/item-chip",
-    "loading-skeleton": "/components/loading-skeleton/loading-skeleton"
+    "loading-skeleton": "/components/loading-skeleton/loading-skeleton",
+    "stamina-recovery": "/components/stamina-recovery/stamina-recovery",
+    "reward-popup": "/components/reward-popup/reward-popup"
   }
 }

@@ -57,3 +57,12 @@
   </view>
   </block>
 </view>
+
+<reward-popup
+  visible="{{rewardPopup.visible}}"
+  title="{{rewardPopup.title}}"
+  subtitle="{{rewardPopup.subtitle}}"
+  badge="{{rewardPopup.badge}}"
+  rewards="{{rewardPopup.rewards}}"
+  bind:close="closeRewardPopup"
+/>

@@ -42,7 +42,8 @@ const account = {
   login: () => call('account.login'),
   updateProfile: (profile) => call('account.updateProfile', profile),
   checkin: () => call('account.checkin'),
-  grantAdReward: (itemType) => call('account.grantAdReward', { itemType })
+  grantAdReward: (itemType) => call('account.grantAdReward', { itemType }),
+  claimRecoveredStamina: () => call('account.claimRecoveredStamina')
 }
 
 const game = {
@@ -63,6 +64,13 @@ const rescue = {
   answer: (rescueId, answer) => call('rescue.answer', { rescueId, answer })
 }
 
+const practice = {
+  stats: (practiceId) => call('practice.stats', { practiceId }),
+  report: (report) => call('practice.report', report),
+  syncProgress: (practiceId, progress) => call('practice.syncProgress', { practiceId, progress }),
+  claimChests: (practiceId) => call('practice.claimChests', { practiceId })
+}
+
 const leaderboard = {
   list: (gameType) => call('leaderboard.list', { gameType })
 }
@@ -71,4 +79,4 @@ const admin = {
   stats: (gameType) => call('admin.stats', { gameType })
 }
 
-module.exports = { ERROR_CODES, ApiError, toastError, account, game, rescue, leaderboard, admin }
+module.exports = { ERROR_CODES, ApiError, toastError, account, game, rescue, practice, leaderboard, admin }

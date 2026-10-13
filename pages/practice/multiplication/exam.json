@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "闭关考核",
+  "disableScroll": true,
+  "usingComponents": {
+    "kungfu-question": "/components/kungfu-question/kungfu-question",
+    "kungfu-result": "/components/kungfu-result/kungfu-result",
+    "practice-cheer": "/components/practice-cheer/practice-cheer"
+  }
+}

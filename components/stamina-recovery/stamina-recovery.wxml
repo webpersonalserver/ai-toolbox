@@ -1,0 +1,14 @@
+<view class="stamina-recovery">
+  <view
+    wx:if="{{showClaim && pending > 0}}"
+    class="stamina-recovery__claim"
+    hover-class="stamina-recovery__claim--pressed"
+    bindtap="handleClaim"
+  >
+    <image class="stamina-recovery__icon" src="/assets/icons/stamina.png" mode="aspectFit" />
+    <text>{{claiming ? '领取中' : '领取 +' + pending}}</text>
+  </view>
+  <text wx:if="{{countdownText}}" class="stamina-recovery__countdown">{{countdownText}} 后 +1</text>
+  <text wx:elif="{{isFull && !pending}}" class="stamina-recovery__countdown">体力已满</text>
+  <text wx:if="{{!showClaim && pending > 0}}" class="stamina-recovery__countdown">已恢复 {{pending}} 点待领取</text>
+</view>

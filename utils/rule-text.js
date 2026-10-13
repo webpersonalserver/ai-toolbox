@@ -27,7 +27,11 @@ const buildRuleSections = (rules) => {
       .map((itemType) => describeAmount(itemType, rules.ad.rewards[itemType]))
     sections.push({ title: '看视频', text: `道具不足时，看完一段视频可得 ${adRewards.join(' 或 ')}` })
   }
-  sections.push({ title: '宝箱', text: `每通过 ${rules.milestone.everyLevels} 关开一个宝箱，获得 ${describeRewards(rules.milestone.rewards)}` })
+  const { everyLevels, bigChest, firstChestRewards } = rules.milestone
+  sections.push({
+    title: '宝箱',
+    text: `每通过 ${everyLevels} 关开一个宝箱，第一个就有 ${describeRewards(firstChestRewards)}，越往后越多；每第 ${bigChest.everyChests} 个是大宝箱，奖励翻 ${bigChest.multiplier} 倍。没领的宝箱可以在「我的 → 福利袋」里领`
+  })
   sections.push({ title: '提示与求助', text: `每关最多提示 ${rules.level.maxHints} 次；卡关可免费求助好友，同一位好友每天最多帮你 ${rules.rescue.dailyLimitPerHelper} 次` })
   return sections
 }

@@ -1,0 +1,98 @@
+.study {
+  padding-bottom: 200rpx;
+}
+
+.study__tip {
+  padding: var(--space-md) var(--space-lg);
+  border: 4rpx solid var(--color-ink);
+  border-radius: var(--radius-md);
+  background: var(--color-ink);
+  color: var(--color-gold);
+}
+
+.study__tip-label {
+  font-size: 22rpx;
+  letter-spacing: 8rpx;
+  opacity: 0.8;
+}
+
+.study__tip-text {
+  margin-top: 4rpx;
+  font-size: var(--font-md);
+  font-weight: 800;
+}
+
+.study__guide {
+  margin: var(--space-md) 0;
+  color: var(--color-ink-soft);
+  font-size: var(--font-sm);
+}
+
+.study__card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+  border: 4rpx solid transparent;
+}
+
+.study__card--read {
+  border-color: var(--color-success);
+  background: var(--color-success-soft);
+}
+
+.study__main {
+  flex: 1;
+}
+
+.study__verse {
+  font-size: 64rpx;
+  font-weight: 900;
+  letter-spacing: 6rpx;
+}
+
+.study__equation {
+  color: var(--color-ink-soft);
+  font-size: var(--font-md);
+}
+
+.study__dots {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.study__dot-row {
+  display: flex;
+  gap: 4rpx;
+}
+
+.study__dot {
+  width: 14rpx;
+  height: 14rpx;
+  border-radius: 50%;
+  background: var(--color-primary);
+}
+
+.study__check {
+  position: absolute;
+  top: 8rpx;
+  right: 16rpx;
+  color: var(--color-success-deep);
+  font-size: var(--font-lg);
+  font-weight: 900;
+}
+
+.study__footer {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  padding: var(--space-md) var(--space-lg) calc(var(--space-md) + env(safe-area-inset-bottom));
+  background: var(--color-bg);
+}
+
+.study__start.btn {
+  width: 100%;
+}

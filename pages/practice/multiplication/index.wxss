@@ -1,0 +1,148 @@
+.kungfu__hero {
+  padding: var(--space-xl) var(--space-lg);
+  border: 6rpx solid var(--color-ink);
+  border-radius: var(--radius-lg);
+  background: var(--color-ink);
+  box-shadow: 0 10rpx 0 var(--color-primary-deep);
+  color: var(--color-gold);
+  text-align: center;
+}
+
+.kungfu__hero-label {
+  font-size: var(--font-sm);
+  letter-spacing: 8rpx;
+  opacity: 0.8;
+}
+
+.kungfu__realm {
+  margin: var(--space-xs) 0;
+  font-size: 80rpx;
+  font-weight: 900;
+  letter-spacing: 12rpx;
+}
+
+.kungfu__hero-progress {
+  color: var(--color-on-accent);
+  font-size: var(--font-md);
+}
+
+.kungfu__chests {
+  margin-top: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  background: var(--color-gold);
+  box-shadow: 0 6rpx 0 var(--color-primary-deep);
+  font-weight: 900;
+  text-align: center;
+}
+
+.kungfu__reward-rule {
+  margin-top: var(--space-md);
+  color: var(--color-ink-soft);
+  font-size: var(--font-sm);
+  text-align: center;
+}
+
+.kungfu__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-md);
+  margin-top: var(--space-lg);
+}
+
+.kungfu__row {
+  padding: var(--space-md) var(--space-xs);
+  border: 4rpx solid var(--color-ink);
+  border-radius: var(--radius-md);
+  background: var(--color-gold-soft);
+  box-shadow: 0 8rpx 0 var(--color-ink);
+  text-align: center;
+}
+
+.kungfu__row--mastered {
+  background: var(--color-gold);
+}
+
+.kungfu__row--locked {
+  border-color: var(--color-border);
+  background: var(--color-surface-muted);
+  box-shadow: 0 8rpx 0 var(--color-border);
+  color: var(--color-ink-faint);
+}
+
+.kungfu__row--pressed {
+  transform: translateY(8rpx);
+  box-shadow: none;
+}
+
+.kungfu__ordinal {
+  font-size: 22rpx;
+  font-weight: 700;
+  letter-spacing: 4rpx;
+}
+
+.kungfu__technique {
+  margin: 6rpx 0;
+  font-size: var(--font-lg);
+  font-weight: 900;
+}
+
+.kungfu__stars,
+.kungfu__lock {
+  font-size: 28rpx;
+}
+
+.kungfu__star {
+  color: var(--color-border);
+}
+
+.kungfu__star--earned {
+  color: var(--color-primary-deep);
+}
+
+.kungfu__exam {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-top: var(--space-xl);
+  padding: var(--space-lg);
+  border: 6rpx solid var(--color-ink);
+  border-radius: var(--radius-lg);
+  background: var(--color-primary);
+  box-shadow: 0 10rpx 0 var(--color-ink);
+  color: var(--color-on-accent);
+}
+
+.kungfu__exam--passed {
+  background: var(--color-gold);
+  color: var(--color-ink);
+}
+
+.kungfu__exam-icon {
+  font-size: 72rpx;
+}
+
+.kungfu__exam-body {
+  flex: 1;
+}
+
+.kungfu__exam-title {
+  font-size: var(--font-xl);
+  font-weight: 900;
+  letter-spacing: 4rpx;
+}
+
+.kungfu__exam-rule,
+.kungfu__exam-advice,
+.kungfu__exam-pass {
+  margin-top: 4rpx;
+  font-size: var(--font-sm);
+}
+
+.kungfu__exam-pass {
+  font-weight: 800;
+}
+
+.kungfu__exam-arrow {
+  font-size: 56rpx;
+}

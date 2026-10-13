@@ -1,5 +1,9 @@
 const WRONG_FEEDBACK_MS = 600
 
+const THINKING_LINES = ['让我翻翻字典…', '嗯，有点意思…', '答案马上揭晓…', '小书童正在核对…', '容我想一想…', '好像有戏…']
+
+const pickThinkingLine = () => THINKING_LINES[Math.floor(Math.random() * THINKING_LINES.length)]
+
 const SLOT_SIZE_BY_LENGTH = [
   { maxLength: 4, sizeClass: '' },
   { maxLength: 5, sizeClass: 'char-puzzle__slots--medium' },
@@ -33,17 +37,22 @@ Component({
     revealed: { type: Array, value: [] },
     eliminated: { type: Array, value: [] },
     columns: { type: Number, value: 6 },
-    disabled: { type: Boolean, value: false }
+    disabled: { type: Boolean, value: false },
+    checking: { type: Boolean, value: false }
   },
 
   data: {
     slots: [],
     boardItems: [],
     slotSizeClass: '',
+    thinkingLine: '',
     isWrong: false
   },
 
   observers: {
+    checking(checking) {
+      if (checking) this.setData({ thinkingLine: pickThinkingLine() })
+    },
     'board, answerLength, revealed, eliminated'(board, answerLength, revealed, eliminated) {
       this.setData({
         slots: buildSlots(answerLength, revealed),

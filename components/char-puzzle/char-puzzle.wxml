@@ -1,5 +1,5 @@
 <view class="char-puzzle">
-  <view class="char-puzzle__slots {{slotSizeClass}} {{isWrong ? 'char-puzzle__slots--wrong' : ''}}">
+  <view class="char-puzzle__slots {{slotSizeClass}} {{isWrong ? 'char-puzzle__slots--wrong' : ''}} {{checking ? 'char-puzzle__slots--checking' : ''}}">
     <view
       wx:for="{{slots}}"
       wx:key="index"
@@ -8,6 +8,14 @@
       bindtap="handleSlotTap"
     >{{item.char}}</view>
   </view>
+  <view class="char-puzzle__thinking {{checking ? 'char-puzzle__thinking--visible' : ''}}" aria-live="polite">
+    <image class="char-puzzle__thinking-avatar" src="/assets/icons/default-avatar.png" mode="aspectFill" />
+    <view class="char-puzzle__thinking-bubble">
+      <text>{{thinkingLine}}</text>
+      <view class="char-puzzle__dots"><view class="char-puzzle__dot"></view><view class="char-puzzle__dot"></view><view class="char-puzzle__dot"></view></view>
+    </view>
+  </view>
+
   <view class="char-puzzle__board char-puzzle__board--cols-{{columns}}">
     <view
       wx:for="{{boardItems}}"

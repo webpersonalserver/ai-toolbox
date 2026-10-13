@@ -1,0 +1,44 @@
+<view wx:if="{{visible}}" class="kr kr--{{kind}}" catchtouchmove="noop">
+  <view class="kr__rays"></view>
+  <view class="kr__panel">
+    <block wx:if="{{kind === 'grandmaster'}}">
+      <view class="kr__scroll">
+        <view class="kr__scroll-rod"></view>
+        <view class="kr__scroll-body">
+          <view
+            wx:for="{{grandmasterCharacters}}"
+            wx:key="*this"
+            class="kr__big-character kr__big-character--{{index}}"
+          >{{item}}</view>
+          <view class="kr__seal"><view>九九</view><view>真传</view></view>
+        </view>
+        <view class="kr__scroll-rod"></view>
+      </view>
+    </block>
+    <block wx:else>
+      <view wx:if="{{heading}}" class="kr__heading">{{heading}}</view>
+      <view class="kr__title">{{title}}</view>
+      <view wx:if="{{kind === 'breakthrough'}}" class="kr__stars">
+        <text
+          wx:for="{{starSlots}}"
+          wx:key="*this"
+          class="kr__star kr__star--{{item}} {{item <= stars ? 'kr__star--earned' : ''}}"
+        >★</text>
+      </view>
+    </block>
+    <view wx:if="{{kind === 'grandmaster' && title}}" class="kr__title kr__title--grandmaster">{{title}}</view>
+    <view wx:if="{{subtitle}}" class="kr__subtitle">{{subtitle}}</view>
+    <view wx:if="{{lines.length}}" class="kr__lines">
+      <view wx:for="{{lines}}" wx:key="index" class="kr__line">{{item}}</view>
+    </view>
+    <view class="kr__actions">
+      <button
+        wx:for="{{actions}}"
+        wx:key="key"
+        class="btn {{item.primary ? 'btn--primary' : 'btn--ghost'}} kr__action"
+        data-key="{{item.key}}"
+        bindtap="handleAction"
+      >{{item.text}}</button>
+    </view>
+  </view>
+</view>

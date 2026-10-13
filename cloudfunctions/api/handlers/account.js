@@ -4,7 +4,14 @@ const { generateNickname } = require('../lib/nickname')
 const { ERROR_CODES, BusinessError, throwIfFailed } = require('../lib/response')
 const { loadRules, sumRewardsByType, toClientRules } = require('../lib/rules')
 const { dailyDocId, getTodayRecord, ensureTodayRecord, adRewardCountOf, describeTodayStatus } = require('../lib/daily')
-const { isItemType, settleUserItems, toItemsView, changeItemsInTransaction } = require('../lib/items')
+const {
+  ITEM_TYPES,
+  isItemType,
+  settleUserItems,
+  toItemsView,
+  changeItemsInTransaction,
+  claimPendingStaminaInTransaction
+} = require('../lib/items')
 const { ITEM_LOG_REASONS, writeItemLogs } = require('../lib/item-log')
 const { isAdmin } = require('./admin')
 
@@ -58,6 +65,7 @@ const findOrCreateUser = async (openid, rules, now) => {
       avatarUrl: '',
       profileCustomized: false,
       items: { ...rules.signupItems },
+      staminaPending: 0,
       staminaAnchorAt: now,
       createdAt: db.serverDate(),
       lastLoginAt: db.serverDate()
@@ -167,4 +175,15 @@ const grantAdReward = async ({ openid, payload }) => {
   return { itemType, rewardAmount, items: outcome.items, adRemaining: outcome.adRemaining }
 }
 
-module.exports = { login, updateProfile, checkin, grantAdReward }
+const claimRecoveredStamina = async ({ openid }) => {
+  const now = Date.now()
+  const rules = await loadRules()
+  const outcome = await db.runTransaction((transaction) => claimPendingStaminaInTransaction(transaction, openid, rules, now))
+  if (outcome.claimed <= 0) {
+    throw new BusinessError(ERROR_CODES.NOTHING_TO_CLAIM, '还没有恢复的体力可以领取')
+  }
+  await writeItemLogs(openid, { [ITEM_TYPES.STAMINA]: outcome.claimed }, ITEM_LOG_REASONS.RECOVERY)
+  return outcome
+}
+
+module.exports = { login, updateProfile, checkin, grantAdReward, claimRecoveredStamina }

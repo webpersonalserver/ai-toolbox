@@ -14,11 +14,13 @@ const {
   ELIMINATED_PER_HINT,
   ELIMINATE_KEEP_AT_LEAST
 } = require('../lib/games')
-const { sumRewardsByType } = require('../lib/rules')
 const {
   describeTitle,
   pendingChestCount,
   milestoneClaimedCount,
+  claimedChestCount,
+  chestRewards,
+  isBigChest,
   describeAchievement
 } = require('../lib/achievement')
 const {
@@ -133,7 +135,6 @@ const claimMilestones = async ({ openid, payload }) => {
   const rules = await loadRulesForGame(gameType)
   await getProgress(openid, gameType)
   const { everyLevels } = rules.milestone
-  const rewardPerChest = sumRewardsByType(rules.milestone.rewards)
 
   const outcome = await db.runTransaction(async (transaction) => {
     const progressRef = progressRefOf(transaction, openid, gameType)
@@ -143,19 +144,25 @@ const claimMilestones = async ({ openid, payload }) => {
     if (chestCount <= 0) {
       return { failure: { code: ERROR_CODES.NO_MILESTONE_TO_CLAIM, message: '还没有可以打开的宝箱' } }
     }
-    const deltas = {}
-    Object.keys(rewardPerChest).forEach((itemType) => {
-      deltas[itemType] = rewardPerChest[itemType] * chestCount
+    const firstChestNo = claimedChestCount(progress, everyLevels) + 1
+    const chests = Array.from({ length: chestCount }, (_, offset) => {
+      const chestNo = firstChestNo + offset
+      return { chestNo, isBig: isBigChest(chestNo, rules), rewards: chestRewards(chestNo, rules) }
     })
+    const deltas = {}
+    chests.forEach((chest) => chest.rewards.forEach((reward) => {
+      deltas[reward.type] = (deltas[reward.type] || 0) + reward.amount
+    }))
     const change = await changeItemsInTransaction(transaction, openid, deltas, rules, now)
     const claimedSolvedCount = Math.floor(solvedCount / everyLevels) * everyLevels
     await progressRef.update({ data: { milestoneClaimedSolvedCount: claimedSolvedCount } })
-    return { chestCount, deltas, items: change.items }
+    return { chestCount, chests, deltas, items: change.items }
   })
   throwIfFailed(outcome)
   await writeItemLogs(openid, outcome.deltas, ITEM_LOG_REASONS.MILESTONE, { gameType })
   return {
     chestCount: outcome.chestCount,
+    chests: outcome.chests,
     rewards: Object.keys(outcome.deltas).map((type) => ({ type, amount: outcome.deltas[type] })),
     items: outcome.items
   }
@@ -214,13 +221,13 @@ const startAttempt = async ({ openid, payload }) => {
     if (unplayableReason) return { failure: unplayableReason }
     if (getAttempt(progress, levelNo).active) return { charged: false }
     const change = await changeItemsInTransaction(transaction, openid, staminaDelta, rules, now)
-    if (change.insufficientType) return { insufficientType: change.insufficientType, items: null }
+    if (change.insufficientType) return { insufficientType: change.insufficientType, insufficientItems: change.items }
     await progressRef.update({ data: { [`attempts.${levelNo}`]: _.set({ active: true, wrongCount: 0 }) } })
     return { charged: true, items: change.items }
   })
   throwIfFailed(outcome)
   if (outcome.insufficientType) {
-    await throwInsufficientItem(openid, outcome.insufficientType, rules)
+    await throwInsufficientItem(openid, outcome.insufficientType, rules, outcome.insufficientItems)
   }
   if (outcome.charged) {
     await writeItemLogs(openid, staminaDelta, ITEM_LOG_REASONS.USE, { gameType, levelNo })
@@ -307,13 +314,13 @@ const useHint = async ({ openid, payload }) => {
       return { failure: { code: ERROR_CODES.HINT_LIMIT_REACHED, message: `每关最多提示 ${maxHints} 次` } }
     }
     const change = await changeItemsInTransaction(transaction, openid, hintDelta, rules, now)
-    if (change.insufficientType) return { insufficientType: change.insufficientType }
+    if (change.insufficientType) return { insufficientType: change.insufficientType, insufficientItems: change.items }
     await progressRef.update({ data: { [`hintsUsed.${levelNo}`]: _.inc(1) } })
     return { hintsUsed: hintsUsed + 1, items: change.items }
   })
   throwIfFailed(outcome)
   if (outcome.insufficientType) {
-    await throwInsufficientItem(openid, outcome.insufficientType, rules)
+    await throwInsufficientItem(openid, outcome.insufficientType, rules, outcome.insufficientItems)
   }
   await writeItemLogs(openid, hintDelta, ITEM_LOG_REASONS.USE, { gameType, levelNo })
   return {

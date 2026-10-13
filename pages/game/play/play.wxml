@@ -23,22 +23,22 @@
     <button class="btn btn--primary play__start" loading="{{busy}}" bindtap="handleStart">
       {{attempt.failed ? '再来一次' : '开始挑战'}}<image class="play__cost-icon" src="/assets/icons/stamina.png" mode="aspectFit" />-{{staminaCost}}
     </button>
-    <view wx:if="{{staminaRecoveryText}}" class="play__recovery"><image class="inline-icon" src="/assets/icons/stamina.png" mode="aspectFit" />{{staminaRecoveryText}}</view>
+    <view class="play__recovery"><stamina-recovery items="{{items}}" bind:claimed="syncItems" /></view>
     <button wx:if="{{attempt.failed}}" class="btn btn--ghost play__start" bindtap="handleRescue">求助好友（免费）</button>
     <view class="play__guide-link" bindtap="openGuide">玩法说明</view>
   </view>
 
   <block wx:if="{{stage === 'playing'}}">
     <view class="play__hearts">
-      <text wx:for="{{hearts}}" wx:key="index" class="play__heart {{item ? '' : 'play__heart--lost'}}">♥</text>
+      <image wx:for="{{hearts}}" wx:key="index" class="play__heart {{item ? '' : 'play__heart--lost'}}" src="{{item ? '/assets/icons/heart-full.png' : '/assets/icons/heart-empty.png'}}" mode="aspectFit" />
     </view>
     <view class="card play__clue">
       <view class="play__clue-label">{{game.clueLabel}}</view>
       <view wx:if="{{gameType === 'typo'}}" class="play__typo">
         <text wx:for="{{clueChars}}" wx:key="index" class="play__typo-char {{item.wrong ? 'play__typo-char--wrong' : ''}}">{{item.char}}</text>
       </view>
-      <view wx:else class="play__clue-text">{{clue}}</view>
-      <view wx:if="{{clueHint}}" class="play__clue-hint">释义：{{clueHint}}</view>
+      <view wx:else class="play__clue-text"><text wx:for="{{clueSegments}}" wx:key="index" class="{{item.masked ? 'clue-mask' : ''}}">{{item.text}}</text></view>
+      <view wx:if="{{clueHint}}" class="play__clue-hint">释义：<text wx:for="{{clueHintSegments}}" wx:key="index" class="{{item.masked ? 'clue-mask clue-mask--small' : ''}}">{{item.text}}</text></view>
       <view wx:if="{{poemSource}}" class="play__clue-source">{{poemSource}}</view>
     </view>
 
@@ -50,6 +50,7 @@
       eliminated="{{eliminated}}"
       columns="{{game.boardColumns}}"
       disabled="{{submitting}}"
+      checking="{{submitting}}"
       bind:complete="handleComplete"
     />
 
@@ -76,7 +77,9 @@
       <view>解锁了 {{milestone.pendingChests}} 个宝箱</view>
       <button class="btn btn--primary play__reward-btn" loading="{{busy}}" bindtap="handleOpenChests">开宝箱</button>
     </view>
-    <view wx:elif="{{milestone}}" class="play__reward-hint">再通过 {{milestone.levelsToNextChest}} 关可开宝箱</view>
+    <view wx:elif="{{milestone}}" class="play__reward-hint">
+      再通过 {{milestone.levelsToNextChest}} 关开{{milestone.nextChestIsBig ? '大' : ''}}宝箱：{{nextChestText}}
+    </view>
     <view class="play__actions">
       <button class="btn btn--muted play__action" bindtap="goLevelList">关卡列表</button>
       <button wx:if="{{nextLevelNo}}" class="btn btn--primary play__action" bindtap="goNextLevel">
@@ -103,3 +106,12 @@
     <button class="btn btn--muted rescue-sheet__cancel" bindtap="closeRescueSheet">再想想</button>
   </view>
 </view>
+
+<reward-popup
+  visible="{{rewardPopup.visible}}"
+  title="{{rewardPopup.title}}"
+  subtitle="{{rewardPopup.subtitle}}"
+  badge="{{rewardPopup.badge}}"
+  rewards="{{rewardPopup.rewards}}"
+  bind:close="closeRewardPopup"
+/>
