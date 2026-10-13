@@ -2,6 +2,7 @@ const { EXAM_QUESTION_COUNT, EXAM_LIVES, buildExam } = require('../../../utils/p
 const { readProgress, saveExamResult } = require('../../../utils/practice/multiplication-records')
 const { createSoundPlayer } = require('../../../utils/practice/sound')
 const { syncProgress, describeNewChests } = require('../../../utils/practice/multiplication-rewards')
+const { HIDDEN_FLOWER_TOAST, HIDDEN_MEDAL_POPUP, createHonorPresenter, medalShareOf } = require('../../../utils/practice/honors')
 
 const CORRECT_PAUSE_MS = 800
 const WRONG_PAUSE_MS = 1800
@@ -18,6 +19,8 @@ const heartsOf = (lives) => Array.from({ length: EXAM_LIVES }, (_, index) => ({ 
 
 Page({
   data: {
+    flowerToast: HIDDEN_FLOWER_TOAST,
+    medalPopup: HIDDEN_MEDAL_POPUP,
     started: false,
     questionCount: EXAM_QUESTION_COUNT,
     lives: EXAM_LIVES,
@@ -37,6 +40,7 @@ Page({
   onLoad() {
     this.timers = []
     this.soundPlayer = createSoundPlayer()
+    this.honorPresenter = createHonorPresenter(this)
     const { exam } = readProgress()
     this.setData({ previousBest: exam.passed ? `你的最快纪录：${describeSeconds(exam.fastestSeconds)}` : '' })
   },
@@ -45,6 +49,7 @@ Page({
     this.timers.forEach((timer) => clearTimeout(timer))
     clearInterval(this.clock)
     this.soundPlayer.destroy()
+    this.honorPresenter.destroy()
   },
 
   later(callback, delayMs) {
@@ -140,6 +145,7 @@ Page({
       { key: 'back', text: passed ? '返回秘籍' : '回去修炼', primary: false }
     ]
     if (!passed) {
+      syncProgress({ practiced: true }).then((result) => result && this.honorPresenter.present(result.honors))
       this.setData({
         locked: true,
         result: {
@@ -154,7 +160,7 @@ Page({
       })
       return
     }
-    const chestsSynced = syncProgress()
+    const chestsSynced = syncProgress({ practiced: true })
     let title = '神功大成，宝刀未老！'
     if (fasterPass) title = '再破纪录，宗师风范！'
     if (firstPass) title = '恭喜你，神功大成！'
@@ -180,10 +186,19 @@ Page({
         }
       })
       chestsSynced.then((result) => {
+        if (result) this.honorPresenter.present(result.honors)
         const chestLine = describeNewChests(result)
         if (chestLine && this.data.result.visible) this.setData({ 'result.lines': [...this.data.result.lines, chestLine] })
       })
     }, GRANDMASTER_CHEER_MS)
+  },
+
+  handleMedalClose() {
+    this.honorPresenter.closeMedal()
+  },
+
+  onShareAppMessage(event) {
+    return medalShareOf(event, this.data.medalPopup) || { title: '一起修炼九九神功，看谁先神功大成！', path: '/pages/practice/multiplication/index' }
   },
 
   handleResultAction(event) {

@@ -20,4 +20,7 @@ const markGuideSeen = (guideKey) => {
   }
 }
 
-module.exports = { GUIDE_KEYS, hasSeenGuide, markGuideSeen }
+// 猜成语 keeps its original key so players who already read it are not asked again.
+const rulesGuideKeyOf = (gameType) => (gameType === 'idiom' ? GUIDE_KEYS.IDIOM_RULES : `guide.rules.${gameType}.seen.v1`)
+
+module.exports = { GUIDE_KEYS, hasSeenGuide, markGuideSeen, rulesGuideKeyOf }

@@ -1,0 +1,145 @@
+.medal-popup {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--space-lg);
+  background: var(--color-overlay);
+  animation: medal-fade 0.3s ease-out;
+}
+
+.medal-popup__rays {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 1400rpx;
+  height: 1400rpx;
+  margin: -760rpx 0 0 -700rpx;
+  border-radius: 50%;
+  background: repeating-conic-gradient(var(--color-gold) 0deg 10deg, transparent 10deg 30deg);
+  opacity: 0.3;
+  animation: medal-spin 14s linear infinite;
+}
+
+.medal-popup__rays--hidden {
+  display: none;
+}
+
+.medal-popup__panel {
+  position: relative;
+  width: 100%;
+  padding: var(--space-xl) var(--space-lg);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: 0 16rpx 0 var(--color-primary-deep);
+  text-align: center;
+  box-sizing: border-box;
+  animation: medal-pop 0.5s cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+
+.medal-popup__headline {
+  color: var(--color-primary-deep);
+  font-size: var(--font-xl);
+  font-weight: 900;
+  letter-spacing: 6rpx;
+}
+
+.medal-popup__medal {
+  position: relative;
+  width: 260rpx;
+  height: 300rpx;
+  margin: var(--space-md) auto 0;
+}
+
+.medal-popup__panel--new .medal-popup__medal {
+  animation: medal-drop 0.9s cubic-bezier(0.3, 1.6, 0.5, 1) 0.2s both;
+}
+
+.medal-popup__ribbon {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 120rpx;
+  height: 120rpx;
+  margin-left: -60rpx;
+  background: linear-gradient(90deg, var(--color-primary) 0 50%, var(--color-primary-deep) 50% 100%);
+  clip-path: polygon(0 0, 100% 0, 75% 100%, 25% 100%);
+}
+
+.medal-popup__disc {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 260rpx;
+  height: 260rpx;
+  border: 12rpx solid var(--color-gold);
+  border-radius: 50%;
+  background: var(--color-gold-soft);
+  box-shadow: 0 10rpx 0 var(--color-primary-deep), inset 0 0 0 8rpx var(--color-surface);
+  font-size: 130rpx;
+  box-sizing: border-box;
+}
+
+.medal-popup__medal--locked {
+  filter: grayscale(1);
+  opacity: 0.45;
+}
+
+.medal-popup__name {
+  margin-top: var(--space-md);
+  font-size: 60rpx;
+  font-weight: 900;
+}
+
+.medal-popup__praise {
+  margin-top: var(--space-xs);
+  color: var(--color-primary-deep);
+  font-size: var(--font-lg);
+  font-weight: 800;
+}
+
+.medal-popup__date,
+.medal-popup__remaining {
+  margin-top: var(--space-sm);
+  color: var(--color-ink-soft);
+  font-size: var(--font-sm);
+}
+
+.medal-popup__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-top: var(--space-lg);
+}
+
+.medal-popup__action.btn {
+  width: 100%;
+}
+
+@keyframes medal-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes medal-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes medal-pop {
+  0% { transform: scale(0.6); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes medal-drop {
+  0% { transform: translateY(-400rpx) rotate(-20deg); opacity: 0; }
+  100% { transform: translateY(0) rotate(0deg); opacity: 1; }
+}

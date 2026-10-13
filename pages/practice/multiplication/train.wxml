@@ -1,41 +1,4 @@
-<view class="page train">
-  <view class="train__top">
-    <view class="train__heading">{{heading}}</view>
-    <view class="train__progress-row">
-      <view class="train__track"><view class="train__fill" style="width: {{progressPercent}}%"></view></view>
-      <view class="train__progress-text">{{progressText}}</view>
-    </view>
-    <view wx:if="{{combo >= 2}}" class="train__combo">🔥 {{combo}} 连击</view>
-  </view>
 
-  <view class="train__feedback">{{feedbackLine}}</view>
 
-  <kungfu-question
-    question="{{question}}"
-    locked="{{locked}}"
-    revealed="{{revealed}}"
-    bind:answered="handleAnswered"
-    bind:empty="handleEmpty"
-  />
-</view>
-
-<practice-cheer
-  visible="{{cheer.visible}}"
-  title="{{cheer.title}}"
-  subtitle="{{cheer.subtitle}}"
-  mascot="{{cheer.mascot}}"
-  big="{{cheer.big}}"
-  flying-star="{{false}}"
-/>
-
-<kungfu-result
-  visible="{{result.visible}}"
-  kind="breakthrough"
-  heading="{{result.heading}}"
-  title="{{result.title}}"
-  subtitle="{{result.subtitle}}"
-  stars="{{result.stars}}"
-  lines="{{result.lines}}"
-  actions="{{result.actions}}"
-  bind:action="handleResultAction"
-/>
+<flower-toast visible="{{flowerToast.visible}}" count="{{flowerToast.count}}" text="{{flowerToast.text}}" />
+<medal-popup visible="{{medalPopup.visible}}" is-new="{{medalPopup.isNew}}" medal="{{medalPopup.medal}}" bind:close="handleMedalClose" />

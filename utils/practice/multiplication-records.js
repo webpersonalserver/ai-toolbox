@@ -10,7 +10,7 @@ const readProgress = () => {
   return stored ? { rows: { ...stored.rows }, exam: { ...empty.exam, ...stored.exam } } : empty
 }
 
-const rowProgressOf = (progress, row) => ({ studied: false, mastered: false, stars: 0, ...progress.rows[row] })
+const rowProgressOf = (progress, row) => ({ studied: false, recited: false, mastered: false, stars: 0, ...progress.rows[row] })
 
 const masteredRowCount = (progress) => Object.values(progress.rows).filter((row) => row.mastered).length
 
@@ -18,6 +18,15 @@ const markStudied = (row) => {
   const progress = readProgress()
   progress.rows[row] = { ...rowProgressOf(progress, row), studied: true }
   writeJson(PROGRESS_KEY, progress)
+}
+
+// Every 口诀 of the row was read aloud on the study page.
+const markRecited = (row) => {
+  const progress = readProgress()
+  const previous = rowProgressOf(progress, row)
+  progress.rows[row] = { ...previous, studied: true, recited: true }
+  writeJson(PROGRESS_KEY, progress)
+  return !previous.recited
 }
 
 // Keeps the best stars ever earned for the row.
@@ -49,4 +58,4 @@ const saveExamResult = ({ passed, correct, seconds }) => {
 // Replaces the local cache with the cloud's merged copy.
 const writeProgress = (progress) => writeJson(PROGRESS_KEY, progress)
 
-module.exports = { writeProgress, readProgress, rowProgressOf, masteredRowCount, markStudied, saveTrainingResult, saveExamResult }
+module.exports = { writeProgress, readProgress, rowProgressOf, masteredRowCount, markStudied, markRecited, saveTrainingResult, saveExamResult }

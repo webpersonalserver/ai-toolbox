@@ -4,10 +4,12 @@ const { loadRules, sumRewardsByType } = require('../lib/rules')
 const { dailyDocId, getTodayRecord, ensureTodayRecord } = require('../lib/daily')
 const { ALL_ITEM_TYPES, changeItemsInTransaction } = require('../lib/items')
 const { ITEM_LOG_REASONS, writeItemLogs } = require('../lib/item-log')
+const { FLOWER_REASONS, applyHonors, describeHonors } = require('../lib/honors')
 const { emptyProgress, parseClientProgress, mergeProgress, milestonesOf, toClientProgress } = require('../lib/multiplication-progress')
 const {
   PRACTICE_TIERS,
   PRACTICE_IDS,
+  practiceStatsDocId: statsDocId,
   milestoneKeyOf,
   isPracticeId,
   isPracticeTier,
@@ -22,7 +24,6 @@ const MAX_REPORTED_STREAK = 100000
 const MAX_RUN_ID_LENGTH = 64
 const MILESTONE_PRACTICE_ID = 'multiplication'
 
-const statsDocId = (openid, practiceId) => `${openid}_${practiceId}`
 const tierKeyOf = (tier) => `within${tier}`
 const emptyItemCounts = () => Object.fromEntries(ALL_ITEM_TYPES.map((type) => [type, 0]))
 const addItemCounts = (left, right) => Object.fromEntries(ALL_ITEM_TYPES.map((type) => [type, (left[type] || 0) + (right[type] || 0)]))
@@ -94,7 +95,8 @@ const toStatsView = (stats, practiceId, earnedToday, rules) => ({
   pendingChestCount: stats.pendingChestCount,
   pendingRewards: toRewardList(stats.pendingRewards),
   earnedToday,
-  rewardRules: rules.practice
+  rewardRules: rules.practice,
+  flowerRules: rules.honors.flowers
 })
 
 const stats = async ({ openid, payload }) => {
@@ -104,11 +106,13 @@ const stats = async ({ openid, payload }) => {
   return toStatsView(storedStats || emptyStats(openid, practiceId), practiceId, practiceEarnedOf(todayRecord), rules)
 }
 
+const countCrossings = (every, from, to) => Math.floor(to / every) - Math.floor(from / every)
+
 const report = async ({ openid, payload }) => {
   const { practiceId, tier, solvedDelta, streak, streakRunId } = parseReport(payload)
   const rules = await loadRules()
   await Promise.all([ensureTodayRecord(openid), ensureStats(openid, practiceId)])
-  return db.runTransaction(async (transaction) => {
+  const outcome = await db.runTransaction(async (transaction) => {
     const statsRef = transaction.collection('practice_stats').doc(statsDocId(openid, practiceId))
     const dailyRef = transaction.collection('daily').doc(dailyDocId(openid))
     const [{ data: rawStats }, { data: todayRecord }] = await Promise.all([statsRef.get(), dailyRef.get()])
@@ -145,8 +149,16 @@ const report = async ({ openid, payload }) => {
     if (chests.length) {
       await dailyRef.update({ data: { practiceEarned: earnedToday, updatedAt: db.serverDate() } })
     }
-    return { newChests: chests, missedByCap, stats: toStatsView(nextStats, practiceId, earnedToday, rules) }
+    const flowerRules = rules.honors.flowers
+    const flowerEvents = [
+      { reason: FLOWER_REASONS.ARITHMETIC_SOLVED, count: countCrossings(flowerRules.arithmeticSolvedEvery, storedStats.totalSolved, totalSolved) },
+      { reason: FLOWER_REASONS.ARITHMETIC_STREAK, count: flowerRules.arithmeticStreaks.filter((target) => target > rewardedStreak && target <= streak).length }
+    ].filter((event) => event.count > 0)
+    return { newChests: chests, missedByCap, stats: toStatsView(nextStats, practiceId, earnedToday, rules), flowerEvents }
   })
+  const { flowerEvents, ...result } = outcome
+  const honors = await applyHonors(openid, { flowerEvents, practiced: solvedDelta > 0 }, rules)
+  return { ...result, honors }
 }
 
 // Merges the device's progress into the cloud copy, then pays each newly reached achievement once
@@ -158,26 +170,32 @@ const syncProgress = async ({ openid, payload }) => {
   const practiceId = MILESTONE_PRACTICE_ID
   const rules = await loadRules()
   await ensureStats(openid, practiceId)
-  return db.runTransaction(async (transaction) => {
+  const outcome = await db.runTransaction(async (transaction) => {
     const statsRef = transaction.collection('practice_stats').doc(statsDocId(openid, practiceId))
     const storedStats = withDefaults((await statsRef.get()).data, openid, practiceId)
     const progress = mergeProgress(storedStats.progress || emptyProgress(), clientProgress)
     const rewarded = new Set(storedStats.rewardedMilestones)
-    const chests = milestonesOf(progress)
-      .filter((milestone) => !rewarded.has(milestoneKeyOf(milestone)))
-      .map((milestone) => {
-        rewarded.add(milestoneKeyOf(milestone))
-        return { source: milestone.type, row: milestone.row || null, rewards: rules.practice.multiplication[milestone.type] }
-      })
+    const newMilestones = milestonesOf(progress).filter((milestone) => !rewarded.has(milestoneKeyOf(milestone)))
+    newMilestones.forEach((milestone) => rewarded.add(milestoneKeyOf(milestone)))
+    const chests = newMilestones
+      .map((milestone) => ({ source: milestone.type, row: milestone.row || null, rewards: rules.practice.multiplication[milestone.type] || [] }))
       .filter((chest) => chest.rewards.length)
     const pendingChestCount = storedStats.pendingChestCount + chests.length
     const pendingRewards = addItemCounts(storedStats.pendingRewards, sumRewardsByType(chests.flatMap((chest) => chest.rewards)))
     await statsRef.update({
       data: { progress, rewardedMilestones: [...rewarded], pendingChestCount, pendingRewards, updatedAt: db.serverDate() }
     })
-    return { progress: toClientProgress(progress), newChests: chests, pendingChestCount }
+    const flowerEvents = [FLOWER_REASONS.ROW_RECITED, FLOWER_REASONS.ROW_MASTERED, FLOWER_REASONS.ROW_PERFECT]
+      .map((reason) => ({ reason, count: newMilestones.filter((milestone) => milestone.type === reason).length }))
+      .filter((event) => event.count > 0)
+    return { progress: toClientProgress(progress), newChests: chests, pendingChestCount, flowerEvents }
   })
+  const { flowerEvents, ...result } = outcome
+  const honors = await applyHonors(openid, { flowerEvents, practiced: payload.practiced === true }, rules)
+  return { ...result, honors }
 }
+
+const honors = ({ openid }) => describeHonors(openid)
 
 const claimChests = async ({ openid, payload }) => {
   const practiceId = parsePracticeId(payload)
@@ -212,4 +230,4 @@ const summarizePractices = (openid) =>
     })
   )
 
-module.exports = { stats, report, syncProgress, claimChests, summarizePractices }
+module.exports = { stats, report, syncProgress, honors, claimChests, summarizePractices }

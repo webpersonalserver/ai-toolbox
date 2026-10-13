@@ -5,11 +5,12 @@ const { describeRewards } = require('../../../utils/items')
 const { DEFAULT_SHARE, buildRescueShare } = require('../../../utils/share')
 const { HIDDEN_REWARD_POPUP, openMilestoneChests } = require('../../../utils/milestone')
 const { buildGuideSections } = require('../../../utils/rule-text')
-const { GUIDE_KEYS, hasSeenGuide, markGuideSeen } = require('../../../utils/onboarding')
+const { hasSeenGuide, markGuideSeen, rulesGuideKeyOf } = require('../../../utils/onboarding')
 const { gameConfigOf, hintTextsOf, describePoemSource, splitTypoClue } = require('../../../utils/games')
 const { openLeaderboardTab } = require('../../../utils/navigation')
 const { splitClue } = require('../../../utils/clue')
 const { withMinimumDuration } = require('../../../utils/min-duration')
+const { createSoundPlayer } = require('../../../utils/practice/sound')
 
 const PLAY_STAGES = {
   LOADING: 'loading',
@@ -20,14 +21,31 @@ const PLAY_STAGES = {
 
 const SHARE_PURPOSE_RESCUE = 'rescue'
 const AUTO_START_FLAG = '1'
-const CELEBRATION_MS = 1600
+const CHEER_MS = 1600
+const BIG_CHEER_MS = 2600
+const PASS_PRAISES = ['过关啦！', '太厉害了！', '答对啦！', '漂亮！', '一猜就中！']
+const PASS_MASCOTS = ['🎉', '🥳', '🌟', '👏', '🤩']
+const BIG_MASCOTS = ['🏆', '👑', '🎁']
+const HIDDEN_CHEER = { visible: false, title: '', subtitle: '', mascot: '', big: false }
 const MIN_CHECKING_MS = 550
-const CONFETTI_PIECES = Array.from({ length: 14 }, (_, index) => index)
 
 const GUIDE_CONFIRM_TEXT = {
   BEFORE_START: '知道了，开始挑战',
   REVIEW: '知道了'
 }
+
+const pick = (list) => list[Math.floor(Math.random() * list.length)]
+
+// Bigger moments (new title, a chest unlocked, everything cleared) get the full-screen version.
+const passCheerOf = ({ titleUpgrade, unlockedChest, allCleared, perfectPass }) => {
+  if (allCleared) return { visible: true, title: '全部通关！', subtitle: '你是真正的解谜达人', mascot: '👑', big: true }
+  if (titleUpgrade) return { visible: true, title: `晋升「${titleUpgrade}」！`, subtitle: '段位又升了一级', mascot: pick(BIG_MASCOTS), big: true }
+  if (unlockedChest) return { visible: true, title: '解锁宝箱！', subtitle: '快去打开看看里面有什么', mascot: '🎁', big: true }
+  return { visible: true, title: pick(PASS_PRAISES), subtitle: perfectPass ? '零失误，完美通关！' : '', mascot: pick(PASS_MASCOTS), big: false }
+}
+
+// Solving exactly the Nth level of a chest interval is the moment a chest unlocks; older unopened chests don't count.
+const justUnlockedChest = (milestone) => milestone.pendingChests > 0 && milestone.levelsToNextChest === milestone.everyLevels
 
 const buildHearts = (attempt) =>
   Array.from({ length: attempt.maxWrongAttempts }, (_, index) => index < attempt.attemptsLeft)
@@ -67,9 +85,9 @@ Page({
     busy: false,
     rescueId: '',
     rescueSheetVisible: false,
-    celebrating: false,
+    cheer: HIDDEN_CHEER,
+    perfectPass: false,
     rewardPopup: HIDDEN_REWARD_POPUP,
-    confettiPieces: CONFETTI_PIECES,
     guideVisible: false,
     guideSections: [],
     guideConfirmText: GUIDE_CONFIRM_TEXT.REVIEW,
@@ -80,6 +98,7 @@ Page({
     this.shouldAutoStart = query.autoStart === AUTO_START_FLAG
     const levelNo = Number(query.levelNo) || 1
     const gameConfig = gameConfigOf(query.gameType)
+    this.soundPlayer = createSoundPlayer()
     this.setData({ levelNo, gameType: gameConfig.gameType, game: gameConfig, hintTexts: hintTextsOf(gameConfig) })
     wx.setNavigationBarTitle({ title: `${gameConfig.name} · 第 ${levelNo} 关` })
     this.loadLevel()
@@ -142,14 +161,19 @@ Page({
     }
   },
 
-  celebrate() {
+  celebrate(cheer) {
     clearTimeout(this.celebrationTimer)
-    this.setData({ celebrating: true })
-    this.celebrationTimer = setTimeout(() => this.setData({ celebrating: false }), CELEBRATION_MS)
+    this.soundPlayer.play(cheer.big ? 'milestone' : 'correct')
+    if (cheer.big) this.celebrationTimer = setTimeout(() => this.soundPlayer.play('gong'), 400)
+    wx.vibrateShort({ type: 'heavy' })
+    this.setData({ cheer })
+    this.cheerTimer = setTimeout(() => this.setData({ cheer: HIDDEN_CHEER }), cheer.big ? BIG_CHEER_MS : CHEER_MS)
   },
 
   onUnload() {
     clearTimeout(this.celebrationTimer)
+    clearTimeout(this.cheerTimer)
+    this.soundPlayer.destroy()
   },
 
   async withBusy(task) {
@@ -163,7 +187,7 @@ Page({
   },
 
   handleStart() {
-    if (!hasSeenGuide(GUIDE_KEYS.IDIOM_RULES)) {
+    if (!hasSeenGuide(rulesGuideKeyOf(this.data.gameType))) {
       this.showGuide({ startAfterGuide: true })
       return
     }
@@ -186,7 +210,7 @@ Page({
   },
 
   handleGuideConfirm() {
-    markGuideSeen(GUIDE_KEYS.IDIOM_RULES)
+    markGuideSeen(rulesGuideKeyOf(this.data.gameType))
     const { startAfterGuide } = this.data
     this.setData({ guideVisible: false, startAfterGuide: false })
     if (startAfterGuide) this.startAttempt()
@@ -213,17 +237,20 @@ Page({
         MIN_CHECKING_MS
       )
       if (result.correct) {
+        const { attempt, hintsUsed } = this.data
+        const perfectPass = attempt.attemptsLeft === attempt.maxWrongAttempts && hintsUsed === 0
+        const titleUpgrade = result.titleUpgrade || ''
         this.setData({
+          perfectPass,
           stage: PLAY_STAGES.SOLVED,
           solution: result.solution,
           nextLevelNo: result.nextLevelNo,
-          titleUpgrade: result.titleUpgrade || '',
+          titleUpgrade,
           allCleared: result.allCleared,
           milestone: result.achievement.milestone,
           nextChestText: describeRewards(result.achievement.milestone.nextChestRewards)
         })
-        wx.vibrateShort({ type: 'light' })
-        this.celebrate()
+        this.celebrate(passCheerOf({ titleUpgrade, unlockedChest: justUnlockedChest(result.achievement.milestone), allCleared: result.allCleared, perfectPass }))
         return
       }
       this.setData({ attempt: result.attempt, hearts: buildHearts(result.attempt) })

@@ -30,8 +30,15 @@ const buildRuleSections = (rules) => {
   const { everyLevels, bigChest, firstChestRewards } = rules.milestone
   sections.push({
     title: '宝箱',
-    text: `每通过 ${everyLevels} 关开一个宝箱，第一个就有 ${describeRewards(firstChestRewards)}，越往后越多；每第 ${bigChest.everyChests} 个是大宝箱，奖励翻 ${bigChest.multiplier} 倍。没领的宝箱可以在「我的 → 福利袋」里领`
+    text: `每通过 ${everyLevels} 关开一个宝箱，第一个就有 ${describeRewards(firstChestRewards)}，越往后越多；每第 ${bigChest.everyChests} 个是大宝箱，奖励翻 ${bigChest.multiplier} 倍。没领的宝箱可以在大厅的「福利袋」里领`
   })
+  if (rules.practice) {
+    const { dailyCaps } = rules.practice
+    sections.push({
+      title: '趣味练习',
+      text: `体力不够时去「趣味」练一练：加减运算答对题数、连对数达标得宝箱（每天最多 ${describeAmount(ITEM_TYPES.STAMINA, dailyCaps.stamina)}、${describeAmount(ITEM_TYPES.HINT, dailyCaps.hint)}）；九九神功每练成一重也有宝箱`
+    })
+  }
   sections.push({ title: '提示与求助', text: `每关最多提示 ${rules.level.maxHints} 次；卡关可免费求助好友，同一位好友每天最多帮你 ${rules.rescue.dailyLimitPerHelper} 次` })
   return sections
 }

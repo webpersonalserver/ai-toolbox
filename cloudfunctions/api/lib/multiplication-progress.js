@@ -8,7 +8,7 @@ const isCounter = (value) => Number.isInteger(value) && value >= 0 && value <= M
 const rowKeyOf = (row) => `row${row}`
 const ROWS = Array.from({ length: ROW_COUNT }, (_, index) => index + 1)
 
-const emptyRow = () => ({ studied: false, mastered: false, stars: 0 })
+const emptyRow = () => ({ studied: false, recited: false, mastered: false, stars: 0 })
 const emptyExam = () => ({ passed: false, passCount: 0, attempts: 0, bestCorrect: 0, fastestSeconds: 0, passedAt: 0 })
 const emptyProgress = () => ({ rows: Object.fromEntries(ROWS.map((row) => [rowKeyOf(row), emptyRow()])), exam: emptyExam() })
 
@@ -16,6 +16,7 @@ const isRowProgress = (value) =>
   value !== null &&
   typeof value === 'object' &&
   isBoolean(value.studied) &&
+  (value.recited === undefined || isBoolean(value.recited)) &&
   isBoolean(value.mastered) &&
   Number.isInteger(value.stars) &&
   value.stars >= 0 &&
@@ -39,7 +40,7 @@ const parseClientProgress = (progress, now) => {
   for (const row of ROWS) {
     const rowProgress = progress.rows[row] === undefined ? emptyRow() : progress.rows[row]
     if (!isRowProgress(rowProgress)) return null
-    rows[rowKeyOf(row)] = { studied: rowProgress.studied, mastered: rowProgress.mastered, stars: rowProgress.stars }
+    rows[rowKeyOf(row)] = { studied: rowProgress.studied, recited: Boolean(rowProgress.recited), mastered: rowProgress.mastered, stars: rowProgress.stars }
   }
   return { rows, exam: { ...progress.exam } }
 }
@@ -57,7 +58,10 @@ const mergeProgress = (left, right) => ({
       const key = rowKeyOf(row)
       const a = left.rows[key] || emptyRow()
       const b = right.rows[key] || emptyRow()
-      return [key, { studied: a.studied || b.studied, mastered: a.mastered || b.mastered, stars: Math.max(a.stars, b.stars) }]
+      return [
+        key,
+        { studied: a.studied || b.studied, recited: Boolean(a.recited || b.recited), mastered: a.mastered || b.mastered, stars: Math.max(a.stars, b.stars) }
+      ]
     })
   ),
   exam: {
@@ -74,6 +78,7 @@ const milestonesOf = (progress) => [
   ...ROWS.flatMap((row) => {
     const rowProgress = progress.rows[rowKeyOf(row)]
     return [
+      ...(rowProgress.recited ? [{ type: 'rowRecited', row }] : []),
       ...(rowProgress.mastered ? [{ type: 'rowMastered', row }] : []),
       ...(rowProgress.stars === MAX_STARS ? [{ type: 'rowPerfect', row }] : [])
     ]

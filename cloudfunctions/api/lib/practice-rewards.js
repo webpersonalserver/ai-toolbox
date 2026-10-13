@@ -6,7 +6,9 @@ const PRACTICE_TIERS = {
 
 const PRACTICE_IDS = ['arithmetic', 'multiplication']
 
-const MILESTONE_TYPES = { ROW_MASTERED: 'rowMastered', ROW_PERFECT: 'rowPerfect', GRANDMASTER: 'grandmaster' }
+const MILESTONE_TYPES = { ROW_RECITED: 'rowRecited', ROW_MASTERED: 'rowMastered', ROW_PERFECT: 'rowPerfect', GRANDMASTER: 'grandmaster' }
+
+const practiceStatsDocId = (openid, practiceId) => `${openid}_${practiceId}`
 
 const isPracticeId = (practiceId) => PRACTICE_IDS.includes(practiceId)
 
@@ -59,6 +61,7 @@ const toRewardList = (deltas) =>
   ALL_ITEM_TYPES.filter((type) => deltas[type] > 0).map((type) => ({ type, amount: deltas[type] }))
 
 module.exports = {
+  practiceStatsDocId,
   PRACTICE_TIERS,
   PRACTICE_IDS,
   MILESTONE_TYPES,

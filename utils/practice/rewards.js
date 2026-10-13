@@ -50,4 +50,9 @@ const expectsChest = (rules, earnedToday, { fromTotal, toTotal, streak, countsFo
 const isDailyCapReached = (earnedToday, dailyCaps) =>
   Object.keys(dailyCaps).every((type) => (earnedToday[type] || 0) >= dailyCaps[type])
 
-module.exports = { nextSolvedChest, nextStreakChest, expectsChest, isDailyCapReached }
+// Flowers have no daily cap, so this only checks the moments: every N answers, or a listed streak in one run.
+const expectsFlower = (flowerRules, { fromTotal, toTotal, streak, countsForStreak }) =>
+  Math.floor(toTotal / flowerRules.arithmeticSolvedEvery) > Math.floor(fromTotal / flowerRules.arithmeticSolvedEvery) ||
+  (countsForStreak && flowerRules.arithmeticStreaks.includes(streak))
+
+module.exports = { nextSolvedChest, nextStreakChest, expectsChest, expectsFlower, isDailyCapReached }

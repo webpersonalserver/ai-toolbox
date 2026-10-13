@@ -7,9 +7,10 @@ const {
   saveUnreportedSolved,
   takeUnreportedSolved
 } = require('../../../utils/practice/records')
-const { nextSolvedChest, nextStreakChest, expectsChest, isDailyCapReached } = require('../../../utils/practice/rewards')
+const { nextSolvedChest, nextStreakChest, expectsChest, expectsFlower, isDailyCapReached } = require('../../../utils/practice/rewards')
 const { practice } = require('../../../utils/api')
 const { createSoundPlayer } = require('../../../utils/practice/sound')
+const { HIDDEN_FLOWER_TOAST, HIDDEN_MEDAL_POPUP, createHonorPresenter, medalShareOf } = require('../../../utils/practice/honors')
 
 const PRACTICE_ID = 'arithmetic'
 const WELFARE_URL = '/pages/welfare/welfare'
@@ -75,6 +76,8 @@ Page({
     rewardBar: null,
     chestCount: 0,
     chestBump: false,
+    flowerToast: HIDDEN_FLOWER_TOAST,
+    medalPopup: HIDDEN_MEDAL_POPUP,
     recordBroken: false,
     soundEnabled: true,
     locked: false,
@@ -90,6 +93,8 @@ Page({
     this.wrongCount = 0
     this.timers = []
     this.soundPlayer = createSoundPlayer()
+    this.honorPresenter = createHonorPresenter(this)
+    this.hasReportedAnswer = false
     this.streakRunId = newRunId()
     this.unreportedSolved = takeUnreportedSolved(this.config.tier)
     this.reportedStreak = 0
@@ -114,12 +119,13 @@ Page({
     this.reportOnLeave()
     this.timers.forEach((timer) => clearTimeout(timer))
     this.soundPlayer.destroy()
+    this.honorPresenter.destroy()
   },
 
   async loadRewardState() {
     try {
       const stats = await practice.stats(PRACTICE_ID)
-      this.rewardState = { rules: stats.rewardRules, totalSolved: stats.totalSolved + this.unreportedSolved, earnedToday: stats.earnedToday }
+      this.rewardState = { rules: stats.rewardRules, flowerRules: stats.flowerRules, totalSolved: stats.totalSolved + this.unreportedSolved, earnedToday: stats.earnedToday }
       const bestStreak = Math.max(this.data.bestStreak, stats.tiers[this.config.tier].bestStreak)
       this.bestAtStart = Math.max(this.bestAtStart, bestStreak)
       this.setData({ bestStreak, chestCount: stats.pendingChestCount })
@@ -149,19 +155,24 @@ Page({
     })
   },
 
-  // Counts this answer and tells whether it is expected to earn a chest (the cloud decides for real).
+  // Counts this answer and tells what it is expected to earn (the cloud decides for real).
+  // The first answer of a visit is reported too, so the daily flower and first medals show up straight away.
   countSolved(streak, countsForStreak) {
     this.unreportedSolved += 1
-    if (!this.rewardState) return false
-    const { rules, totalSolved, earnedToday } = this.rewardState
+    const isFirstAnswer = !this.hasReportedAnswer
+    if (!this.rewardState) return { chest: false, shouldReport: isFirstAnswer }
+    const { rules, flowerRules, totalSolved, earnedToday } = this.rewardState
     this.rewardState.totalSolved = totalSolved + 1
-    return expectsChest(rules, earnedToday, { fromTotal: totalSolved, toTotal: totalSolved + 1, streak, countsForStreak })
+    const moment = { fromTotal: totalSolved, toTotal: totalSolved + 1, streak, countsForStreak }
+    const chest = expectsChest(rules, earnedToday, moment)
+    return { chest, shouldReport: isFirstAnswer || chest || expectsFlower(flowerRules, moment) }
   },
 
   report() {
     const solvedDelta = this.unreportedSolved
     const streak = this.data.streak
     this.unreportedSolved = 0
+    if (solvedDelta) this.hasReportedAnswer = true
     this.reportedStreak = Math.max(this.reportedStreak, streak)
     const payload = { practiceId: PRACTICE_ID, tier: this.config.tier, solvedDelta, streak, streakRunId: this.streakRunId }
     this.reportQueue = this.reportQueue
@@ -178,7 +189,8 @@ Page({
     return this.reportQueue
   },
 
-  applyReport({ newChests, stats }) {
+  applyReport({ newChests, stats, honors }) {
+    this.honorPresenter.present(honors)
     if (this.rewardState) {
       this.rewardState.totalSolved = stats.totalSolved + this.unreportedSolved
       this.rewardState.earnedToday = stats.earnedToday
@@ -194,6 +206,14 @@ Page({
     this.report().then((reported) => {
       if (reported) saveUnreportedSolved(tier, this.unreportedSolved)
     })
+  },
+
+  handleMedalClose() {
+    this.honorPresenter.closeMedal()
+  },
+
+  onShareAppMessage(event) {
+    return medalShareOf(event, this.data.medalPopup) || { title: '一起来做加减运算，看谁连对得多！', path: '/pages/practice/index' }
   },
 
   openWelfare() {
@@ -258,7 +278,7 @@ Page({
     const milestoneTitle = countsForStreak ? milestoneTitleOf(streak) : ''
     const big = Boolean(milestoneTitle) || firstRecordMoment
     if (bestStreak > this.data.bestStreak) saveBestStreak(this.config.tier, bestStreak)
-    const expectsChest = this.countSolved(streak, countsForStreak)
+    const expected = this.countSolved(streak, countsForStreak)
 
     let title = countsForStreak ? pick(PRAISES) : pick(RETRY_PRAISES)
     if (firstRecordMoment) title = '新纪录！'
@@ -266,7 +286,7 @@ Page({
     let subtitle = '奖励你一颗星星 ⭐'
     if (countsForStreak && streak >= 2) subtitle = `已经连对 ${streak} 题啦！`
     if (firstRecordMoment) subtitle = `连对 ${streak} 题，超过了以前的自己！`
-    if (expectsChest) subtitle = '🎁 得到一个宝箱！去福利袋打开'
+    if (expected.chest) subtitle = '🎁 得到一个宝箱！去福利袋打开'
 
     this.playSound(big ? 'milestone' : 'correct')
     wx.vibrateShort({ type: 'heavy' })
@@ -283,7 +303,7 @@ Page({
       cheer: { visible: false, title, subtitle, mascot: pick(big ? BIG_MASCOTS : MASCOTS), big }
     }, () => this.setData({ streakBump: countsForStreak, 'cheer.visible': true }))
     this.refreshRewardBar()
-    if (expectsChest) this.report()
+    if (expected.shouldReport) this.report()
     this.later(() => {
       this.setData({ 'cheer.visible': false })
       this.nextQuestion()

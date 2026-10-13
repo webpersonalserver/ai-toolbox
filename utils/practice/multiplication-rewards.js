@@ -6,10 +6,11 @@ const PRACTICE_ID = 'multiplication'
 // The cloud keeps the master copy and merges forward-only, so sending the local copy never loses anything.
 // If the player made more progress while the request was in flight, the local copy is kept; the next sync merges it.
 // Resolves null when offline so callers can ignore it.
-const syncProgress = async () => {
+// practiced: this sync follows real practice (counts towards today's flower and day streaks), not just opening a page.
+const syncProgress = async ({ practiced = false } = {}) => {
   const sent = readProgress()
   try {
-    const result = await practice.syncProgress(PRACTICE_ID, sent)
+    const result = await practice.syncProgress(PRACTICE_ID, sent, practiced)
     if (JSON.stringify(readProgress()) === JSON.stringify(sent)) writeProgress(result.progress)
     return result
   } catch (error) {

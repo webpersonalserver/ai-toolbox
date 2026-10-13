@@ -1,3 +1,7 @@
 {
-  "navigationBarTitleText": "九九神功秘籍"
+  "navigationBarTitleText": "九九神功秘籍",
+  "usingComponents": {
+    "flower-toast": "/components/flower-toast/flower-toast",
+    "medal-popup": "/components/medal-popup/medal-popup"
+  }
 }

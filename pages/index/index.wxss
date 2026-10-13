@@ -23,21 +23,57 @@
   text-align: right;
 }
 
-.hall__checkin {
+.hall__welfare {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: var(--space-md);
   margin-bottom: var(--space-xl);
 }
 
-.hall__checkin-title {
+.hall__welfare--has {
+  background: var(--color-gold-soft);
+}
+
+.hall__welfare-icon {
+  font-size: 64rpx;
+}
+
+.hall__welfare-body {
+  flex: 1;
+}
+
+.hall__welfare-title {
   font-size: var(--font-lg);
   font-weight: 700;
 }
 
-.hall__checkin-desc {
+.hall__welfare-badge {
+  display: inline-block;
+  min-width: 36rpx;
+  margin-left: 8rpx;
+  padding: 0 10rpx;
+  border-radius: 999rpx;
+  background: var(--color-primary);
+  color: var(--color-on-accent);
+  font-size: 22rpx;
+  line-height: 36rpx;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.hall__welfare-desc {
   color: var(--color-ink-soft);
   font-size: var(--font-sm);
+}
+
+.hall__game-recommend {
+  background: var(--color-success);
+  color: var(--color-on-accent);
+}
+
+.hall__practice-icon {
+  background: var(--color-success);
+  box-shadow: 0 6rpx 0 var(--color-success-deep);
 }
 
 .btn.hall__checkin-btn {
@@ -62,10 +98,6 @@
   opacity: 0.85;
 }
 
-.hall__game--coming {
-  opacity: 0.6;
-}
-
 .hall__game-icon {
   display: flex;
   align-items: center;
@@ -79,11 +111,6 @@
   color: var(--color-on-accent);
   font-size: var(--font-xl);
   font-weight: 800;
-}
-
-.hall__game-icon--muted {
-  background: var(--color-surface-muted);
-  color: var(--color-ink-faint);
 }
 
 .hall__game-body {

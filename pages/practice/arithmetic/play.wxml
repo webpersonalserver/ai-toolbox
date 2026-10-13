@@ -66,3 +66,6 @@
   mascot="{{cheer.mascot}}"
   big="{{cheer.big}}"
 />
+
+<flower-toast visible="{{flowerToast.visible}}" count="{{flowerToast.count}}" text="{{flowerToast.text}}" />
+<medal-popup visible="{{medalPopup.visible}}" is-new="{{medalPopup.isNew}}" medal="{{medalPopup.medal}}" bind:close="handleMedalClose" />

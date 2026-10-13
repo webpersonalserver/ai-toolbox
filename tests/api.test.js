@@ -71,7 +71,12 @@ const startedAttempt = { active: true, wrongCount: 0 }
   r = await call('u1', 'account.checkin'); assert(r.code === 0 && r.data.items.stamina === 5 && r.data.items.hint === 12, 'checkin grants hint+stamina', r)
   r = await call('u1', 'account.checkin'); assert(r.code === 40002, 'checkin once', r)
   S.users.u1.items.stamina = 0; S.users.u1.staminaAnchorAt = Date.now()
-  r = await call('u1', 'game.startAttempt', { gameType: 'idiom', levelNo: 2 }); assert(r.data.next === 'waitRecovery', 'ad off -> wait recovery', r)
+  r = await call('u1', 'game.startAttempt', { gameType: 'idiom', levelNo: 2 }); assert(r.data.next === 'practice' && r.data.practiceStaminaRoom === 15, 'ad off -> earn stamina by practice', r)
+  S.progress['u1_idiom'].solved = [1, ...Array.from({ length: 9 }, (_, i) => i + 3)]
+  r = await call('u1', 'game.startAttempt', { gameType: 'idiom', levelNo: 2 }); assert(r.data.next === 'openChests' && r.data.welfareChests === 1, 'unopened chest in the welfare bag -> open it first', r.data)
+  S.progress['u1_idiom'].solved = [1]
+  S.daily[Object.keys(S.daily).find((id) => id.startsWith('u1_'))].practiceEarned = { stamina: 15, hint: 0 }
+  r = await call('u1', 'game.startAttempt', { gameType: 'idiom', levelNo: 2 }); assert(r.data.next === 'waitRecovery', 'practice capped, ad off -> wait recovery', r)
   S.users.u1.staminaAnchorAt = Date.now() - 65 * MIN
   r = await call('u1', 'account.login'); assert(r.data.items.stamina === 0 && r.data.items.staminaPending === 2 && r.data.items.nextStaminaAt > Date.now(), 'recovered stamina waits as pending (2 after 65min)', r.data.items)
   S.users.u1.staminaAnchorAt = Date.now() - 100 * 30 * MIN
@@ -409,6 +414,38 @@ const startedAttempt = { active: true, wrongCount: 0 }
   const staminaBeforeKungfu = S.users.p1.items.stamina
   r = await call('p1', 'practice.claimChests', { practiceId: 'multiplication' })
   assert(r.code === 0 && r.data.chestCount === 4 && r.data.items.stamina === staminaBeforeKungfu + 16, 'claim multiplication chests: 3 + 3 + 10 stamina', r.data)
+  // honors: flowers for practice events + daily first practice, medals unlock from cloud stats, day streaks
+  const chinaKey = (timestamp) => new Date(timestamp + 8 * 3600000).toISOString().slice(0, 10).replace(/-/g, '')
+  await call('h1', 'account.login')
+  const reportH = (payload) => call('h1', 'practice.report', { practiceId: 'arithmetic', tier: 10, solvedDelta: 0, streak: 0, streakRunId: 'h-run', ...payload })
+  r = await call('h1', 'practice.honors')
+  assert(r.code === 0 && r.data.flowers === 0 && r.data.medalCount === 14 && r.data.unlockedCount === 0 && r.data.groups.length === 3, 'honors start empty with 14 medals in 3 groups', r.data)
+  r = await reportH({ solvedDelta: 10, streak: 10 })
+  const medalIds = (result) => result.data.honors.newMedals.map((medal) => medal.id).sort().join(',')
+  assert(r.data.honors.flowersGained === 3 && r.data.honors.flowerReasons.includes('dailyFirst') && r.data.honors.todayFlowers === 3, '10 solved + streak 10 + first practice today = 3 flowers', r.data.honors)
+  assert(medalIds(r) === 'arith-first,arith-streak-10', 'first answer and streak 10 medals unlock', r.data.honors.newMedals)
+  r = await reportH({ solvedDelta: 5, streak: 15 })
+  assert(r.data.honors.flowersGained === 0 && r.data.honors.newMedals.length === 0, 'no daily flower twice, medals unlock once', r.data.honors)
+  r = await reportH({ solvedDelta: 0, streak: 0, streakRunId: 'h-run-2' })
+  assert(r.data.honors.flowersGained === 0, 'a report with no answers does not count as practising', r.data.honors)
+  const honorsDoc = S.practice_stats.h1_honors
+  honorsDoc.lastPracticeDate = chinaKey(Date.now() - 24 * 3600000); honorsDoc.dayStreak = 2; honorsDoc.bestDayStreak = 2
+  r = await reportH({ solvedDelta: 1, streak: 1, streakRunId: 'h-run-3' })
+  assert(r.data.honors.flowerReasons.includes('dailyFirst') && medalIds(r) === 'days-3' && S.practice_stats.h1_honors.dayStreak === 3, 'practising on the next day grows the streak to 3 and unlocks 坚持之星', r.data.honors)
+  honorsDoc.lastPracticeDate = chinaKey(Date.now() - 3 * 24 * 3600000)
+  r = await call('h1', 'practice.honors'); assert(r.data.dayStreak === 0 && r.data.bestDayStreak === 3, 'missed days show a broken streak, best kept', r.data)
+  const kungfuExam = { passed: false, passCount: 0, attempts: 0, bestCorrect: 0, fastestSeconds: 0, passedAt: 0 }
+  r = await call('h1', 'practice.syncProgress', { practiceId: 'multiplication', progress: { rows: { 1: { studied: true, recited: true, mastered: true, stars: 3 } }, exam: kungfuExam }, practiced: true })
+  assert(r.code === 0 && r.data.honors.flowersGained === 4 && medalIds(r) === 'kungfu-row-1', 'recited + mastered + perfect + first practice after a gap = 4 flowers, 入门弟子 medal', r.data.honors)
+  r = await call('h1', 'practice.syncProgress', { practiceId: 'multiplication', progress: { rows: { 1: { studied: true, mastered: true, stars: 3 } }, exam: kungfuExam } })
+  assert(r.code === 0 && r.data.honors.flowersGained === 0 && r.data.progress.rows[1].recited, 'old clients without recited still sync; nothing paid twice', r.data)
+  r = await call('h1', 'practice.honors')
+  const lockedMedal = r.data.groups[0].medals.find((medal) => medal.id === 'arith-solved-100')
+  assert(r.data.unlockedCount === 4 && r.data.flowers === 8 && !lockedMedal.unlocked && lockedMedal.current === 16 && lockedMedal.target === 100, 'honor wall shows progress towards locked medals', r.data)
+  S.app_config = { game_rules: { _id: 'game_rules', honors: { flowers: { arithmeticStreaks: [10, 5], perEvent: { arithmeticSolved: 3 } } } } }
+  r = await reportH({ solvedDelta: 4, streak: 2, streakRunId: 'h-run-3' })
+  assert(r.data.honors.flowersGained === 3, 'per-event flowers configurable; invalid streak list falls back', r.data.honors)
+  S.app_config = {}
   S.app_config = { game_rules: { _id: 'game_rules', practice: { solvedRewards: [{ every: 0, rewards: [] }], dailyCaps: { stamina: 1 } } } }
   r = await call('p1', 'practice.stats', { practiceId: 'arithmetic' })
   assert(r.data.rewardRules.solvedRewards[0].every === 20 && r.data.rewardRules.dailyCaps.stamina === 1, 'invalid practice override falls back, valid cap applies', r.data.rewardRules)

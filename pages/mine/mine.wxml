@@ -1,6 +1,6 @@
 <view class="page mine">
   <view class="card mine__profile">
-    <view class="mine__identity-row" hover-class="mine__profile--pressed" bindtap="openProfileEditor">
+    <view class="mine__identity-row" hover-class="mine__profile--pressed" bindtap="openProfileEditor" bindlongpress="copyOpenid">
       <image class="mine__avatar" src="{{avatarDisplay}}" mode="aspectFill" />
       <view class="mine__identity">
         <view class="mine__nickname {{nickname ? '' : 'mine__nickname--empty'}}">{{nicknameDisplay}}</view>
@@ -60,7 +60,7 @@
     </view>
   </view>
 
-  <view class="mine__openid" bindlongpress="copyOpenid">用户编号 {{openid}} · 长按复制</view>
+  <view wx:if="{{isAdmin}}" class="mine__openid" bindlongpress="copyOpenid">用户编号 {{openid}} · 长按复制</view>
 </view>
 
 <game-guide

@@ -7,7 +7,9 @@ const { ITEM_META, describeAmount, minutesUntil } = require('./items')
 const ITEM_NEXT_STEPS = {
   CLAIM_RECOVERY: 'claimRecovery',
   CHECKIN: 'checkin',
+  OPEN_CHESTS: 'openChests',
   AD: 'ad',
+  PRACTICE: 'practice',
   RESCUE: 'rescue',
   WAIT_RECOVERY: 'waitRecovery',
   TOMORROW: 'tomorrow'
@@ -17,6 +19,9 @@ const confirm = (title, content, confirmText) =>
   new Promise((resolve) => {
     wx.showModal({ title, content, confirmText, success: (result) => resolve(result.confirm) })
   })
+
+const WELFARE_URL = '/pages/welfare/welfare'
+const PRACTICE_TAB_URL = '/pages/practice/index'
 
 const notify = (title, content) => wx.showModal({ title, content, showCancel: false, confirmText: '知道了' })
 
@@ -59,6 +64,20 @@ const earnByAd = async ({ itemType, adReward }) => {
   }
 }
 
+const openWelfareChests = async ({ itemType, welfareChests }) => {
+  const agreed = await confirm(titleOf(itemType), `福利袋里有 ${welfareChests} 个宝箱还没打开，里面有体力和提示`, '去开宝箱')
+  if (agreed) wx.navigateTo({ url: WELFARE_URL })
+}
+
+const suggestPractice = async ({ practiceStaminaRoom }) => {
+  const agreed = await confirm(
+    '体力不足',
+    `去「趣味」做加减运算，答对题目就能攒体力宝箱（今天还能攒 ${practiceStaminaRoom} 点）`,
+    '去练习'
+  )
+  if (agreed) wx.switchTab({ url: PRACTICE_TAB_URL })
+}
+
 const explainStaminaRecovery = async () => {
   const { items } = await ensureLogin({ force: true })
   const content = items.nextStaminaAt
@@ -69,7 +88,7 @@ const explainStaminaRecovery = async () => {
 
 /**
  * Runs an action that consumes an item. When the server reports the item is short,
- * walks the configured fallback order: check-in → rewarded ad → item-specific fallback, then retries.
+ * walks the fallback order: claim recovery → check-in → open chests → rewarded ad → practice → item-specific fallback.
  * Resolves the action result, { needRescue: true } when the user should ask friends, or null.
  */
 const runWithItem = async (action) => {
@@ -91,9 +110,15 @@ const runWithItem = async (action) => {
       case ITEM_NEXT_STEPS.CHECKIN:
         earned = await earnByCheckin(step)
         break
+      case ITEM_NEXT_STEPS.OPEN_CHESTS:
+        await openWelfareChests(step)
+        return null
       case ITEM_NEXT_STEPS.AD:
         earned = await earnByAd(step)
         break
+      case ITEM_NEXT_STEPS.PRACTICE:
+        await suggestPractice(step)
+        return null
       case ITEM_NEXT_STEPS.RESCUE:
         return { needRescue: true }
       case ITEM_NEXT_STEPS.WAIT_RECOVERY:

@@ -4,6 +4,22 @@
     <view class="practice__subtitle">不限次数，想练多久练多久</view>
   </view>
 
+  <view wx:if="{{honors}}" class="practice__honors" hover-class="practice__card--pressed" bindtap="openHonors">
+    <view class="practice__honor">
+      <view class="practice__honor-value">🌺 {{honors.flowers}}</view>
+      <view class="practice__honor-label">小红花{{honors.todayFlowers ? ' · 今天 +' + honors.todayFlowers : ''}}</view>
+    </view>
+    <view class="practice__honor">
+      <view class="practice__honor-value">🏅 {{honors.unlockedCount}}/{{honors.medalCount}}</view>
+      <view class="practice__honor-label">奖章</view>
+    </view>
+    <view class="practice__honor">
+      <view class="practice__honor-value">🔥 {{honors.dayStreak}}</view>
+      <view class="practice__honor-label">连续练习天数</view>
+    </view>
+    <view class="practice__honors-link">荣誉墙 ›</view>
+  </view>
+
   <view
     wx:for="{{practices}}"
     wx:key="id"

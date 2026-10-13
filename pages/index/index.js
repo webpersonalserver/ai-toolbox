@@ -7,6 +7,23 @@ const { showRescueNotices } = require('../../utils/rescue-notice')
 const { describeTitleProgress } = require('../../utils/milestone')
 const { GAME_ORDER, gameConfigOf } = require('../../utils/games')
 const { GUIDE_KEYS, hasSeenGuide, markGuideSeen } = require('../../utils/onboarding')
+const { countUnclaimedWelfare } = require('../../utils/welfare')
+
+const BEGINNER_GAME_TYPE = 'idiom'
+const WELFARE_URL = '/pages/welfare/welfare'
+const PRACTICE_TAB_URL = '/pages/practice/index'
+
+// Most recently played first; untouched games keep the default order. A brand-new player gets one clear starting point.
+const describeWelfare = (session, unclaimed) => {
+  if (!session.today.checkedIn) return `今日打卡可领${describeRewards(session.rules.checkinRewards)}`
+  return unclaimed ? '还有福利没领，点开看看' : '今天的福利都领完啦'
+}
+
+const orderGameCards = (cards) => {
+  const isNewPlayer = cards.every((card) => !card.solvedCount)
+  const ordered = [...cards].sort((left, right) => right.lastSolvedAt - left.lastSolvedAt)
+  return ordered.map((card) => ({ ...card, recommended: isNewPlayer && card.gameType === BEGINNER_GAME_TYPE }))
+}
 
 const toGameCard = (summary) => ({
   ...gameConfigOf(summary.gameType),
@@ -16,7 +33,8 @@ const toGameCard = (summary) => ({
   titleName: summary.achievement.title.name,
   titleProgressText: describeTitleProgress(summary.achievement),
   pendingChests: summary.achievement.milestone.pendingChests,
-  allCleared: summary.allCleared
+  allCleared: summary.allCleared,
+  lastSolvedAt: summary.lastSolvedAt || 0
 })
 
 Page({
@@ -25,6 +43,8 @@ Page({
     items: { hint: 0, stamina: 0 },
     checkedIn: false,
     checkinRewardText: '',
+    unclaimedWelfare: 0,
+    welfareDesc: '',
     gameCards: GAME_ORDER.map((gameType) => gameConfigOf(gameType)),
     welcomeVisible: false,
     profileAvatarUrl: '',
@@ -37,13 +57,15 @@ Page({
 
   async refresh() {
     try {
-      const { session, games, rescueNotices } = await game.overview()
+      const { session, games, rescueNotices, practices } = await game.overview()
       setSession(session)
       this.syncSession()
       const summaryByGame = Object.fromEntries(games.map((summary) => [summary.gameType, summary]))
       this.setData({
         loading: false,
-        gameCards: GAME_ORDER.filter((gameType) => summaryByGame[gameType]).map((gameType) => toGameCard(summaryByGame[gameType]))
+        unclaimedWelfare: countUnclaimedWelfare(session, games, practices),
+        welfareDesc: describeWelfare(session, countUnclaimedWelfare(session, games, practices)),
+        gameCards: orderGameCards(GAME_ORDER.filter((gameType) => summaryByGame[gameType]).map((gameType) => toGameCard(summaryByGame[gameType])))
       })
       showRescueNotices(rescueNotices.map((notice) => ({ ...notice, gameName: gameConfigOf(notice.gameType).name })))
       this.offerProfileWelcome(session.profile)
@@ -64,7 +86,15 @@ Page({
   },
 
   async handleCheckin() {
-    if (await checkinToday()) this.syncSession()
+    if (await checkinToday()) this.refresh()
+  },
+
+  openWelfare() {
+    wx.navigateTo({ url: WELFARE_URL })
+  },
+
+  openPracticeTab() {
+    wx.switchTab({ url: PRACTICE_TAB_URL })
   },
 
   offerProfileWelcome(profile) {

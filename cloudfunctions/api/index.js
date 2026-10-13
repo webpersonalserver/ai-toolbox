@@ -30,6 +30,7 @@ const ROUTES = {
   'practice.stats': practice.stats,
   'practice.report': practice.report,
   'practice.syncProgress': practice.syncProgress,
+  'practice.honors': practice.honors,
   'practice.claimChests': practice.claimChests,
   'leaderboard.list': leaderboard.list,
   'admin.stats': admin.stats

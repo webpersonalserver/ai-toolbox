@@ -1,0 +1,46 @@
+.flower-toast {
+  position: fixed;
+  top: 24rpx;
+  left: 50%;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-lg) var(--space-sm) var(--space-sm);
+  border-radius: 999rpx;
+  background: var(--color-surface);
+  box-shadow: 0 8rpx 0 var(--color-primary-soft), 0 8rpx 32rpx var(--color-shadow);
+  white-space: nowrap;
+  pointer-events: none;
+  animation: flower-toast-in 2.2s ease-out forwards;
+}
+
+.flower-toast__flower {
+  font-size: 72rpx;
+  line-height: 1;
+  animation: flower-bloom 0.7s cubic-bezier(0.2, 1.8, 0.4, 1);
+}
+
+.flower-toast__count {
+  color: var(--color-primary-deep);
+  font-size: var(--font-lg);
+  font-weight: 900;
+}
+
+.flower-toast__text {
+  color: var(--color-ink);
+  font-size: var(--font-sm);
+  font-weight: 700;
+}
+
+@keyframes flower-toast-in {
+  0% { transform: translate(-50%, -120%); opacity: 0; }
+  12% { transform: translate(-50%, 0); opacity: 1; }
+  85% { transform: translate(-50%, 0); opacity: 1; }
+  100% { transform: translate(-50%, -40%); opacity: 0; }
+}
+
+@keyframes flower-bloom {
+  0% { transform: scale(0) rotate(-90deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}

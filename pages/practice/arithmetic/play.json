@@ -2,6 +2,8 @@
   "navigationBarTitleText": "加减运算",
   "disableScroll": true,
   "usingComponents": {
-    "practice-cheer": "/components/practice-cheer/practice-cheer"
+    "practice-cheer": "/components/practice-cheer/practice-cheer",
+    "flower-toast": "/components/flower-toast/flower-toast",
+    "medal-popup": "/components/medal-popup/medal-popup"
   }
 }

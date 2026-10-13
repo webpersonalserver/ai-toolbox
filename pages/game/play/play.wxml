@@ -63,10 +63,10 @@
   </block>
 
   <view wx:if="{{stage === 'solved'}}" class="card play__result">
-    <view wx:if="{{celebrating}}" class="play__confetti" aria-hidden="true">
-      <view wx:for="{{confettiPieces}}" wx:key="*this" class="play__confetti-piece"></view>
+    <view class="play__result-badges">
+      <view class="play__result-badge">过关</view>
+      <view wx:if="{{perfectPass}}" class="play__result-badge play__result-badge--perfect">完美通关</view>
     </view>
-    <view class="play__result-badge">过关</view>
     <game-solution game-type="{{gameType}}" solution="{{solution}}" />
     <view wx:if="{{allCleared}}" class="play__all-cleared">
       <view class="play__all-cleared-title">恭喜通关全部关卡！</view>
@@ -106,6 +106,15 @@
     <button class="btn btn--muted rescue-sheet__cancel" bindtap="closeRescueSheet">再想想</button>
   </view>
 </view>
+
+<practice-cheer
+  visible="{{cheer.visible}}"
+  title="{{cheer.title}}"
+  subtitle="{{cheer.subtitle}}"
+  mascot="{{cheer.mascot}}"
+  big="{{cheer.big}}"
+  flying-star="{{false}}"
+/>
 
 <reward-popup
   visible="{{rewardPopup.visible}}"

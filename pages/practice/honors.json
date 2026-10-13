@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "荣誉墙",
+  "usingComponents": {
+    "medal-popup": "/components/medal-popup/medal-popup",
+    "loading-skeleton": "/components/loading-skeleton/loading-skeleton"
+  }
+}

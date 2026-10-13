@@ -140,6 +140,23 @@
   animation: play-result-pop 0.45s cubic-bezier(0.2, 1.4, 0.4, 1);
 }
 
+.play__result-badges {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.play__result-badge--perfect {
+  background: var(--color-gold);
+  box-shadow: 0 4rpx 0 var(--color-primary-deep);
+  color: var(--color-ink);
+  animation: play-perfect-stamp 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) 0.4s both;
+}
+
+@keyframes play-perfect-stamp {
+  0% { transform: scale(2.4) rotate(-12deg); opacity: 0; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
 .play__result-badge {
   display: inline-block;
   padding: 4rpx var(--space-md);
@@ -247,43 +264,3 @@
   100% { transform: scale(1); opacity: 1; }
 }
 
-.play__confetti {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  pointer-events: none;
-}
-
-.play__confetti-piece {
-  position: absolute;
-  top: -24rpx;
-  width: 16rpx;
-  height: 24rpx;
-  border-radius: 4rpx;
-  background: var(--game-color);
-  animation: play-confetti-fall 1.5s ease-in forwards;
-}
-
-.play__confetti-piece:nth-child(3n) { background: var(--color-gold); }
-.play__confetti-piece:nth-child(3n + 1) { background: var(--color-success); }
-.play__confetti-piece:nth-child(1) { left: 6%; animation-delay: 0s; }
-.play__confetti-piece:nth-child(2) { left: 14%; animation-delay: 0.15s; }
-.play__confetti-piece:nth-child(3) { left: 22%; animation-delay: 0.05s; }
-.play__confetti-piece:nth-child(4) { left: 30%; animation-delay: 0.25s; }
-.play__confetti-piece:nth-child(5) { left: 38%; animation-delay: 0.1s; }
-.play__confetti-piece:nth-child(6) { left: 46%; animation-delay: 0.3s; }
-.play__confetti-piece:nth-child(7) { left: 54%; animation-delay: 0s; }
-.play__confetti-piece:nth-child(8) { left: 62%; animation-delay: 0.2s; }
-.play__confetti-piece:nth-child(9) { left: 70%; animation-delay: 0.08s; }
-.play__confetti-piece:nth-child(10) { left: 78%; animation-delay: 0.28s; }
-.play__confetti-piece:nth-child(11) { left: 86%; animation-delay: 0.12s; }
-.play__confetti-piece:nth-child(12) { left: 94%; animation-delay: 0.22s; }
-.play__confetti-piece:nth-child(13) { left: 42%; animation-delay: 0.35s; }
-.play__confetti-piece:nth-child(14) { left: 66%; animation-delay: 0.4s; }
-
-@keyframes play-confetti-fall {
-  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-  100% { transform: translateY(560rpx) rotate(540deg); opacity: 0; }
-}

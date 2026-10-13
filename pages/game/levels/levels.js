@@ -141,7 +141,8 @@ Page({
       wx.showToast({ title: '先通过前面的关卡吧', icon: 'none' })
       return
     }
-    wx.navigateTo({ url: `/pages/game/play/play?gameType=${this.data.gameType}&levelNo=${levelNo}` })
+    // Fresh levels start straight away; a failed attempt still stops on the "再来一次" card (see play.autoStartIfRequested).
+    wx.navigateTo({ url: `/pages/game/play/play?gameType=${this.data.gameType}&levelNo=${levelNo}&autoStart=1` })
   },
 
   onShareAppMessage() {

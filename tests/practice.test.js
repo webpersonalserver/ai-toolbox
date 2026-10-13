@@ -84,5 +84,10 @@ expectReward(!expects(0, 10, false), 'retried answers do not reach streak chests
 expectReward(!expects(19, 1, true, { stamina: 15, hint: 0 }) && expects(99, 1, true, { stamina: 15, hint: 0 }), 'capped items do not promise a chest')
 expectReward(rewardsPreview.isDailyCapReached({ stamina: 15, hint: 3 }, PRACTICE_RULES.dailyCaps) && !rewardsPreview.isDailyCapReached({ stamina: 15, hint: 2 }, PRACTICE_RULES.dailyCaps), 'daily cap needs every item capped')
 
+const FLOWER_RULES = { arithmeticSolvedEvery: 10, arithmeticStreaks: [10] }
+const flowerAt = (fromTotal, streak, countsForStreak) => rewardsPreview.expectsFlower(FLOWER_RULES, { fromTotal, toTotal: fromTotal + 1, streak, countsForStreak })
+expectReward(flowerAt(9, 1, true) && !flowerAt(10, 1, true), 'flower at every 10th answer')
+expectReward(flowerAt(3, 10, true) && !flowerAt(3, 10, false) && !flowerAt(3, 11, true), 'flower when a run reaches streak 10')
+
 console.log(failed ? `${failed} checks failed` : 'all practice checks passed')
 process.exitCode = failed ? 1 : 0

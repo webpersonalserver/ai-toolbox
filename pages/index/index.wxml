@@ -8,14 +8,17 @@
   </view>
   <view class="hall__recovery"><stamina-recovery items="{{items}}" bind:claimed="syncSession" /></view>
 
-  <view class="card hall__checkin">
-    <view>
-      <view class="hall__checkin-title">{{checkedIn ? '今日已打卡' : '每日打卡'}}</view>
-      <view class="hall__checkin-desc">{{checkedIn ? '明天再来领取' : '领取' + checkinRewardText}}</view>
+  <view class="card hall__welfare {{unclaimedWelfare ? 'hall__welfare--has' : ''}}" hover-class="hall__game--pressed" bindtap="openWelfare">
+    <view class="hall__welfare-icon">🎁</view>
+    <view class="hall__welfare-body">
+      <view class="hall__welfare-title">
+        福利袋
+        <text wx:if="{{unclaimedWelfare}}" class="hall__welfare-badge">{{unclaimedWelfare}}</text>
+      </view>
+      <view class="hall__welfare-desc">{{welfareDesc}}</view>
     </view>
-    <button class="btn {{checkedIn ? 'btn--muted' : 'btn--primary'}} hall__checkin-btn" disabled="{{checkedIn}}" bindtap="handleCheckin">
-      {{checkedIn ? '已领取' : '打卡'}}
-    </button>
+    <button wx:if="{{!checkedIn}}" class="btn btn--primary hall__checkin-btn" catchtap="handleCheckin">打卡</button>
+    <view wx:else class="hall__game-action">打开 ›</view>
   </view>
 
   <view class="hall__section-title">玩法</view>
@@ -32,7 +35,8 @@
     <view class="hall__game-body">
       <view class="hall__game-name">
         {{item.name}}
-        <text wx:if="{{item.titleName}}" class="chip hall__game-title">{{item.titleName}}</text>
+        <text wx:if="{{item.recommended}}" class="chip hall__game-recommend">新手推荐</text>
+        <text wx:elif="{{item.titleName}}" class="chip hall__game-title">{{item.titleName}}</text>
       </view>
       <view wx:if="{{item.allCleared}}" class="hall__game-desc">已通关全部关卡 · 更多挑战敬请期待</view>
       <view wx:elif="{{item.total}}" class="hall__game-desc">已通过 {{item.solvedCount}} 关 · {{item.titleProgressText}}</view>
@@ -53,12 +57,13 @@
     <view wx:else class="hall__game-action">查看</view>
   </view>
 
-  <view class="card hall__game hall__game--coming">
-    <view class="hall__game-icon hall__game-icon--muted">?</view>
+  <view class="card hall__game hall__practice" hover-class="hall__game--pressed" bindtap="openPracticeTab">
+    <view class="hall__game-icon hall__practice-icon">趣</view>
     <view class="hall__game-body">
-      <view class="hall__game-name">更多玩法</view>
-      <view class="hall__game-desc">敬请期待</view>
+      <view class="hall__game-name">趣味练习</view>
+      <view class="hall__game-desc">加减运算、九九神功，不限次数，还能攒体力宝箱</view>
     </view>
+    <view class="hall__game-action">去看看 ›</view>
   </view>
 </view>
 

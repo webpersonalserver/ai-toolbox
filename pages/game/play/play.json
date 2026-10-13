@@ -7,6 +7,7 @@
     "item-chip": "/components/item-chip/item-chip",
     "loading-skeleton": "/components/loading-skeleton/loading-skeleton",
     "stamina-recovery": "/components/stamina-recovery/stamina-recovery",
-    "reward-popup": "/components/reward-popup/reward-popup"
+    "reward-popup": "/components/reward-popup/reward-popup",
+    "practice-cheer": "/components/practice-cheer/practice-cheer"
   }
 }

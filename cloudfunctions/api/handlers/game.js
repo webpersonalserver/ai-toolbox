@@ -125,6 +125,7 @@ const summary = async ({ openid, payload }) => {
   return {
     total,
     allCleared: isAllCleared(progress.solved.length, total),
+    lastSolvedAt: progress.lastSolvedAt ? new Date(progress.lastSolvedAt).getTime() : 0,
     achievement: describeAchievement(progress, rules)
   }
 }

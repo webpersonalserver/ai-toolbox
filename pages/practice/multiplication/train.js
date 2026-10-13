@@ -2,6 +2,7 @@ const { ROW_COUNT, techniqueOf, buildTrainingQueue, requeueMissed, starsOf, real
 const { readProgress, masteredRowCount, saveTrainingResult } = require('../../../utils/practice/multiplication-records')
 const { createSoundPlayer } = require('../../../utils/practice/sound')
 const { syncProgress, describeNewChests } = require('../../../utils/practice/multiplication-rewards')
+const { HIDDEN_FLOWER_TOAST, HIDDEN_MEDAL_POPUP, createHonorPresenter, medalShareOf } = require('../../../utils/practice/honors')
 
 const CHINESE_ORDINALS = ['一', '二', '三', '四', '五', '六', '七', '八', '九']
 const WRONG_BEFORE_REVEAL = 2
@@ -17,6 +18,8 @@ const pick = (list) => list[Math.floor(Math.random() * list.length)]
 
 Page({
   data: {
+    flowerToast: HIDDEN_FLOWER_TOAST,
+    medalPopup: HIDDEN_MEDAL_POPUP,
     heading: '',
     question: null,
     revealed: false,
@@ -34,6 +37,7 @@ Page({
     this.technique = techniqueOf(this.row)
     this.timers = []
     this.soundPlayer = createSoundPlayer()
+    this.honorPresenter = createHonorPresenter(this)
     wx.setNavigationBarTitle({ title: `练功 · ${this.technique.name}` })
     this.setData({ heading: `第${CHINESE_ORDINALS[this.row - 1]}重 · ${this.technique.name}` })
     this.startTraining()
@@ -42,6 +46,7 @@ Page({
   onUnload() {
     this.timers.forEach((timer) => clearTimeout(timer))
     this.soundPlayer.destroy()
+    this.honorPresenter.destroy()
   },
 
   later(callback, delayMs) {
@@ -126,7 +131,7 @@ Page({
     const realmBefore = realmOf(masteredRowCount(readProgress()), readProgress().exam.passed)
     const stars = starsOf(this.mistakes)
     const { firstMastery, improvedStars } = saveTrainingResult(this.row, stars)
-    const chestsSynced = syncProgress()
+    const chestsSynced = syncProgress({ practiced: true })
     const progressAfter = readProgress()
     const realmAfter = realmOf(masteredRowCount(progressAfter), progressAfter.exam.passed)
     this.soundPlayer.play('gong')
@@ -160,10 +165,19 @@ Page({
         }
       })
       chestsSynced.then((result) => {
+        if (result) this.honorPresenter.present(result.honors)
         const chestLine = describeNewChests(result)
         if (chestLine && this.data.result.visible) this.setData({ 'result.lines': [...this.data.result.lines, chestLine] })
       })
     }, MASTERY_CHEER_MS)
+  },
+
+  handleMedalClose() {
+    this.honorPresenter.closeMedal()
+  },
+
+  onShareAppMessage(event) {
+    return medalShareOf(event, this.data.medalPopup) || { title: '一起修炼九九神功，看谁先神功大成！', path: '/pages/practice/multiplication/index' }
   },
 
   handleResultAction(event) {

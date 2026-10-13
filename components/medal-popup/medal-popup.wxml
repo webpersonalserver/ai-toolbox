@@ -1,0 +1,18 @@
+<view wx:if="{{visible && medal}}" class="medal-popup" catchtouchmove="noop">
+  <view class="medal-popup__rays {{medal.unlocked ? '' : 'medal-popup__rays--hidden'}}"></view>
+  <view class="medal-popup__panel {{isNew ? 'medal-popup__panel--new' : ''}}">
+    <view wx:if="{{isNew}}" class="medal-popup__headline">获得新奖章！</view>
+    <view class="medal-popup__medal {{medal.unlocked ? '' : 'medal-popup__medal--locked'}}">
+      <view class="medal-popup__ribbon"></view>
+      <view class="medal-popup__disc">{{medal.icon}}</view>
+    </view>
+    <view class="medal-popup__name">{{medal.name}}</view>
+    <view class="medal-popup__praise">{{medal.praise}}</view>
+    <view wx:if="{{medal.dateText}}" class="medal-popup__date">{{medal.dateText}}</view>
+    <view wx:if="{{medal.remainingText}}" class="medal-popup__remaining">进度 {{medal.current}} / {{medal.target}} · {{medal.remainingText}}</view>
+    <view class="medal-popup__actions">
+      <button wx:if="{{medal.unlocked}}" class="btn btn--primary medal-popup__action" open-type="share" data-purpose="medal">分享给爸爸妈妈</button>
+      <button class="btn {{medal.unlocked ? 'btn--ghost' : 'btn--primary'}} medal-popup__action" bindtap="handleClose">{{isNew ? '收下奖章' : '知道了'}}</button>
+    </view>
+  </view>
+</view>

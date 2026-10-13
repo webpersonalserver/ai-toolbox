@@ -87,6 +87,7 @@ Page({
     wx.navigateTo({ url: '/pages/admin/stats' })
   },
 
+  // Shown only to admins; anyone can still long-press their name to copy it (needed to be added to admin.openids).
   copyOpenid() {
     wx.setClipboardData({ data: this.data.openid })
   },

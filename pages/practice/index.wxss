@@ -65,3 +65,38 @@
   font-size: var(--font-sm);
   text-align: center;
 }
+
+.practice__honors {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: var(--space-lg);
+  padding: var(--space-lg) var(--space-md) var(--space-xl);
+  border-radius: var(--radius-lg);
+  background: var(--color-primary-soft);
+  box-shadow: 0 8rpx 0 var(--color-primary);
+}
+
+.practice__honor {
+  flex: 1;
+  text-align: center;
+}
+
+.practice__honor-value {
+  font-size: var(--font-xl);
+  font-weight: 900;
+}
+
+.practice__honor-label {
+  color: var(--color-ink-soft);
+  font-size: 22rpx;
+}
+
+.practice__honors-link {
+  position: absolute;
+  right: var(--space-md);
+  bottom: 8rpx;
+  color: var(--color-primary-deep);
+  font-size: 22rpx;
+  font-weight: 800;
+}

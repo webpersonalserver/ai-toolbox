@@ -67,7 +67,8 @@ const rescue = {
 const practice = {
   stats: (practiceId) => call('practice.stats', { practiceId }),
   report: (report) => call('practice.report', report),
-  syncProgress: (practiceId, progress) => call('practice.syncProgress', { practiceId, progress }),
+  honors: () => call('practice.honors'),
+  syncProgress: (practiceId, progress, practiced) => call('practice.syncProgress', { practiceId, progress, practiced }),
   claimChests: (practiceId) => call('practice.claimChests', { practiceId })
 }
 

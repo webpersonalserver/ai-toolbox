@@ -4,6 +4,8 @@
   "usingComponents": {
     "kungfu-question": "/components/kungfu-question/kungfu-question",
     "kungfu-result": "/components/kungfu-result/kungfu-result",
-    "practice-cheer": "/components/practice-cheer/practice-cheer"
+    "practice-cheer": "/components/practice-cheer/practice-cheer",
+    "flower-toast": "/components/flower-toast/flower-toast",
+    "medal-popup": "/components/medal-popup/medal-popup"
   }
 }

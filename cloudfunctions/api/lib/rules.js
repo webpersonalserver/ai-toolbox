@@ -123,6 +123,13 @@ const DEFAULT_RULES = {
       grandmaster: [{ type: 'stamina', amount: 10 }, { type: 'hint', amount: 3 }]
     }
   },
+  honors: {
+    flowers: {
+      arithmeticSolvedEvery: 10,
+      arithmeticStreaks: [10],
+      perEvent: { arithmeticSolved: 1, arithmeticStreak: 1, dailyFirst: 1, rowRecited: 1, rowMastered: 1, rowPerfect: 1 }
+    }
+  },
   titles: BASELINE_TITLES_BY_GAME,
   maintenance: {
     itemLogRetentionDays: 180,
@@ -170,6 +177,9 @@ const isStreakMilestones = (value) =>
       (index === 0 || milestone.streak > value[index - 1].streak)
   )
 
+const isIncreasingPositiveList = (value) =>
+  Array.isArray(value) && value.every((item, index) => isPositiveInteger(item) && (index === 0 || item > value[index - 1]))
+
 const RULE_VALIDATORS = {
   'signupItems.hint': isNonNegativeInteger,
   'signupItems.stamina': isNonNegativeInteger,
@@ -210,6 +220,14 @@ const RULE_VALIDATORS = {
   'practice.multiplication.rowMastered': isRewardList,
   'practice.multiplication.rowPerfect': isRewardList,
   'practice.multiplication.grandmaster': isRewardList,
+  'honors.flowers.arithmeticSolvedEvery': isPositiveInteger,
+  'honors.flowers.arithmeticStreaks': isIncreasingPositiveList,
+  'honors.flowers.perEvent.arithmeticSolved': isNonNegativeInteger,
+  'honors.flowers.perEvent.arithmeticStreak': isNonNegativeInteger,
+  'honors.flowers.perEvent.dailyFirst': isNonNegativeInteger,
+  'honors.flowers.perEvent.rowRecited': isNonNegativeInteger,
+  'honors.flowers.perEvent.rowMastered': isNonNegativeInteger,
+  'honors.flowers.perEvent.rowPerfect': isNonNegativeInteger,
   'admin.openids': isStringList,
   'leaderboard.size': isLeaderboardSize
 }
@@ -336,6 +354,9 @@ const toClientRules = (rules) => ({
     firstChestRewards: Object.entries(rules.milestone.rewardRules)
       .map(([type, rule]) => ({ type, amount: Math.min(rule.max, rule.base) }))
       .filter((reward) => reward.amount > 0)
+  },
+  practice: {
+    dailyCaps: rules.practice.dailyCaps
   }
 })
 
