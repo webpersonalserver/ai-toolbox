@@ -2,56 +2,32 @@
 <view class="page welfare" wx:else>
   <view class="welfare__summary">
     <text wx:if="{{unclaimedCount}}">有 {{unclaimedCount}} 份福利等你领取</text>
-    <text wx:else>福利都领完啦，继续闯关攒宝箱吧</text>
+    <text wx:elif="{{openTaskCount}}">还有 {{openTaskCount}} 个任务能赚体力和提示</text>
+    <text wx:else>今天的福利都领完啦，明天再来</text>
   </view>
 
-  <view class="card welfare__row">
-    <view class="welfare__icon welfare__icon--checkin">签</view>
+  <view class="welfare__section-title">每日任务 · 赚体力和提示</view>
+  <view
+    wx:for="{{taskRows}}"
+    wx:key="key"
+    class="card welfare__row {{item.done ? 'welfare__row--done' : ''}}"
+  >
+    <image wx:if="{{item.icon}}" class="welfare__icon welfare__icon--image" src="{{item.icon}}" mode="aspectFit" />
+    <view wx:else class="welfare__icon welfare__icon--task">{{item.iconText}}</view>
     <view class="welfare__body">
-      <view class="welfare__name">每日打卡</view>
-      <view class="welfare__desc">{{checkinRewardText}}</view>
+      <view class="welfare__name">{{item.name}}</view>
+      <view class="welfare__desc">{{item.progressText}}</view>
     </view>
     <button
-      wx:if="{{!checkedIn}}"
+      wx:if="{{item.actionText}}"
       class="btn btn--primary welfare__action"
-      loading="{{busyKey === 'checkin'}}"
-      bindtap="claimCheckin"
-    >领取</button>
-    <view wx:else class="welfare__done">明天再来</view>
+      loading="{{busyKey === item.key}}"
+      data-key="{{item.key}}"
+      data-done="{{item.done}}"
+      bindtap="handleTask"
+    >{{item.actionText}}</button>
+    <view wx:else class="welfare__done">{{item.statusText}}</view>
   </view>
-
-  <view class="card welfare__row">
-    <image class="welfare__icon welfare__icon--image" src="/assets/icons/stamina.png" mode="aspectFit" />
-    <view class="welfare__body">
-      <view class="welfare__name">恢复的体力</view>
-      <view class="welfare__desc">
-        <stamina-recovery items="{{items}}" show-claim="{{false}}" />
-      </view>
-    </view>
-    <button
-      wx:if="{{items.staminaPending > 0}}"
-      class="btn btn--primary welfare__action"
-      loading="{{busyKey === 'recovery'}}"
-      bindtap="claimRecovery"
-    >领取</button>
-  </view>
-
-  <block wx:if="{{adOffers.length}}">
-    <view class="welfare__section-title">看视频领奖励</view>
-    <view wx:for="{{adOffers}}" wx:key="itemType" class="card welfare__row">
-      <image class="welfare__icon welfare__icon--image" src="{{item.icon}}" mode="aspectFit" />
-      <view class="welfare__body">
-        <view class="welfare__name">看视频得{{item.label}} +{{item.amount}}</view>
-        <view class="welfare__desc">{{item.remainingText}}</view>
-      </view>
-      <button
-        class="btn btn--primary welfare__action"
-        loading="{{busyKey === 'ad-' + item.itemType}}"
-        data-item-type="{{item.itemType}}"
-        bindtap="watchAd"
-      >去看</button>
-    </view>
-  </block>
 
   <view class="welfare__section-title">闯关宝箱</view>
   <view

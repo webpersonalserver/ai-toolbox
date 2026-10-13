@@ -3,6 +3,7 @@ const { readProgress, saveExamResult } = require('../../../utils/practice/multip
 const { createSoundPlayer } = require('../../../utils/practice/sound')
 const { syncProgress, describeNewChests } = require('../../../utils/practice/multiplication-rewards')
 const { HIDDEN_FLOWER_TOAST, HIDDEN_MEDAL_POPUP, createHonorPresenter, medalShareOf } = require('../../../utils/practice/honors')
+const { KUNGFU_SHARE } = require('../../../utils/share')
 
 const CORRECT_PAUSE_MS = 800
 const WRONG_PAUSE_MS = 1800
@@ -198,7 +199,7 @@ Page({
   },
 
   onShareAppMessage(event) {
-    return medalShareOf(event, this.data.medalPopup) || { title: '一起修炼九九神功，看谁先神功大成！', path: '/pages/practice/multiplication/index' }
+    return medalShareOf(event, this.data.medalPopup) || KUNGFU_SHARE
   },
 
   handleResultAction(event) {

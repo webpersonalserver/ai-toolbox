@@ -1,3 +1,5 @@
+const { buildMedalShare } = require('../share')
+
 const FLOWER_PRAISES = {
   arithmeticSolved: '又答对 10 题，真棒！',
   arithmeticStreak: '连对 10 题，了不起！',
@@ -11,7 +13,6 @@ const FLOWER_TOAST_MS = 2200
 const HIDDEN_FLOWER_TOAST = { visible: false, count: 0, text: '' }
 const HIDDEN_MEDAL_POPUP = { visible: false, isNew: false, medal: null }
 const SHARE_PURPOSE_MEDAL = 'medal'
-const PRACTICE_TAB_PATH = '/pages/practice/index'
 
 const praiseOf = (reasons) => FLOWER_PRAISES[reasons[0]] || DEFAULT_PRAISE
 
@@ -24,11 +25,6 @@ const toMedalPopup = (medal, isNew) => ({
   visible: true,
   isNew,
   medal: { ...medal, dateText: medal.unlocked ? describeMedalDate(medal.unlockedAt) : '', remainingText: medal.unlocked ? '' : `还差 ${medal.target - medal.current}，加油！` }
-})
-
-const buildMedalShare = (medal) => ({
-  title: `我获得了「${medal.name}」奖章！${medal.praise}`,
-  path: PRACTICE_TAB_PATH
 })
 
 /**

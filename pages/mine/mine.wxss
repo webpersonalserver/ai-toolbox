@@ -211,3 +211,9 @@
   text-align: center;
   box-sizing: border-box;
 }
+
+.mine__cell-hint {
+  margin-left: var(--space-sm);
+  color: var(--color-ink-soft);
+  font-size: var(--font-sm);
+}

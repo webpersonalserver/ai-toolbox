@@ -1,7 +1,7 @@
 const { game, toastError } = require('../../utils/api')
 const { getSession, setSession } = require('../../utils/session')
 const { buildRuleSections } = require('../../utils/rule-text')
-const { DEFAULT_SHARE } = require('../../utils/share')
+const { DEFAULT_SHARE, buildRankShare } = require('../../utils/share')
 const { describeTitleProgress } = require('../../utils/milestone')
 const { GAME_ORDER, gameConfigOf } = require('../../utils/games')
 const { countUnclaimedWelfare } = require('../../utils/welfare')
@@ -120,9 +120,6 @@ Page({
   onShareAppMessage() {
     const best = [...this.data.gameTitles].sort((left, right) => right.solvedCount - left.solvedCount)[0]
     if (!best || !best.solvedCount) return DEFAULT_SHARE
-    return {
-      ...DEFAULT_SHARE,
-      title: `我在${best.name}闯过了 ${best.solvedCount} 关，晋升「${best.titleName}」，你能到第几关？`
-    }
+    return buildRankShare(`我在${best.name}闯过了 ${best.solvedCount} 关，晋升「${best.titleName}」，你能到第几关？`)
   }
 })

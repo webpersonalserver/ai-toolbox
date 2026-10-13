@@ -86,3 +86,12 @@
   background: var(--color-success);
   box-shadow: 0 6rpx 0 var(--color-success-deep);
 }
+
+.welfare__row--done {
+  opacity: 0.55;
+}
+
+.welfare__icon--task {
+  background: var(--color-success);
+  box-shadow: 0 6rpx 0 var(--color-success-deep);
+}

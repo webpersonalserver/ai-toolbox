@@ -1,5 +1,6 @@
 const { account, toastError } = require('../../utils/api')
 const { getSession, updateSession } = require('../../utils/session')
+const { isUploadedFile, uploadFile } = require('../../utils/upload')
 
 const DEFAULT_AVATAR = '/assets/icons/default-avatar.png'
 const NICKNAME_MAX_LENGTH = 20
@@ -72,12 +73,8 @@ Component({
     },
 
     async uploadAvatarIfLocal(avatarUrl) {
-      if (!avatarUrl || avatarUrl.startsWith('cloud://')) return avatarUrl
-      const extension = avatarUrl.split('.').pop() || 'png'
-      const { avatarUploadDir } = getSession().profile
-      const cloudPath = `${avatarUploadDir}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${extension}`
-      const { fileID } = await wx.cloud.uploadFile({ cloudPath, filePath: avatarUrl })
-      return fileID
+      if (!avatarUrl || isUploadedFile(avatarUrl)) return avatarUrl
+      return uploadFile(avatarUrl, getSession().profile.avatarUploadDir)
     },
 
     async handleSave() {

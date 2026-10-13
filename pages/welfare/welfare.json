@@ -2,7 +2,6 @@
   "navigationBarTitleText": "福利袋",
   "usingComponents": {
     "reward-popup": "/components/reward-popup/reward-popup",
-    "loading-skeleton": "/components/loading-skeleton/loading-skeleton",
-    "stamina-recovery": "/components/stamina-recovery/stamina-recovery"
+    "loading-skeleton": "/components/loading-skeleton/loading-skeleton"
   }
 }

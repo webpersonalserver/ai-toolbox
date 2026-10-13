@@ -146,12 +146,12 @@ const startedAttempt = { active: true, wrongCount: 0 }
   await call('u5', 'game.startAttempt', { gameType: 'idiom', levelNo: 10 })
   r = await call('u5', 'game.submit', { gameType: 'idiom', levelNo: 10, answer: levels[9].answer }); assert(r.data.correct && r.data.titleUpgrade === '童生' && r.data.achievement.milestone.pendingChests === 1, 'solve 10th -> title upgrade + chest', r)
   const before = { ...S.users.u5.items }
-  r = await call('u5', 'game.claimMilestones', { gameType: 'idiom' }); assert(r.code === 0 && r.data.chestCount === 1 && r.data.items.hint === before.hint + 2 && r.data.items.stamina === before.stamina + 10 && r.data.chests[0].chestNo === 1, 'first chest: 10 stamina + 2 hints', r.data)
+  r = await call('u5', 'game.claimMilestones', { gameType: 'idiom' }); assert(r.code === 0 && r.data.chestCount === 1 && r.data.items.hint === before.hint + 1 && r.data.items.stamina === before.stamina + 10 && r.data.chests[0].chestNo === 1, 'first chest: 10 stamina + 1 hint', r.data)
   r = await call('u5', 'game.claimMilestones', { gameType: 'idiom' }); assert(r.code === 40012, 'chest claimed once', r)
   S.progress['u5_idiom'].solved = Array.from({ length: 29 }, (_, i) => i + 1)
   r = await call('u5', 'game.levelList', { gameType: 'idiom' }); assert(r.data.achievement.milestone.pendingChests === 1 && r.data.achievement.milestone.levelsToNextChest === 1, 'pending after more solves', r.data.achievement)
   S.progress['u5_idiom'].solved.push(30)
-  r = await call('u5', 'game.claimMilestones', { gameType: 'idiom' }); assert(r.data.chestCount === 2 && r.data.rewards.find((x) => x.type === 'hint').amount === 4 && r.data.rewards.find((x) => x.type === 'stamina').amount === 26, 'chests 2 and 3 summed (12 + 14 stamina)', r.data)
+  r = await call('u5', 'game.claimMilestones', { gameType: 'idiom' }); assert(r.data.chestCount === 2 && r.data.rewards.find((x) => x.type === 'hint').amount === 2 && r.data.rewards.find((x) => x.type === 'stamina').amount === 26, 'chests 2 and 3 summed (12 + 14 stamina)', r.data)
   r = await call('u5', 'game.solvedBook', { gameType: 'idiom', page: 1 }); assert(r.data.total === 30 && r.data.entries.length === 20 && r.data.entries[0].levelNo === 1 && r.data.entries[0].answer === levels[0].answer && r.data.hasMore, 'book page 1', r.data.total)
   r = await call('u5', 'game.solvedBook', { gameType: 'idiom', page: 2 }); assert(r.data.entries.length === 10 && !r.data.hasMore, 'book page 2', r.data.entries.length)
   const baseline = DEFAULT_RULES.titles.idiom
@@ -362,7 +362,7 @@ const startedAttempt = { active: true, wrongCount: 0 }
   assert(r.data.achievement.milestone.nextChestNo === 5 && r.data.achievement.milestone.nextChestIsBig && r.data.achievement.milestone.nextChestRewards[0].amount === 36, 'next chest preview shows the big chest', r.data.achievement.milestone)
   S.progress['k1_idiom'].solved = Array.from({ length: 50 }, (_, i) => i + 1)
   r = await call('k1', 'game.claimMilestones', { gameType: 'idiom' })
-  assert(r.data.chests.length === 1 && r.data.chests[0].isBig && r.data.rewards.find((x) => x.type === 'stamina').amount === 36 && r.data.rewards.find((x) => x.type === 'hint').amount === 6, 'fifth chest is doubled', r.data)
+  assert(r.data.chests.length === 1 && r.data.chests[0].isBig && r.data.rewards.find((x) => x.type === 'stamina').amount === 36 && r.data.rewards.find((x) => x.type === 'hint').amount === 2, 'fifth chest is doubled', r.data)
   S.app_config = { game_rules: { _id: 'game_rules', milestone: { rewardRules: { stamina: { base: 20, step: '2' } }, bigChest: { multiplier: 3 } } } }
   S.progress['k1_idiom'].solved = Array.from({ length: 60 }, (_, i) => i + 1)
   r = await call('k1', 'game.claimMilestones', { gameType: 'idiom' })
@@ -499,7 +499,7 @@ const startedAttempt = { active: true, wrongCount: 0 }
   r = await call('d1', 'game.claimMilestones', { gameType: 'idiom' })
   assert(r.code === 0 && r.data.doubleToken && r.data.rewards.length === 2, 'opening level chests offers a double', r.data)
   const hintBeforeChestDouble = S.users.d1.items.hint
-  r = await call('d1', 'account.claimDoubleReward', { token: r.data.doubleToken }); assert(r.code === 0 && r.data.items.hint === hintBeforeChestDouble + 2, 'chest double adds the chest rewards again', r.data)
+  r = await call('d1', 'account.claimDoubleReward', { token: r.data.doubleToken }); assert(r.code === 0 && r.data.items.hint === hintBeforeChestDouble + 1, 'chest double adds the chest rewards again', r.data)
   S.app_config = {}
   // video stats for the admin page, and no double offer for tiny recovery claims
   S.app_config = { game_rules: { _id: 'game_rules', ad: { enabled: true, adUnitId: 'adunit-test' }, admin: { openids: ['v1'] } } }

@@ -2,6 +2,7 @@ const { TECHNIQUES, ROW_COUNT, EXAM_QUESTION_COUNT, EXAM_LIVES, realmOf } = requ
 const { readProgress, rowProgressOf, masteredRowCount } = require('../../../utils/practice/multiplication-records')
 const { syncProgress } = require('../../../utils/practice/multiplication-rewards')
 const { HIDDEN_FLOWER_TOAST, HIDDEN_MEDAL_POPUP, createHonorPresenter, medalShareOf } = require('../../../utils/practice/honors')
+const { KUNGFU_SHARE } = require('../../../utils/share')
 
 const CHINESE_ORDINALS = ['一', '二', '三', '四', '五', '六', '七', '八', '九']
 const STAR_SLOTS = [1, 2, 3]
@@ -83,7 +84,7 @@ Page({
   },
 
   onShareAppMessage(event) {
-    return medalShareOf(event, this.data.medalPopup) || { title: '一起修炼九九神功，看谁先神功大成！', path: '/pages/practice/multiplication/index' }
+    return medalShareOf(event, this.data.medalPopup) || KUNGFU_SHARE
   },
 
   openExam() {

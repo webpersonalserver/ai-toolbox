@@ -12,6 +12,7 @@ const { practice } = require('../../../utils/api')
 const { trackReport } = require('../../../utils/practice/pending-report')
 const { createSoundPlayer } = require('../../../utils/practice/sound')
 const { HIDDEN_FLOWER_TOAST, HIDDEN_MEDAL_POPUP, createHonorPresenter, medalShareOf } = require('../../../utils/practice/honors')
+const { ARITHMETIC_SHARE } = require('../../../utils/share')
 
 const PRACTICE_ID = 'arithmetic'
 const WELFARE_URL = '/pages/welfare/welfare'
@@ -218,7 +219,7 @@ Page({
   },
 
   onShareAppMessage(event) {
-    return medalShareOf(event, this.data.medalPopup) || { title: '一起来做加减运算，看谁连对得多！', path: '/pages/practice/index' }
+    return medalShareOf(event, this.data.medalPopup) || ARITHMETIC_SHARE
   },
 
   openWelfare() {

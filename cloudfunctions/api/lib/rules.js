@@ -99,7 +99,7 @@ const DEFAULT_RULES = {
     everyLevels: 10,
     rewardRules: {
       stamina: { base: 10, step: 2, everyChests: 1, max: 20 },
-      hint: { base: 2, step: 1, everyChests: 3, max: 6 }
+      hint: { base: 1, step: 1, everyChests: 5, max: 3 }
     },
     bigChest: { everyChests: 5, multiplier: 2 }
   },
@@ -352,7 +352,8 @@ const toClientRules = (rules) => ({
   ad: {
     enabled: rules.ad.enabled,
     adUnitId: rules.ad.adUnitId,
-    rewards: rules.ad.rewards
+    rewards: rules.ad.rewards,
+    dailyLimits: rules.ad.dailyLimits
   },
   level: rules.level,
   levelByGame: rules.levelByGame,

@@ -117,5 +117,33 @@ expectReward(adOffersOf(adSession({}, { stamina: 3, hint: 0 })).map((offer) => o
 expectReward(adOffersOf(adSession({}, { stamina: 0, hint: 0 })).length === 0, 'both used up: entry disappears')
 expectReward(adOffersOf(adSession({}, { stamina: null, hint: 1 }))[0].remainingText === '随时都能看', 'unlimited stays available')
 
+const welfare = require(path.join(__dirname, '..', 'utils', 'welfare'))
+const taskSession = ({ checkedIn = false, ad = false, adRemaining = { stamina: 10, hint: 10 }, items = {} } = {}) => ({
+  today: { checkedIn, adRemaining },
+  items: { staminaPending: 0, recoveredToday: 4, ...items },
+  rules: {
+    checkinRewards: [{ type: 'stamina', amount: 5 }],
+    staminaRecovery: { intervalMinutes: 30, dailyCap: 15 },
+    ad: { enabled: ad, adUnitId: ad ? 'unit' : '', rewards: { stamina: 10, hint: 2 }, dailyLimits: { stamina: 10, hint: 10 } },
+    practice: { dailyCaps: { stamina: 15, hint: 3 } }
+  }
+})
+const taskGames = [
+  { gameType: 'idiom', achievement: { milestone: { levelsToNextChest: 7, nextChestIsBig: false } } },
+  { gameType: 'typo', achievement: { milestone: { levelsToNextChest: 2, nextChestIsBig: true } } }
+]
+const tasksFor = (options, extra = {}) => welfare.buildTaskRows({ session: taskSession(options), games: taskGames, practices: [{ practiceId: 'multiplication', masteredRows: 3 }], practiceEarnedToday: { stamina: 6, hint: 1 }, ...extra })
+const taskByKey = (rows, key) => rows.find((row) => row.key === key)
+let tasks = tasksFor({})
+expectReward(!taskByKey(tasks, 'ad-stamina') && tasks.length === 5, 'videos off: video tasks hidden, 5 tasks shown')
+expectReward(taskByKey(tasks, 'checkin').actionText === '打卡' && taskByKey(tasks, 'recovery').statusText === '恢复中', 'open check-in, recovery running')
+expectReward(taskByKey(tasks, 'practice').progressText.includes('6 / 15') && taskByKey(tasks, 'kungfu').progressText.includes('3 / 9'), 'practice and kungfu progress shown')
+expectReward(taskByKey(tasks, 'levels').progressText.includes('找错字再过 2 关开大宝箱'), 'levels task points at the nearest chest')
+expectReward(welfare.countOpenTasks(tasks) === 4, 'open tasks: check-in, practice, kungfu, levels')
+tasks = tasksFor({ checkedIn: true, ad: true, adRemaining: { stamina: 0, hint: 4 }, items: { recoveredToday: 15 } }, { practiceEarnedToday: { stamina: 15, hint: 3 } })
+expectReward(taskByKey(tasks, 'checkin').done && taskByKey(tasks, 'recovery').done && taskByKey(tasks, 'practice').done, 'limits reached: rows stay but are done')
+expectReward(taskByKey(tasks, 'ad-stamina').done && taskByKey(tasks, 'ad-stamina').statusText === '今天已看满' && taskByKey(tasks, 'ad-hint').progressText === '今天已看 6 / 10 次', 'video rows show used / limit and grey out when full')
+expectReward(taskByKey(tasksFor({ items: { staminaPending: 7 } }), 'recovery').actionText === '领取 +7', 'pending recovery becomes a claim button')
+
 console.log(failed ? `${failed} checks failed` : 'all practice checks passed')
 process.exitCode = failed ? 1 : 0

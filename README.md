@@ -90,7 +90,7 @@
 | `rescue.dailyLimitPerHelper` | 2 | 同一位好友每天最多帮同一个人解几关 |
 | `rescue.maxWrongAnswersPerHelper` | 3 | 每位好友对每条求助最多答错几次，超过就不能再答（防止乱点试出答案） |
 | `milestone.everyLevels` | 10 | 每通过多少关解锁一个宝箱 |
-| `milestone.rewardRules.<道具>` | 体力 `{base:10, step:2, everyChests:1, max:20}`；提示 `{base:2, step:1, everyChests:3, max:6}` | 第 n 个宝箱 = min(max, base + step × ⌊(n−1) ÷ everyChests⌋) |
+| `milestone.rewardRules.<道具>` | 体力 `{base:10, step:2, everyChests:1, max:20}`；提示 `{base:1, step:1, everyChests:5, max:3}`（提示故意给得少，卡关时看视频拿提示是主要广告位置） | 第 n 个宝箱 = min(max, base + step × ⌊(n−1) ÷ everyChests⌋) |
 | `milestone.bigChest` | `{everyChests:5, multiplier:2}` | 每第 5 个宝箱（每 50 关）是大宝箱，奖励 ×2（翻倍在封顶之后计算） |
 | `maintenance.itemLogRetentionDays` | 180 | 道具流水保留天数，过期由定时任务清理 |
 | `maintenance.dailyRecordRetentionDays` | 7 | 每日打卡记录、求助计数这类按天记录的数据保留天数 |
@@ -124,6 +124,7 @@
 ```
 
 - **体力恢复要手动领取**：恢复的体力先进入「待领取」（`users.staminaPending`），不直接加到体力里；页面显示 `mm:ss 后 +1` 的倒计时和「领取 +N」按钮，福利袋里也能领。体力不足时如果有待领取的，会先提示去领取
+- **福利袋 = 领奖励 + 每日任务**：上面是「每日任务 · 赚体力和提示」（打卡、自动恢复、看视频、加减运算、九九神功、闯关开宝箱），每行显示今天的进度，到上限变灰但仍然展示；没到上限的可以直接点去做。下面是闯关宝箱和练习宝箱（`utils/welfare.js` 的 `buildTaskRows`）
 - 体力恢复不靠定时任务：每次读写体力时，按距离上次结算过去了多少时间补进「待领取」（`lib/items.js`）
 - 「一天」按**北京时间**划分（云函数默认是 UTC 时区，见 `lib/date.js`）
 - 道具的扣减和发放都在数据库事务里完成，多端同时操作也不会扣错
@@ -239,6 +240,52 @@
 - **关卡总数缓存**：每个云函数实例缓存 10 分钟，导入新关卡后最多 10 分钟可见
 - **提审风险**：体力、宝箱、段位都是游戏化机制，个人主体开不了游戏类目，审核可能认定为"小程序提供游戏服务"。建议部署后尽早用体验版提审一次；介绍文案和截图突出成语学习（释义、出处、成语本）
 
+## 分享
+
+所有分享卡片（标题、打开后到哪个页面、配图）都在 `utils/share.js` 里统一定义，页面只调用，不自己拼标题。配图在 `assets/share/`，600×480（微信转发卡片按 5:4 显示），每张不超过 128KB，`tests/templates.test.js` 会检查。
+
+| 分享 | 配图 | 打开后 |
+|---|---|---|
+| 求助好友 | `rescue.jpg` | 求助页 |
+| 晒段位、排行榜名次 | `rank.jpg` | 大厅 |
+| 奖章 | `medal.jpg` | 「趣味」页 |
+| 满分奖状 | `certificate.jpg` | 「趣味」页 |
+| 荣誉墙 | `honors.jpg` | 「趣味」页 |
+| 加减运算邀请 | `arithmetic.jpg` | 「趣味」页 |
+| 限时考试邀请 | `exam.jpg` | 「趣味」页 |
+| 九九神功邀请 | `kungfu.jpg` | 九九神功秘籍总览 |
+| 其他页面（默认） | `default.jpg` | 大厅 |
+
+配图由 AI 生成，右下角保留了「豆包 AI 生成」标识，不要裁掉（AI 生成内容需要标识）。
+
+## 迁移设计（现在用云开发，以后可能迁到云托管或自建服务器）
+
+**原则**：云开发专属的调用只允许写在下面几个「适配文件」里，业务代码只依赖它们。迁移时改这几个文件，页面和业务逻辑不用动。`tests/boundaries.test.js` 会检查这条边界，违反就报错。
+
+| 层 | 适配文件 | 现在（云开发） | 迁移时改成 |
+|---|---|---|---|
+| 前端请求 | `utils/api.js` 的 `call()` | `wx.cloud.callFunction`，`{ action, payload }` 调同一个云函数 | `wx.request` 调 `https://<域名>/api/<action>`，带上登录凭证；返回结构 `{ code, message, data }` 不变 |
+| 前端初始化 | `app.js` | `wx.cloud.init` | 删掉 |
+| 前端上传 | `utils/upload.js` | `wx.cloud.uploadFile` 传到云存储 | 传到 COS / OSS（先找服务端要上传凭证） |
+| 用户身份 | `cloudfunctions/api/index.js` | `cloud.getWXContext()` 取 openid | 校验登录凭证得到 openid（登录接口用 `wx.login` 的 code 换 openid）。业务函数只接收 `{ openid, payload }`，不用改 |
+| 路由 | `cloudfunctions/api/index.js` 的 `ROUTES` | 按 `action` 分发 | 原样搬成 HTTP 路由，每个 action 一个接口 |
+| 数据库 | `cloudfunctions/api/lib/cloud.js` 的 `db` / `_` | `wx-server-sdk` | 迁到云托管：换成 `@cloudbase/node-sdk` 连同一个数据库，查询写法基本一样。迁到自建数据库：要重写数据访问部分，这是工作量最大的一块 |
+| 微信接口 | `cloudfunctions/api/lib/wechat-api.js` | 云调用（内容安全检查） | 用 access_token 调微信的 HTTPS 接口 |
+| 文件存储 | `cloudfunctions/api/lib/storage.js` | 云存储删除文件 | COS / OSS 的删除接口 |
+| 定时任务 | `cloudfunctions/api/config.json` 的 `triggers` → `handlers/maintenance.js` | 云函数定时触发器 | 服务器上的定时任务，调用同样的函数 |
+
+**迁移时还要处理的数据**：用户头像存的是 `cloud://` 格式的地址，只有云开发能显示。迁移存储时要把已有头像转存，并把 `users.avatarUrl` 改成 https 地址。
+
+**开发约定**
+- 所有业务都通过云函数完成，前端不直接读写数据库，所有集合的安全规则保持 `{"read": false, "write": false}`
+- 身份只在云端取，不信任前端传来的 openid；权限（比如管理员）在云函数里校验
+- 新的云开发专属能力（订阅消息、支付等）先加到对应的适配文件里，再给业务调用
+- 可调的数值放进 `game_rules`，不要写死在代码里
+- 字段名统一用驼峰（`createdAt`），不和下划线混用
+- 查询都要带 `limit`，不一次读出整张表
+
+**控制台要定期确认**：数据库每日自动备份、资源告警、云函数超时时间（定时统计和清理任务，数据量大了可能会变慢）。
+
 ## 测试
 
 ```
@@ -246,6 +293,7 @@ node tests/api.test.js      # 后端：用内存版数据库跑完整业务流�
 node tests/practice.test.js # 趣味练习：每档 6000 道题检查范围、等式、题型分布
 node tests/multiplication.test.js # 乘法口诀：45 句口诀写法、练功队列、考核出题
 node tests/templates.test.js # 页面模板体检：模板不能为空、绑定的函数要存在、不能用 ||
+node tests/boundaries.test.js # 迁移边界：云开发专属调用只能出现在适配文件里
 node tests/levels.test.js   # 题库体检（四个玩法）：编号连续、字盘包含答案、题面与答案能还原原句、学段连续
 ```
 

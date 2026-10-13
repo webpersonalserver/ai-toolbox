@@ -76,6 +76,7 @@ const toItemsView = (settled, rules, now = Date.now()) => {
     staminaPending: settled.staminaPending,
     staminaDailyCap: recovery.dailyCap,
     staminaPendingCap: recovery.pendingCap,
+    recoveredToday: recoveredTodayOf(settled, now),
     recoveryLeftToday: Math.min(recoveryLeftToday, pendingRoom),
     pendingFull: pendingRoom === 0,
     nextStaminaAt: canAccrue ? settled.staminaAnchorAt + recovery.intervalMinutes * MINUTE_MS : null

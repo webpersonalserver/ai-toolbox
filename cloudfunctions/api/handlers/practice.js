@@ -314,7 +314,14 @@ const summarizePractices = (openid) =>
   Promise.all(
     PRACTICE_IDS.map(async (practiceId) => {
       const storedStats = (await readStats(openid, practiceId)) || emptyStats(openid, practiceId)
-      return { practiceId, pendingChestCount: storedStats.pendingChestCount, pendingRewards: toRewardList(storedStats.pendingRewards) }
+      const masteredRows = storedStats.progress ? Object.values(storedStats.progress.rows).filter((row) => row.mastered).length : 0
+      return {
+        practiceId,
+        pendingChestCount: storedStats.pendingChestCount,
+        pendingRewards: toRewardList(storedStats.pendingRewards),
+        totalSolved: storedStats.totalSolved,
+        masteredRows
+      }
     })
   )
 

@@ -1,6 +1,6 @@
 const { leaderboard, toastError } = require('../../utils/api')
 const { ensureLogin } = require('../../utils/session')
-const { DEFAULT_SHARE } = require('../../utils/share')
+const { DEFAULT_SHARE, buildRankShare } = require('../../utils/share')
 const { GAME_ORDER, gameConfigOf } = require('../../utils/games')
 const { takePendingLeaderboardGameType } = require('../../utils/navigation')
 
@@ -67,6 +67,6 @@ Page({
   onShareAppMessage() {
     const { me } = this.data
     if (!me || !me.rank) return DEFAULT_SHARE
-    return { ...DEFAULT_SHARE, title: `我在${gameConfigOf(this.data.gameType).name}排行榜第 ${me.rank} 名，已闯过 ${me.solvedCount} 关，来挑战我！` }
+    return buildRankShare(`我在${gameConfigOf(this.data.gameType).name}排行榜第 ${me.rank} 名，已闯过 ${me.solvedCount} 关，来挑战我！`)
   }
 })

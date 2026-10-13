@@ -1,7 +1,7 @@
 const { practice, toastError } = require('../../utils/api')
 const { HIDDEN_MEDAL_POPUP, toMedalPopup, medalShareOf } = require('../../utils/practice/honors')
+const { buildHonorsShare } = require('../../utils/share')
 
-const PRACTICE_TAB_PATH = '/pages/practice/index'
 
 Page({
   data: {
@@ -32,6 +32,6 @@ Page({
     const medalShare = medalShareOf(event, this.data.medalPopup)
     if (medalShare) return medalShare
     const flowers = this.data.honors ? this.data.honors.flowers : 0
-    return { title: `我已经得到 ${flowers} 朵小红花啦，快来看看我的荣誉墙！`, path: PRACTICE_TAB_PATH }
+    return buildHonorsShare(flowers)
   }
 })

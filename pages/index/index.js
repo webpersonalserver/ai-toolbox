@@ -7,7 +7,7 @@ const { showRescueNotices } = require('../../utils/rescue-notice')
 const { describeTitleProgress } = require('../../utils/milestone')
 const { GAME_ORDER, gameConfigOf } = require('../../utils/games')
 const { GUIDE_KEYS, hasSeenGuide, markGuideSeen } = require('../../utils/onboarding')
-const { countUnclaimedWelfare } = require('../../utils/welfare')
+const { countUnclaimedWelfare, buildTaskRows, countOpenTasks } = require('../../utils/welfare')
 const { adOffersOf } = require('../../utils/ad-reward')
 const { HIDDEN_REWARD_POPUP } = require('../../utils/milestone')
 
@@ -16,9 +16,10 @@ const WELFARE_URL = '/pages/welfare/welfare'
 const PRACTICE_TAB_URL = '/pages/practice/index'
 
 // Most recently played first; untouched games keep the default order. A brand-new player gets one clear starting point.
-const describeWelfare = (session, unclaimed) => {
+const describeWelfare = (session, unclaimed, openTasks) => {
   if (!session.today.checkedIn) return `今日打卡可领${describeRewards(session.rules.checkinRewards)}`
-  return unclaimed ? '还有福利没领，点开看看' : '今天的福利都领完啦'
+  if (unclaimed) return '还有福利没领，点开看看'
+  return openTasks ? `还有 ${openTasks} 个任务能赚体力和提示` : '今天的福利都领完啦'
 }
 
 const orderGameCards = (cards) => {
@@ -61,14 +62,18 @@ Page({
 
   async refresh() {
     try {
-      const { session, games, rescueNotices, practices } = await game.overview()
+      const { session, games, rescueNotices, practices, practiceEarnedToday } = await game.overview()
       setSession(session)
       this.syncSession()
       const summaryByGame = Object.fromEntries(games.map((summary) => [summary.gameType, summary]))
       this.setData({
         loading: false,
         unclaimedWelfare: countUnclaimedWelfare(session, games, practices),
-        welfareDesc: describeWelfare(session, countUnclaimedWelfare(session, games, practices)),
+        welfareDesc: describeWelfare(
+          session,
+          countUnclaimedWelfare(session, games, practices),
+          countOpenTasks(buildTaskRows({ session, games, practices, practiceEarnedToday }))
+        ),
         gameCards: orderGameCards(GAME_ORDER.filter((gameType) => summaryByGame[gameType]).map((gameType) => toGameCard(summaryByGame[gameType])))
       })
       showRescueNotices(rescueNotices.map((notice) => ({ ...notice, gameName: gameConfigOf(notice.gameType).name })))

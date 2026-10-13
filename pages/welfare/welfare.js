@@ -1,21 +1,21 @@
 const { account, game, practice, toastError } = require('../../utils/api')
 const { setSession, updateSession, setItems } = require('../../utils/session')
-const { describeRewards } = require('../../utils/items')
 const { HIDDEN_REWARD_POPUP, openMilestoneChests } = require('../../utils/milestone')
-const { countUnclaimedWelfare, buildChestRows, buildPracticeChestRows } = require('../../utils/welfare')
-const { adOffersOf, watchAdForItem } = require('../../utils/ad-reward')
+const { TASK_ACTIONS, countUnclaimedWelfare, buildChestRows, buildPracticeChestRows, buildTaskRows, countOpenTasks } = require('../../utils/welfare')
+const { watchAdForItem } = require('../../utils/ad-reward')
+
+const PRACTICE_TAB_URL = '/pages/practice/index'
+const LOBBY_TAB_URL = '/pages/index/index'
+const KUNGFU_URL = '/pages/practice/multiplication/index'
 
 Page({
   data: {
     loading: true,
     busyKey: '',
-    checkedIn: false,
-    checkinRewardText: '',
-    checkinRewards: [],
-    items: null,
+    taskRows: [],
+    openTaskCount: 0,
     chestRows: [],
     practiceChestRows: [],
-    adOffers: [],
     unclaimedCount: 0,
     rewardPopup: HIDDEN_REWARD_POPUP
   },
@@ -26,17 +26,15 @@ Page({
 
   async loadWelfare() {
     try {
-      const { session, games, practices } = await game.overview()
+      const { session, games, practices, practiceEarnedToday } = await game.overview()
       setSession(session)
+      const taskRows = buildTaskRows({ session, games, practices, practiceEarnedToday })
       this.setData({
         loading: false,
-        checkedIn: session.today.checkedIn,
-        checkinRewards: session.rules.checkinRewards,
-        checkinRewardText: describeRewards(session.rules.checkinRewards),
-        items: session.items,
+        taskRows,
+        openTaskCount: countOpenTasks(taskRows),
         chestRows: buildChestRows(games),
         practiceChestRows: buildPracticeChestRows(practices),
-        adOffers: adOffersOf(session),
         unclaimedCount: countUnclaimedWelfare(session, games, practices)
       })
     } catch (error) {
@@ -95,8 +93,22 @@ Page({
     })
   },
 
-  watchAd(event) {
-    const { itemType } = event.currentTarget.dataset
+  handleTask(event) {
+    const { key, done } = event.currentTarget.dataset
+    if (done) return
+    const handlers = {
+      [TASK_ACTIONS.CHECKIN]: () => this.claimCheckin(),
+      [TASK_ACTIONS.RECOVERY]: () => this.claimRecovery(),
+      [TASK_ACTIONS.AD_STAMINA]: () => this.watchAd('stamina'),
+      [TASK_ACTIONS.AD_HINT]: () => this.watchAd('hint'),
+      [TASK_ACTIONS.PRACTICE]: () => wx.switchTab({ url: PRACTICE_TAB_URL }),
+      [TASK_ACTIONS.KUNGFU]: () => wx.navigateTo({ url: KUNGFU_URL }),
+      [TASK_ACTIONS.LEVELS]: () => wx.switchTab({ url: LOBBY_TAB_URL })
+    }
+    handlers[key]()
+  },
+
+  watchAd(itemType) {
     return this.runClaim(`ad-${itemType}`, async () => {
       const result = await watchAdForItem(itemType)
       if (!result) return null

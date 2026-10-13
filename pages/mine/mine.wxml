@@ -40,7 +40,10 @@
 
   <view class="card mine__menu">
     <view class="mine__cell" hover-class="mine__cell--pressed" bindtap="openWelfare">
-      <text>福利袋</text>
+      <view>
+        <text>福利袋</text>
+        <text class="mine__cell-hint">做任务赚体力和提示</text>
+      </view>
       <view class="mine__cell-side">
         <text wx:if="{{unclaimedWelfare > 0}}" class="mine__badge">{{unclaimedWelfare}}</text>
         <text class="mine__cell-arrow">›</text>

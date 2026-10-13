@@ -17,6 +17,7 @@ const { ensureLogin } = require('../../../utils/session')
 const { createSoundPlayer } = require('../../../utils/practice/sound')
 const { trackReport } = require('../../../utils/practice/pending-report')
 const { HIDDEN_FLOWER_TOAST, HIDDEN_MEDAL_POPUP, createHonorPresenter, medalShareOf, mergeHonors } = require('../../../utils/practice/honors')
+const { buildCertificateShare, buildExamShare } = require('../../../utils/share')
 
 const PRACTICE_ID = 'arithmetic'
 const SECOND_MS = 1000
@@ -26,7 +27,6 @@ const STAGES = { SELECT: 'select', RUNNING: 'running', RESULT: 'result' }
 const FULL_SCORE = EXAM_QUESTION_COUNT * POINTS_PER_QUESTION
 const HIDDEN_CHEER = { visible: false, title: '', subtitle: '', mascot: '', big: false }
 const HIDDEN_CERTIFICATE = { visible: false, nickname: '', achievement: '', dateText: '' }
-const PRACTICE_TAB_PATH = '/pages/practice/index'
 
 const newRunId = () => `exam${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
 
@@ -302,8 +302,8 @@ Page({
     const isCertificate = event.from === 'button' && event.target.dataset.purpose === 'certificate'
     if (isCertificate) {
       const { nickname, achievement } = this.data.certificate
-      return { title: `${nickname}在${achievement}中考了 100 分，获得一张奖状！`, path: PRACTICE_TAB_PATH }
+      return buildCertificateShare(nickname, achievement)
     }
-    return { title: `来挑战${this.config.label}加减法限时考试，看看你能考几分！`, path: PRACTICE_TAB_PATH }
+    return buildExamShare(this.config.label)
   }
 })

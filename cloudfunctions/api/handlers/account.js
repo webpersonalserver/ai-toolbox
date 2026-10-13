@@ -1,4 +1,6 @@
-const { cloud, db, _ } = require('../lib/cloud')
+const { db, _ } = require('../lib/cloud')
+const { CONTENT_SCENES, isTextSafe } = require('../lib/wechat-api')
+const { isStoredFileIn, removeFile } = require('../lib/storage')
 const { hashedId } = require('../lib/hashed-id')
 const { generateNickname } = require('../lib/nickname')
 const { ERROR_CODES, BusinessError, throwIfFailed } = require('../lib/response')
@@ -19,41 +21,27 @@ const { recordAdView } = require('../lib/ad-stats')
 
 const NICKNAME_MAX_LENGTH = 20
 const AVATAR_ROOT_DIR = 'avatars'
-const CONTENT_CHECK_SCENE_PROFILE = 1
-const CONTENT_CHECK_VERSION = 2
-const CONTENT_CHECK_PASS = 'pass'
 
 const avatarUploadDirOf = (openid) => `${AVATAR_ROOT_DIR}/${hashedId(openid)}`
 
-const isOwnAvatarFile = (fileId, openid) =>
-  typeof fileId === 'string' && fileId.startsWith('cloud://') && fileId.includes(`/${avatarUploadDirOf(openid)}/`)
+const isOwnAvatarFile = (fileId, openid) => isStoredFileIn(fileId, avatarUploadDirOf(openid))
 
 const assertNicknameSafe = async (openid, nickname) => {
-  let suggest
+  let safe
   try {
-    const response = await cloud.openapi.security.msgSecCheck({
-      openid,
-      scene: CONTENT_CHECK_SCENE_PROFILE,
-      version: CONTENT_CHECK_VERSION,
-      content: nickname
-    })
-    suggest = response.result && response.result.suggest
+    safe = await isTextSafe(openid, nickname, CONTENT_SCENES.PROFILE)
   } catch (error) {
-    console.error('msgSecCheck failed', error)
+    console.error('nickname content check failed', error)
     throw new BusinessError(ERROR_CODES.CONTENT_RISKY, '昵称校验暂时不可用，请稍后再试')
   }
-  if (suggest !== CONTENT_CHECK_PASS) {
+  if (!safe) {
     throw new BusinessError(ERROR_CODES.CONTENT_RISKY, '昵称包含不当内容，请换一个')
   }
 }
 
 const deleteReplacedAvatar = async (previousAvatarUrl, nextAvatarUrl, openid) => {
   if (!isOwnAvatarFile(previousAvatarUrl, openid) || previousAvatarUrl === nextAvatarUrl) return
-  try {
-    await cloud.deleteFile({ fileList: [previousAvatarUrl] })
-  } catch (error) {
-    console.error('deleteReplacedAvatar failed', previousAvatarUrl, error)
-  }
+  await removeFile(previousAvatarUrl)
 }
 
 const findOrCreateUser = async (openid, rules, now) => {
