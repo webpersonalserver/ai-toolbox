@@ -1,4 +1,4 @@
-const { db } = require('./cloud')
+const { db, _ } = require('./cloud')
 const { chinaDateKey } = require('./date')
 const { practiceStatsDocId } = require('./practice-rewards')
 
@@ -158,11 +158,11 @@ const applyHonors = async (openid, { flowerEvents = [], practiced = false }, rul
     await ref.update({
       data: {
         flowers: next.flowers,
-        flowersToday: next.flowersToday,
+        flowersToday: _.set(next.flowersToday),
         lastPracticeDate: next.lastPracticeDate,
         dayStreak: next.dayStreak,
         bestDayStreak: next.bestDayStreak,
-        medals: next.medals,
+        medals: _.set(next.medals),
         updatedAt: db.serverDate()
       }
     })

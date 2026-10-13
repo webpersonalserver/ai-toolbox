@@ -1,6 +1,7 @@
 const { TIERS, TIER_ORDER } = require('../../../utils/practice/arithmetic')
 const { bestStreakOf } = require('../../../utils/practice/records')
 const { practice } = require('../../../utils/api')
+const { waitForPendingReport } = require('../../../utils/practice/pending-report')
 
 const PRACTICE_ID = 'arithmetic'
 const NO_RECORD_TEXT = '—'
@@ -24,6 +25,7 @@ Page({
   async onShow() {
     this.setData({ tiers: buildTiers(null) })
     try {
+      await waitForPendingReport()
       const stats = await practice.stats(PRACTICE_ID)
       this.setData({ tiers: buildTiers(stats.tiers) })
     } catch (error) {

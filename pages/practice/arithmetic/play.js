@@ -9,6 +9,7 @@ const {
 } = require('../../../utils/practice/records')
 const { nextSolvedChest, nextStreakChest, expectsChest, expectsFlower, isDailyCapReached } = require('../../../utils/practice/rewards')
 const { practice } = require('../../../utils/api')
+const { trackReport } = require('../../../utils/practice/pending-report')
 const { createSoundPlayer } = require('../../../utils/practice/sound')
 const { HIDDEN_FLOWER_TOAST, HIDDEN_MEDAL_POPUP, createHonorPresenter, medalShareOf } = require('../../../utils/practice/honors')
 
@@ -184,9 +185,13 @@ Page({
       .catch((error) => {
         console.error('[practice] report failed, will retry with the next one', error)
         this.unreportedSolved += solvedDelta
+        if (!this.reportFailureShown) {
+          this.reportFailureShown = true
+          wx.showToast({ title: '网络不太好，答题记录稍后补上', icon: 'none' })
+        }
         return false
       })
-    return this.reportQueue
+    return trackReport(this.reportQueue)
   },
 
   applyReport({ newChests, stats, honors }) {

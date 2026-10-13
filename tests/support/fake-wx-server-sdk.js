@@ -34,14 +34,29 @@ const applyValue = (previous, value) => {
   }
 }
 
+const isPlainValueObject = (value) =>
+  value !== null && typeof value === 'object' && !Array.isArray(value) && !value[COMMAND] && !value.__serverDate
+
+// Like the real cloud database: a plain object in update data is expanded into field paths (merged, not replaced),
+// and a field that is currently null cannot get sub-fields. Use _.set(...) to replace a whole object.
 const setPath = (target, path, value) => {
   const keys = path.split('.')
   let node = target
   keys.slice(0, -1).forEach((key) => {
+    if (node[key] === null) throw new Error(`Cannot create field in element {${key}: null}`)
     node[key] = node[key] || {}
     node = node[key]
   })
   const last = keys[keys.length - 1]
+  if (isPlainValueObject(value)) {
+    if (node[last] === null) throw new Error(`Cannot create field in element {${last}: null}`)
+    if (Object.keys(value).length === 0) {
+      node[last] = node[last] || {}
+      return
+    }
+    Object.entries(value).forEach(([key, child]) => setPath(node, `${last}.${key}`, child))
+    return
+  }
   node[last] = applyValue(node[last], value)
 }
 

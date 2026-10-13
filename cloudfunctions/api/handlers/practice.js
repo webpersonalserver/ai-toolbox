@@ -1,4 +1,4 @@
-const { db } = require('../lib/cloud')
+const { db, _ } = require('../lib/cloud')
 const { ERROR_CODES, BusinessError, throwIfFailed } = require('../lib/response')
 const { loadRules, sumRewardsByType } = require('../lib/rules')
 const { dailyDocId, getTodayRecord, ensureTodayRecord } = require('../lib/daily')
@@ -138,16 +138,16 @@ const report = async ({ openid, payload }) => {
     }
     await statsRef.update({
       data: {
-        [`tiers.${tierKey}`]: nextStats.tiers[tierKey],
+        [`tiers.${tierKey}`]: _.set(nextStats.tiers[tierKey]),
         totalSolved,
-        streakRun: nextStats.streakRun,
+        streakRun: _.set(nextStats.streakRun),
         pendingChestCount: nextStats.pendingChestCount,
-        pendingRewards: nextStats.pendingRewards,
+        pendingRewards: _.set(nextStats.pendingRewards),
         updatedAt: db.serverDate()
       }
     })
     if (chests.length) {
-      await dailyRef.update({ data: { practiceEarned: earnedToday, updatedAt: db.serverDate() } })
+      await dailyRef.update({ data: { practiceEarned: _.set(earnedToday), updatedAt: db.serverDate() } })
     }
     const flowerRules = rules.honors.flowers
     const flowerEvents = [
@@ -183,7 +183,13 @@ const syncProgress = async ({ openid, payload }) => {
     const pendingChestCount = storedStats.pendingChestCount + chests.length
     const pendingRewards = addItemCounts(storedStats.pendingRewards, sumRewardsByType(chests.flatMap((chest) => chest.rewards)))
     await statsRef.update({
-      data: { progress, rewardedMilestones: [...rewarded], pendingChestCount, pendingRewards, updatedAt: db.serverDate() }
+      data: {
+        progress: _.set(progress),
+        rewardedMilestones: _.set([...rewarded]),
+        pendingChestCount,
+        pendingRewards: _.set(pendingRewards),
+        updatedAt: db.serverDate()
+      }
     })
     const flowerEvents = [FLOWER_REASONS.ROW_RECITED, FLOWER_REASONS.ROW_MASTERED, FLOWER_REASONS.ROW_PERFECT]
       .map((reason) => ({ reason, count: newMilestones.filter((milestone) => milestone.type === reason).length }))
@@ -214,7 +220,7 @@ const claimChests = async ({ openid, payload }) => {
     }
     const deltas = storedStats.pendingRewards
     const { items } = await changeItemsInTransaction(transaction, openid, deltas, rules, now)
-    await statsRef.update({ data: { pendingChestCount: 0, pendingRewards: emptyItemCounts(), updatedAt: db.serverDate() } })
+    await statsRef.update({ data: { pendingChestCount: 0, pendingRewards: _.set(emptyItemCounts()), updatedAt: db.serverDate() } })
     return { chestCount: storedStats.pendingChestCount, deltas, items }
   })
   throwIfFailed(outcome)
