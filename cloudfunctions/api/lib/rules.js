@@ -65,7 +65,7 @@ const BASELINE_TITLES_BY_GAME = {
 }
 
 const DEFAULT_RULES = {
-  signupItems: { hint: 10, stamina: 25 },
+  signupItems: { hint: 10, stamina: 50 },
   checkinRewards: [
     { type: 'hint', amount: 3 },
     { type: 'stamina', amount: 5 }
@@ -73,8 +73,9 @@ const DEFAULT_RULES = {
   ad: {
     enabled: false,
     adUnitId: '',
-    rewards: { hint: 2, stamina: 3 },
-    dailyLimits: { hint: 5, stamina: 5 }
+    rewards: { hint: 2, stamina: 10 },
+    dailyLimits: { hint: 10, stamina: 10 },
+    recoveryDoubleMinAmount: 5
   },
   level: {
     staminaCost: 1,
@@ -87,7 +88,8 @@ const DEFAULT_RULES = {
   staminaRecovery: {
     enabled: true,
     intervalMinutes: 30,
-    cap: 10
+    dailyCap: 15,
+    pendingCap: 30
   },
   rescue: {
     dailyLimitPerHelper: 2,
@@ -96,7 +98,7 @@ const DEFAULT_RULES = {
   milestone: {
     everyLevels: 10,
     rewardRules: {
-      stamina: { base: 10, step: 2, everyChests: 1, max: 30 },
+      stamina: { base: 10, step: 2, everyChests: 1, max: 20 },
       hint: { base: 2, step: 1, everyChests: 3, max: 6 }
     },
     bigChest: { everyChests: 5, multiplier: 2 }
@@ -104,7 +106,7 @@ const DEFAULT_RULES = {
   practice: {
     solvedRewards: [
       { every: 20, rewards: [{ type: 'stamina', amount: 2 }] },
-      { every: 100, rewards: [{ type: 'hint', amount: 1 }] }
+      { every: 50, rewards: [{ type: 'hint', amount: 1 }] }
     ],
     streakRewards: {
       milestones: [
@@ -118,7 +120,7 @@ const DEFAULT_RULES = {
     },
     dailyCaps: { stamina: 15, hint: 3 },
     multiplication: {
-      rowMastered: [{ type: 'stamina', amount: 3 }],
+      rowMastered: [{ type: 'stamina', amount: 5 }],
       rowPerfect: [{ type: 'hint', amount: 1 }],
       grandmaster: [{ type: 'stamina', amount: 10 }, { type: 'hint', amount: 3 }]
     }
@@ -127,7 +129,7 @@ const DEFAULT_RULES = {
     flowers: {
       arithmeticSolvedEvery: 10,
       arithmeticStreaks: [10],
-      perEvent: { arithmeticSolved: 1, arithmeticStreak: 1, dailyFirst: 1, rowRecited: 1, rowMastered: 1, rowPerfect: 1 }
+      perEvent: { arithmeticSolved: 1, arithmeticStreak: 1, dailyFirst: 1, rowRecited: 1, rowMastered: 1, rowPerfect: 1, examPerfect: 3, examGreat: 2, examPassed: 1 }
     }
   },
   titles: BASELINE_TITLES_BY_GAME,
@@ -180,6 +182,9 @@ const isStreakMilestones = (value) =>
 const isIncreasingPositiveList = (value) =>
   Array.isArray(value) && value.every((item, index) => isPositiveInteger(item) && (index === 0 || item > value[index - 1]))
 
+// null means no daily limit, so it can be switched between "unlimited" and a number by config alone.
+const isOptionalLimit = (value) => value === null || isNonNegativeInteger(value)
+
 const RULE_VALIDATORS = {
   'signupItems.hint': isNonNegativeInteger,
   'signupItems.stamina': isNonNegativeInteger,
@@ -188,14 +193,16 @@ const RULE_VALIDATORS = {
   'ad.adUnitId': isString,
   'ad.rewards.hint': isNonNegativeInteger,
   'ad.rewards.stamina': isNonNegativeInteger,
-  'ad.dailyLimits.hint': isNonNegativeInteger,
-  'ad.dailyLimits.stamina': isNonNegativeInteger,
+  'ad.dailyLimits.hint': isOptionalLimit,
+  'ad.dailyLimits.stamina': isOptionalLimit,
+  'ad.recoveryDoubleMinAmount': isPositiveInteger,
   'level.staminaCost': isNonNegativeInteger,
   'level.maxWrongAttempts': isPositiveInteger,
   'level.maxHints': isNonNegativeInteger,
   'staminaRecovery.enabled': isBoolean,
   'staminaRecovery.intervalMinutes': isPositiveInteger,
-  'staminaRecovery.cap': isNonNegativeInteger,
+  'staminaRecovery.dailyCap': isNonNegativeInteger,
+  'staminaRecovery.pendingCap': isNonNegativeInteger,
   'rescue.dailyLimitPerHelper': isNonNegativeInteger,
   'rescue.maxWrongAnswersPerHelper': isPositiveInteger,
   'milestone.everyLevels': isPositiveInteger,
@@ -228,6 +235,9 @@ const RULE_VALIDATORS = {
   'honors.flowers.perEvent.rowRecited': isNonNegativeInteger,
   'honors.flowers.perEvent.rowMastered': isNonNegativeInteger,
   'honors.flowers.perEvent.rowPerfect': isNonNegativeInteger,
+  'honors.flowers.perEvent.examPerfect': isNonNegativeInteger,
+  'honors.flowers.perEvent.examGreat': isNonNegativeInteger,
+  'honors.flowers.perEvent.examPassed': isNonNegativeInteger,
   'admin.openids': isStringList,
   'leaderboard.size': isLeaderboardSize
 }

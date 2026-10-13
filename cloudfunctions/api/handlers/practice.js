@@ -5,6 +5,7 @@ const { dailyDocId, getTodayRecord, ensureTodayRecord } = require('../lib/daily'
 const { ALL_ITEM_TYPES, changeItemsInTransaction } = require('../lib/items')
 const { ITEM_LOG_REASONS, writeItemLogs } = require('../lib/item-log')
 const { FLOWER_REASONS, applyHonors, describeHonors } = require('../lib/honors')
+const { issueDoubleOffer } = require('../lib/double-reward')
 const { emptyProgress, parseClientProgress, mergeProgress, milestonesOf, toClientProgress } = require('../lib/multiplication-progress')
 const {
   PRACTICE_TIERS,
@@ -23,6 +24,14 @@ const MAX_SOLVED_PER_REPORT = 500
 const MAX_REPORTED_STREAK = 100000
 const MAX_RUN_ID_LENGTH = 64
 const MILESTONE_PRACTICE_ID = 'multiplication'
+const EXAM_QUESTION_COUNT = 20
+const EXAM_POINTS_PER_QUESTION = 5
+const EXAM_LEVELS = [1, 2, 3]
+const EXAM_UNLOCK_SCORE = 80
+const MAX_EXAM_SECONDS = 3600
+const FULL_SCORE = EXAM_QUESTION_COUNT * EXAM_POINTS_PER_QUESTION
+const GREAT_SCORE = 90
+const PASS_SCORE = 60
 
 const tierKeyOf = (tier) => `within${tier}`
 const emptyItemCounts = () => Object.fromEntries(ALL_ITEM_TYPES.map((type) => [type, 0]))
@@ -84,11 +93,27 @@ const ensureStats = async (openid, practiceId) => {
 
 const practiceEarnedOf = (todayRecord) => addItemCounts(emptyItemCounts(), (todayRecord && todayRecord.practiceEarned) || {})
 
+const levelKeyOf = (level) => `level${level}`
+
+// Level 1 is always open; each next level opens once the one below scored EXAM_UNLOCK_SCORE or more.
+const toExamView = (tierExams = {}) =>
+  EXAM_LEVELS.map((level, index) => {
+    const record = tierExams[levelKeyOf(level)] || null
+    const previous = index === 0 ? null : tierExams[levelKeyOf(EXAM_LEVELS[index - 1])]
+    return {
+      level,
+      unlocked: index === 0 || Boolean(previous && previous.best >= EXAM_UNLOCK_SCORE),
+      best: record ? record.best : null,
+      bestSeconds: record ? record.bestSeconds : 0,
+      attempts: record ? record.attempts : 0
+    }
+  })
+
 const toStatsView = (stats, practiceId, earnedToday, rules) => ({
   tiers: Object.fromEntries(
     (PRACTICE_TIERS[practiceId] || []).map((tier) => {
       const tierStats = stats.tiers[tierKeyOf(tier)] || {}
-      return [tier, { solved: tierStats.solved || 0, bestStreak: tierStats.bestStreak || 0 }]
+      return [tier, { solved: tierStats.solved || 0, bestStreak: tierStats.bestStreak || 0, exams: toExamView((stats.exams || {})[tierKeyOf(tier)]) }]
     })
   ),
   totalSolved: stats.totalSolved,
@@ -201,6 +226,61 @@ const syncProgress = async ({ openid, payload }) => {
   return { ...result, honors }
 }
 
+const examFlowerReasonOf = (score) => {
+  if (score >= FULL_SCORE) return FLOWER_REASONS.EXAM_PERFECT
+  if (score >= GREAT_SCORE) return FLOWER_REASONS.EXAM_GREAT
+  if (score >= PASS_SCORE) return FLOWER_REASONS.EXAM_PASSED
+  return null
+}
+
+const parseExamReport = (payload) => {
+  const { practiceId, tier, level, correct, seconds } = payload
+  const isValid =
+    practiceId === 'arithmetic' &&
+    isPracticeTier(practiceId, tier) &&
+    EXAM_LEVELS.includes(level) &&
+    isIntegerBetween(correct, 0, EXAM_QUESTION_COUNT) &&
+    isIntegerBetween(seconds, 1, MAX_EXAM_SECONDS)
+  if (!isValid) throw new BusinessError(ERROR_CODES.BAD_REQUEST, '考试成绩数据不正确')
+  return { practiceId, tier, level, correct, seconds }
+}
+
+// Records one finished exam paper. Answers already counted through practice.report; this keeps the scores,
+// opens the next level, and pays flowers / medals.
+const reportExam = async ({ openid, payload }) => {
+  const { practiceId, tier, level, correct, seconds } = parseExamReport(payload)
+  const score = correct * EXAM_POINTS_PER_QUESTION
+  const rules = await loadRules()
+  await ensureStats(openid, practiceId)
+  const outcome = await db.runTransaction(async (transaction) => {
+    const statsRef = transaction.collection('practice_stats').doc(statsDocId(openid, practiceId))
+    const storedStats = withDefaults((await statsRef.get()).data, openid, practiceId)
+    const tierKey = tierKeyOf(tier)
+    const tierExams = (storedStats.exams || {})[tierKey] || {}
+    const levelView = toExamView(tierExams).find((view) => view.level === level)
+    if (!levelView.unlocked) {
+      return { failure: { code: ERROR_CODES.BAD_REQUEST, message: '这个等级还没解锁' } }
+    }
+    const previous = tierExams[levelKeyOf(level)] || { best: 0, bestSeconds: 0, attempts: 0 }
+    const isNewBest = score > previous.best || (score === previous.best && (!previous.bestSeconds || seconds < previous.bestSeconds))
+    const record = {
+      best: Math.max(previous.best, score),
+      bestSeconds: isNewBest ? seconds : previous.bestSeconds,
+      attempts: previous.attempts + 1
+    }
+    const nextTierExams = { ...tierExams, [levelKeyOf(level)]: record }
+    await statsRef.update({ data: { [`exams.${tierKey}`]: _.set(nextTierExams), updatedAt: db.serverDate() } })
+    const levelsBefore = toExamView(tierExams)
+    const levelsAfter = toExamView(nextTierExams)
+    const unlockedLevel = levelsAfter.find((view, index) => view.unlocked && !levelsBefore[index].unlocked)
+    return { score, isNewBest: score > previous.best, previousBest: previous.attempts ? previous.best : null, exams: levelsAfter, unlockedLevel: unlockedLevel ? unlockedLevel.level : null }
+  })
+  throwIfFailed(outcome)
+  const reason = examFlowerReasonOf(score)
+  const honorsResult = await applyHonors(openid, { flowerEvents: reason ? [{ reason, count: 1 }] : [], practiced: true }, rules)
+  return { ...outcome, honors: honorsResult }
+}
+
 const honors = ({ openid }) => describeHonors(openid)
 
 const claimChests = async ({ openid, payload }) => {
@@ -225,7 +305,9 @@ const claimChests = async ({ openid, payload }) => {
   })
   throwIfFailed(outcome)
   await writeItemLogs(openid, outcome.deltas, ITEM_LOG_REASONS.PRACTICE, { practiceId })
-  return { chestCount: outcome.chestCount, rewards: toRewardList(outcome.deltas), items: outcome.items }
+  const rewards = toRewardList(outcome.deltas)
+  const doubleToken = await issueDoubleOffer(openid, rewards, `practice:${practiceId}`, rules)
+  return { chestCount: outcome.chestCount, rewards, items: outcome.items, doubleToken }
 }
 
 const summarizePractices = (openid) =>
@@ -236,4 +318,4 @@ const summarizePractices = (openid) =>
     })
   )
 
-module.exports = { stats, report, syncProgress, honors, claimChests, summarizePractices }
+module.exports = { stats, report, reportExam, syncProgress, honors, claimChests, summarizePractices }

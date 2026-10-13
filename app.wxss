@@ -91,6 +91,7 @@ page {
   font-size: var(--font-md);
   font-weight: 800;
   line-height: 88rpx;
+  white-space: nowrap;
   transition: transform 0.08s ease, box-shadow 0.08s ease;
 }
 

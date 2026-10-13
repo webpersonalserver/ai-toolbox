@@ -122,5 +122,6 @@
   subtitle="{{rewardPopup.subtitle}}"
   badge="{{rewardPopup.badge}}"
   rewards="{{rewardPopup.rewards}}"
+  double-token="{{rewardPopup.doubleToken}}"
   bind:close="closeRewardPopup"
 />

@@ -47,21 +47,21 @@ const startedAttempt = { active: true, wrongCount: 0 }
 
 ;(async () => {
   let r = await call('u1', 'account.login')
-  assert(r.code === 0 && r.data.items.hint === 10 && r.data.items.stamina === 25 && r.data.items.rescue === undefined, 'signup items hint10 stamina25', r)
+  assert(r.code === 0 && r.data.items.hint === 10 && r.data.items.stamina === 50 && r.data.items.rescue === undefined, 'signup items hint10 stamina50', r)
   assert(r.data.rules.rescue.dailyLimitPerHelper === 2, 'rescue limit exposed', r.data)
   r = await call('u1', 'account.login'); assert(!r.data.isNewUser && r.data.items.hint === 10, 'relogin no double grant', r)
   r = await call('u1', 'game.getLevel', { gameType: 'idiom', levelNo: 1 }); assert(r.data.puzzle === null && !r.data.attempt.active && r.data.staminaCost === 1, 'puzzle hidden before start', r)
   r = await call('u1', 'game.submit', { gameType: 'idiom', levelNo: 1, answer: 'x' }); assert(r.code === 40010, 'submit needs active attempt', r)
   r = await call('u1', 'game.useHint', { gameType: 'idiom', levelNo: 1 }); assert(r.code === 40010, 'hint needs active attempt', r)
-  r = await call('u1', 'game.startAttempt', { gameType: 'idiom', levelNo: 1 }); assert(r.code === 0 && r.data.items.stamina === 24 && r.data.puzzle.board.length === 24 && !r.data.puzzle.answer && r.data.attempt.attemptsLeft === 3, 'start costs 1 stamina', r)
-  r = await call('u1', 'game.startAttempt', { gameType: 'idiom', levelNo: 1 }); assert(r.data.items === null && S.users.u1.items.stamina === 24, 're-enter active attempt is free', r)
+  r = await call('u1', 'game.startAttempt', { gameType: 'idiom', levelNo: 1 }); assert(r.code === 0 && r.data.items.stamina === 49 && r.data.puzzle.board.length === 24 && !r.data.puzzle.answer && r.data.attempt.attemptsLeft === 3, 'start costs 1 stamina', r)
+  r = await call('u1', 'game.startAttempt', { gameType: 'idiom', levelNo: 1 }); assert(r.data.items === null && S.users.u1.items.stamina === 49, 're-enter active attempt is free', r)
   r = await call('u1', 'game.useHint', { gameType: 'idiom', levelNo: 1 }); assert(r.code === 0 && r.data.items.hint === 9 && r.data.revealed.join('') === levels[0].answer[0], 'hint', r)
   r = await call('u1', 'game.submit', { gameType: 'idiom', levelNo: 1, answer: '一一一一' }); assert(r.data.correct === false && r.data.attempt.attemptsLeft === 2, 'wrong -1 heart', r)
   await call('u1', 'game.submit', { gameType: 'idiom', levelNo: 1, answer: '一一一一' })
   r = await call('u1', 'game.submit', { gameType: 'idiom', levelNo: 1, answer: '一一一一' }); assert(r.data.attempt.failed && !r.data.attempt.active, '3 wrong -> failed', r)
   r = await call('u1', 'game.submit', { gameType: 'idiom', levelNo: 1, answer: levels[0].answer }); assert(r.code === 40010, 'no submit after fail', r)
   r = await call('u1', 'game.getLevel', { gameType: 'idiom', levelNo: 1 }); assert(r.data.attempt.failed && r.data.puzzle === null, 'failed state persisted', r)
-  r = await call('u1', 'game.startAttempt', { gameType: 'idiom', levelNo: 1 }); assert(r.data.items.stamina === 23 && r.data.attempt.attemptsLeft === 3 && r.data.puzzle.revealed.join('') === levels[0].answer[0], 'retry costs stamina, revealed kept', r)
+  r = await call('u1', 'game.startAttempt', { gameType: 'idiom', levelNo: 1 }); assert(r.data.items.stamina === 48 && r.data.attempt.attemptsLeft === 3 && r.data.puzzle.revealed.join('') === levels[0].answer[0], 'retry costs stamina, revealed kept', r)
   r = await call('u1', 'game.submit', { gameType: 'idiom', levelNo: 1, answer: levels[0].answer }); assert(r.data.correct && r.data.nextLevelNo === 2, 'solve', r)
   r = await call('u1', 'game.getLevel', { gameType: 'idiom', levelNo: 1 }); assert(r.data.solved && r.data.solution.answer === levels[0].answer, 'solved review free', r)
   r = await call('u1', 'game.startAttempt', { gameType: 'idiom', levelNo: 1 }); assert(r.code === 40004, 'no start on solved', r)
@@ -79,22 +79,31 @@ const startedAttempt = { active: true, wrongCount: 0 }
   r = await call('u1', 'game.startAttempt', { gameType: 'idiom', levelNo: 2 }); assert(r.data.next === 'waitRecovery', 'practice capped, ad off -> wait recovery', r)
   S.users.u1.staminaAnchorAt = Date.now() - 65 * MIN
   r = await call('u1', 'account.login'); assert(r.data.items.stamina === 0 && r.data.items.staminaPending === 2 && r.data.items.nextStaminaAt > Date.now(), 'recovered stamina waits as pending (2 after 65min)', r.data.items)
-  S.users.u1.staminaAnchorAt = Date.now() - 100 * 30 * MIN
-  r = await call('u1', 'account.login'); assert(r.data.items.stamina === 0 && r.data.items.staminaPending === 10 && r.data.items.nextStaminaAt === null, 'pending capped so held + pending <= 10', r.data.items)
+  S.users.u1.items.stamina = 40
+  S.users.u1.staminaPending = 0
+  S.users.u1.staminaAnchorAt = Date.now() - 65 * MIN
+  r = await call('u1', 'account.login'); assert(r.data.items.stamina === 40 && r.data.items.staminaPending === 2, 'recovery no longer stops when holding plenty of stamina', r.data.items)
+  S.users.u1.items.stamina = 0
+  S.users.u1.staminaPending = 10
+  S.users.u1.staminaAnchorAt = Date.now() - 10 * MIN
+  S.users.u1.staminaRecoveredDate = new Date(Date.now() + 8 * 3600000).toISOString().slice(0, 10)
+  S.users.u1.staminaRecoveredCount = 15
+  r = await call('u1', 'account.login'); assert(r.data.items.staminaPending === 10 && r.data.items.recoveryLeftToday === 0 && r.data.items.nextStaminaAt === null, "today's 15 recovered: countdown stops until tomorrow", r.data.items)
   r = await call('u1', 'game.startAttempt', { gameType: 'idiom', levelNo: 2 }); assert(r.code === 40001 && r.data.next === 'claimRecovery' && r.data.pendingStamina === 10, 'no stamina but pending -> suggest claiming', r)
   r = await call('u1', 'account.claimRecoveredStamina'); assert(r.code === 0 && r.data.claimed === 10 && r.data.items.stamina === 10 && r.data.items.staminaPending === 0, 'claim moves pending into stamina', r.data)
   r = await call('u1', 'account.claimRecoveredStamina'); assert(r.code === 40016, 'nothing left to claim', r)
-  r = await call('u1', 'game.startAttempt', { gameType: 'idiom', levelNo: 2 }); assert(r.data.items.stamina === 9 && r.data.items.nextStaminaAt > Date.now() + 29 * MIN, 'spend from cap restarts timer', r.data.items)
+  S.users.u1.staminaRecoveredCount = 3
+  r = await call('u1', 'game.startAttempt', { gameType: 'idiom', levelNo: 2 }); assert(r.data.items.stamina === 9 && r.data.items.recoveryLeftToday === 12 && r.data.items.nextStaminaAt > Date.now(), 'below the daily cap the countdown keeps running', r.data.items)
   S.app_config = { game_rules: { _id: 'game_rules', ad: { enabled: true, adUnitId: 'adunit-test', dailyLimits: { stamina: 1 } }, staminaRecovery: { enabled: false }, level: { staminaCost: 2 } } }
   S.users.u1.items.stamina = 0
   r = await call('u1', 'game.startAttempt', { gameType: 'idiom', levelNo: 3 }); assert(r.code === 40003, 'level 3 locked', r)
   await call('u1', 'game.submit', { gameType: 'idiom', levelNo: 2, answer: levels[1].answer })
-  r = await call('u1', 'game.startAttempt', { gameType: 'idiom', levelNo: 3 }); assert(r.data.next === 'ad' && r.data.adReward === 3, 'ad enabled -> ad (deep-merged config)', r)
-  r = await call('u1', 'account.grantAdReward', { itemType: 'stamina' }); assert(r.code === 0 && r.data.items.stamina === 3 && r.data.adRemaining === 0, 'ad grants stamina', r)
+  r = await call('u1', 'game.startAttempt', { gameType: 'idiom', levelNo: 3 }); assert(r.data.next === 'ad' && r.data.adReward === 10, 'ad enabled -> ad (deep-merged config)', r)
+  r = await call('u1', 'account.grantAdReward', { itemType: 'stamina' }); assert(r.code === 0 && r.data.items.stamina === 10 && r.data.adRemaining === 0, 'ad grants 10 stamina', r)
   r = await call('u1', 'account.grantAdReward', { itemType: 'stamina' }); assert(r.code === 40006, 'ad per-item daily limit', r)
   r = await call('u1', 'account.grantAdReward', { itemType: 'hint' }); assert(r.code === 0, 'hint ad limit separate', r)
   r = await call('u1', 'account.grantAdReward', { itemType: 'rescue' }); assert(r.code === 40006, 'rescue is not an item', r)
-  r = await call('u1', 'game.startAttempt', { gameType: 'idiom', levelNo: 3 }); assert(r.data.items.stamina === 1, 'configurable stamina cost 2', r)
+  r = await call('u1', 'game.startAttempt', { gameType: 'idiom', levelNo: 3 }); assert(r.data.items.stamina === 8, 'configurable stamina cost 2', r)
   S.users.u1.items.stamina = 0
   r = await call('u1', 'game.startAttempt', { gameType: 'idiom', levelNo: 4 }); assert(r.code === 40003, 'locked 4', r)
   S.app_config.game_rules.staminaRecovery = { enabled: false }
@@ -224,7 +233,7 @@ const startedAttempt = { active: true, wrongCount: 0 }
   assert(r.data.current.clearRate === Math.round((clearedNow / Object.keys(S.users).length) * 10000) / 10000 && r.data.recentCompletions[0].openid === 'c1', 'clear rate and recent completions', r.data)
   sdk.testing.actAs('')
   r = await main({ Type: 'Timer', TriggerName: 'snapshotStats' }); assert(r.code === 0 && r.data.length === ALL_GAME_TYPES.length && S.stats_daily[`idiom_${r.data[0].date}`].clearedUsers === clearedNow, 'hourly snapshot written for every game', r)
-  r = await main({ Type: 'Timer', TriggerName: 'snapshotStats' }); assert(Object.keys(S.stats_daily).length === ALL_GAME_TYPES.length, 'snapshot overwrites same day', Object.keys(S.stats_daily))
+  r = await main({ Type: 'Timer', TriggerName: 'snapshotStats' }); assert(Object.keys(S.stats_daily).filter((id) => !id.startsWith('ads_')).length === ALL_GAME_TYPES.length, 'snapshot overwrites same day', Object.keys(S.stats_daily))
   r = await call('c1', 'admin.stats', { gameType: 'idiom' }); assert(r.data.dailyHistory.length === 1 && r.data.dailyHistory[0].clearedUsers === clearedNow, 'admin sees daily history', r.data.dailyHistory)
   S.app_config = { game_rules: { _id: 'game_rules', admin: { openids: 'c1' } } }
   r = await call('c1', 'admin.stats', { gameType: 'idiom' }); assert(r.code === 40300, 'malformed admin list falls back to no admins', r)
@@ -324,7 +333,7 @@ const startedAttempt = { active: true, wrongCount: 0 }
   // overview: one call for hall and mine
   S.app_config = {}
   r = await call('o1', 'game.overview', {})
-  assert(r.code === 0 && r.data.session.isNewUser && r.data.session.items.stamina === 25 && r.data.games.length === ALL_GAME_TYPES.length, 'overview returns session and every game', r.data && r.data.games && r.data.games.map((g) => g.gameType))
+  assert(r.code === 0 && r.data.session.isNewUser && r.data.session.items.stamina === 50 && r.data.games.length === ALL_GAME_TYPES.length, 'overview returns session and every game', r.data && r.data.games && r.data.games.map((g) => g.gameType))
   assert(r.data.games.every((g) => g.total === LOADED_LEVEL_COUNT && g.solvedCount === 0 && g.achievement.title.name), 'overview game summaries', r.data.games[0])
   await call('o1', 'game.startAttempt', { gameType: 'poetry', levelNo: 1 })
   await call('o1', 'rescue.create', { gameType: 'poetry', levelNo: 1 })
@@ -357,7 +366,7 @@ const startedAttempt = { active: true, wrongCount: 0 }
   S.app_config = { game_rules: { _id: 'game_rules', milestone: { rewardRules: { stamina: { base: 20, step: '2' } }, bigChest: { multiplier: 3 } } } }
   S.progress['k1_idiom'].solved = Array.from({ length: 60 }, (_, i) => i + 1)
   r = await call('k1', 'game.claimMilestones', { gameType: 'idiom' })
-  assert(r.data.chests[0].chestNo === 6 && r.data.rewards.find((x) => x.type === 'stamina').amount === 30, 'override base 20 + default step 2 (string step rejected), capped at 30', r.data)
+  assert(r.data.chests[0].chestNo === 6 && r.data.rewards.find((x) => x.type === 'stamina').amount === 20, 'override base 20 + default step 2 (string step rejected), capped at 20', r.data)
   S.app_config = {}
   // practice rewards: earned as chests in the welfare bag, claimed by the user; daily caps apply when earning
   await call('p1', 'account.login')
@@ -386,7 +395,7 @@ const startedAttempt = { active: true, wrongCount: 0 }
   assert(r.data.missedByCap && r.data.stats.earnedToday.stamina === 15 && r.data.stats.earnedToday.hint === 3 && pendingAmount(r.data.stats, 'stamina') === 15 && pendingAmount(r.data.stats, 'hint') === 3, 'streak 150 earns up to the daily caps', r.data.stats)
   const chestsAtCap = r.data.stats.pendingChestCount
   r = await report({ solvedDelta: 100, streak: 160, streakRunId: 'run-d' })
-  assert(r.data.newChests.length === 0 && r.data.missedByCap && r.data.stats.totalSolved === 123 && r.data.stats.pendingChestCount === chestsAtCap, 'after caps: stats still grow, no new chests', r.data)
+  assert(r.data.newChests.length === 0 && r.data.missedByCap && r.data.stats.totalSolved === 123 && r.data.stats.pendingChestCount === chestsAtCap, 'after caps (stamina 15, hint 3): stats still grow, no new chests', r.data)
   const hintBeforeClaim = S.users.p1.items.hint
   r = await call('p1', 'practice.claimChests', { practiceId: 'arithmetic' })
   assert(r.code === 0 && r.data.chestCount === chestsAtCap && r.data.items.stamina === staminaBeforePractice + 15 && r.data.items.hint === hintBeforeClaim + 3, 'claim opens all practice chests at once', r.data)
@@ -413,13 +422,13 @@ const startedAttempt = { active: true, wrongCount: 0 }
   assert(r.data.practices[1].practiceId === 'multiplication' && r.data.practices[1].pendingChestCount === 4, 'multiplication chests listed for the welfare bag', r.data.practices)
   const staminaBeforeKungfu = S.users.p1.items.stamina
   r = await call('p1', 'practice.claimChests', { practiceId: 'multiplication' })
-  assert(r.code === 0 && r.data.chestCount === 4 && r.data.items.stamina === staminaBeforeKungfu + 16, 'claim multiplication chests: 3 + 3 + 10 stamina', r.data)
+  assert(r.code === 0 && r.data.chestCount === 4 && r.data.items.stamina === staminaBeforeKungfu + 20, 'claim multiplication chests: 5 + 5 + 10 stamina', r.data)
   // honors: flowers for practice events + daily first practice, medals unlock from cloud stats, day streaks
   const chinaKey = (timestamp) => new Date(timestamp + 8 * 3600000).toISOString().slice(0, 10).replace(/-/g, '')
   await call('h1', 'account.login')
   const reportH = (payload) => call('h1', 'practice.report', { practiceId: 'arithmetic', tier: 10, solvedDelta: 0, streak: 0, streakRunId: 'h-run', ...payload })
   r = await call('h1', 'practice.honors')
-  assert(r.code === 0 && r.data.flowers === 0 && r.data.medalCount === 14 && r.data.unlockedCount === 0 && r.data.groups.length === 3, 'honors start empty with 14 medals in 3 groups', r.data)
+  assert(r.code === 0 && r.data.flowers === 0 && r.data.medalCount === 17 && r.data.unlockedCount === 0 && r.data.groups.length === 3, 'honors start empty with 17 medals in 3 groups', r.data)
   r = await reportH({ solvedDelta: 10, streak: 10 })
   const medalIds = (result) => result.data.honors.newMedals.map((medal) => medal.id).sort().join(',')
   assert(r.data.honors.flowersGained === 3 && r.data.honors.flowerReasons.includes('dailyFirst') && r.data.honors.todayFlowers === 3, '10 solved + streak 10 + first practice today = 3 flowers', r.data.honors)
@@ -442,6 +451,29 @@ const startedAttempt = { active: true, wrongCount: 0 }
   r = await call('h1', 'practice.honors')
   const lockedMedal = r.data.groups[0].medals.find((medal) => medal.id === 'arith-solved-100')
   assert(r.data.unlockedCount === 4 && r.data.flowers === 8 && !lockedMedal.unlocked && lockedMedal.current === 16 && lockedMedal.target === 100, 'honor wall shows progress towards locked medals', r.data)
+  // timed exams: three levels per tier, 80+ opens the next, scores kept, flowers + exam medals
+  await call('e1', 'account.login')
+  const exam = (payload) => call('e1', 'practice.reportExam', { practiceId: 'arithmetic', tier: 10, level: 1, correct: 20, seconds: 90, ...payload })
+  r = await call('e1', 'practice.stats', { practiceId: 'arithmetic' })
+  assert(r.data.tiers[10].exams.length === 3 && r.data.tiers[10].exams[0].unlocked && !r.data.tiers[10].exams[1].unlocked && r.data.tiers[10].exams[0].best === null, 'only level 1 open at first', r.data.tiers[10].exams)
+  r = await exam({ level: 2 }); assert(r.code === 40000, 'locked level rejected', r)
+  r = await exam({ correct: 21 }); assert(r.code === 40000, 'more than 20 correct rejected', r)
+  r = await exam({ seconds: 0 }); assert(r.code === 40000, 'zero seconds rejected', r)
+  r = await exam({ correct: 15, seconds: 150 })
+  assert(r.code === 0 && r.data.score === 75 && r.data.unlockedLevel === null && !r.data.exams[1].unlocked && r.data.honors.flowerReasons.includes('examPassed'), '75 points: passed flower, level 2 still locked', r.data)
+  r = await exam({ correct: 18, seconds: 140 })
+  assert(r.data.score === 90 && r.data.unlockedLevel === 2 && r.data.isNewBest && r.data.previousBest === 75 && r.data.honors.flowerReasons[0] === 'examGreat', '90 points opens level 2 and gives 2 flowers', r.data)
+  r = await exam({ correct: 10, seconds: 100 })
+  assert(r.data.score === 50 && !r.data.isNewBest && r.data.exams[0].best === 90 && r.data.exams[0].attempts === 3 && r.data.honors.flowersGained === 0, 'a low score keeps the best and earns no flower', r.data)
+  r = await exam({ level: 2, correct: 20, seconds: 100 })
+  assert(r.data.score === 100 && r.data.unlockedLevel === 3 && r.data.honors.newMedals.some((medal) => medal.id === 'exam-full-score'), 'full score opens level 3 and earns 满分小状元', r.data)
+  r = await exam({ level: 3, correct: 20, seconds: 70 })
+  assert(r.data.honors.newMedals.map((medal) => medal.id).join() === 'exam-lightning', 'full score on the hardest level earns 闪电手', r.data.honors)
+  await exam({ tier: 20, correct: 20, seconds: 200 })
+  r = await exam({ tier: 100, correct: 20, seconds: 400 })
+  assert(r.data.honors.newMedals.some((medal) => medal.id === 'exam-all-tiers'), 'full score in all three tiers earns 三档满分', r.data.honors)
+  r = await call('e1', 'practice.stats', { practiceId: 'arithmetic' })
+  assert(r.data.tiers[10].exams[2].best === 100 && r.data.tiers[10].exams[2].bestSeconds === 70 && r.data.tiers[20].exams[1].unlocked, 'stats show best score, time and unlocks per tier', r.data.tiers)
   S.app_config = { game_rules: { _id: 'game_rules', honors: { flowers: { arithmeticStreaks: [10, 5], perEvent: { arithmeticSolved: 3 } } } } }
   r = await reportH({ solvedDelta: 4, streak: 2, streakRunId: 'h-run-3' })
   assert(r.data.honors.flowersGained === 3, 'per-event flowers configurable; invalid streak list falls back', r.data.honors)
@@ -450,6 +482,61 @@ const startedAttempt = { active: true, wrongCount: 0 }
   r = await call('p1', 'practice.stats', { practiceId: 'arithmetic' })
   assert(r.data.rewardRules.solvedRewards[0].every === 20 && r.data.rewardRules.dailyCaps.stamina === 1, 'invalid practice override falls back, valid cap applies', r.data.rewardRules)
   S.app_config = {}
+  // watch a video to double a free claim: single-use token from today's record, only when videos are on
+  await call('d1', 'account.login')
+  r = await call('d1', 'account.checkin'); assert(r.code === 0 && r.data.doubleToken === '', 'videos off: no double offer', r.data)
+  S.app_config = { game_rules: { _id: 'game_rules', ad: { enabled: true, adUnitId: 'adunit-test' } } }
+  S.users.d1.staminaPending = 6
+  r = await call('d1', 'account.claimRecoveredStamina'); const recoveryToken = r.data.doubleToken
+  assert(r.code === 0 && /^[0-9a-f]{16}$/.test(recoveryToken), 'videos on: claiming recovered stamina offers a double', r.data)
+  const staminaBeforeDouble = S.users.d1.items.stamina
+  r = await call('d1', 'account.claimDoubleReward', { token: recoveryToken })
+  assert(r.code === 0 && r.data.items.stamina === staminaBeforeDouble + 6 && r.data.rewards[0].amount === 6, 'double gives the same 6 stamina again', r.data)
+  r = await call('d1', 'account.claimDoubleReward', { token: recoveryToken }); assert(r.code === 40006, 'a double token works once', r)
+  r = await call('d1', 'account.claimDoubleReward', { token: 'ffffffffffffffff' }); assert(r.code === 40006, 'unknown token rejected', r)
+  r = await call('d1', 'account.claimDoubleReward', { token: '../x' }); assert(r.code === 40000, 'malformed token rejected', r)
+  S.progress.d1_idiom = { _id: 'd1_idiom', openid: 'd1', gameType: 'idiom', currentLevel: 11, solved: Array.from({ length: 10 }, (_, i) => i + 1), solvedCount: 10, hintsUsed: {}, attempts: {} }
+  r = await call('d1', 'game.claimMilestones', { gameType: 'idiom' })
+  assert(r.code === 0 && r.data.doubleToken && r.data.rewards.length === 2, 'opening level chests offers a double', r.data)
+  const hintBeforeChestDouble = S.users.d1.items.hint
+  r = await call('d1', 'account.claimDoubleReward', { token: r.data.doubleToken }); assert(r.code === 0 && r.data.items.hint === hintBeforeChestDouble + 2, 'chest double adds the chest rewards again', r.data)
+  S.app_config = {}
+  // video stats for the admin page, and no double offer for tiny recovery claims
+  S.app_config = { game_rules: { _id: 'game_rules', ad: { enabled: true, adUnitId: 'adunit-test' }, admin: { openids: ['v1'] } } }
+  await call('v1', 'account.login'); await call('v2', 'account.login')
+  const todayAds = () => S.stats_daily[Object.keys(S.stats_daily).filter((id) => id.startsWith('ads_')).sort().pop()]
+  const adsBefore = { ...todayAds().views, viewers: todayAds().viewers }
+  await call('v1', 'account.grantAdReward', { itemType: 'stamina' })
+  await call('v1', 'account.grantAdReward', { itemType: 'hint' })
+  await call('v2', 'account.grantAdReward', { itemType: 'stamina' })
+  S.users.v2.staminaPending = 3
+  r = await call('v2', 'account.claimRecoveredStamina'); assert(r.code === 0 && r.data.doubleToken === '', 'recovery below 5 points: no double offer', r.data)
+  S.users.v2.staminaPending = 5
+  r = await call('v2', 'account.claimRecoveredStamina'); assert(/^[0-9a-f]{16}$/.test(r.data.doubleToken), 'recovery of 5 points: double offered', r.data)
+  await call('v2', 'account.claimDoubleReward', { token: r.data.doubleToken })
+  const adsAfter = todayAds()
+  assert(adsAfter.views.stamina === adsBefore.stamina + 2 && adsAfter.views.hint === adsBefore.hint + 1 && adsAfter.views.double === adsBefore.double + 1 && adsAfter.viewers === adsBefore.viewers + 2, 'ad views counted per kind, viewers counted once per person per day', adsAfter)
+  r = await call('v1', 'admin.stats', { gameType: 'idiom' })
+  assert(r.code === 0 && r.data.adStats.length >= 1 && r.data.adStats[0].views === adsAfter.views.stamina + adsAfter.views.hint + adsAfter.views.double && r.data.adStats[0].viewsPerViewer > 0, 'admin stats include daily video numbers', r.data.adStats)
+  S.app_config = {}
+  // stamina recovery rules, with fixed clocks: one point per 30 minutes, at most 15 per Beijing day
+  const { settleStamina } = require(path.join(API_ROOT, 'lib', 'items'))
+  const recovery = { enabled: true, intervalMinutes: 30, dailyCap: 15, pendingCap: 1000 }
+  const beijing = (day, hour, minute = 0) => Date.UTC(2026, 9, day, hour - 8, minute)
+  let settled = settleStamina({ pending: 0, anchorAt: beijing(13, 8), recoveredDate: '', recoveredCount: 0 }, recovery, beijing(13, 10, 5))
+  assert(settled.staminaPending === 4 && settled.recoveredCount === 4 && settled.staminaAnchorAt === beijing(13, 10), '2h05m -> 4 points, clock kept at the last tick', settled)
+  settled = settleStamina({ pending: 0, anchorAt: beijing(13, 8), recoveredDate: '', recoveredCount: 0 }, recovery, beijing(13, 23))
+  assert(settled.staminaPending === 15 && settled.recoveredCount === 15, 'a whole day stops at 15', settled)
+  settled = settleStamina({ pending: 15, anchorAt: settled.staminaAnchorAt, recoveredDate: settled.recoveredDate, recoveredCount: 15 }, recovery, beijing(14, 1))
+  assert(settled.staminaPending === 18 && settled.recoveredCount === 3 && settled.recoveredDate === '2026-10-14', 'after midnight the count restarts (23:30 skipped as capped; 00:00, 00:30, 01:00 count)', settled)
+  settled = settleStamina({ pending: 0, anchorAt: beijing(10, 12), recoveredDate: '', recoveredCount: 0 }, recovery, beijing(13, 12))
+  assert(settled.staminaPending === 15 * 3 + 15 && settled.recoveredDate === '2026-10-13', 'three days away: 15 per day (10th afternoon 15, 11th 15, 12th 15, 13th morning 15)', settled)
+  settled = settleStamina({ pending: 0, anchorAt: beijing(10, 12), recoveredDate: '', recoveredCount: 0 }, { ...recovery, pendingCap: 30 }, beijing(13, 12))
+  assert(settled.staminaPending === 30, 'unclaimed recovery stops at the pending cap of 30', settled)
+  settled = settleStamina({ pending: 30, anchorAt: settled.staminaAnchorAt, recoveredDate: settled.recoveredDate, recoveredCount: settled.recoveredCount }, { ...recovery, pendingCap: 30 }, beijing(13, 14))
+  assert(settled.staminaPending === 30 && settled.staminaAnchorAt === beijing(13, 14), 'while pending is full the clock moves on without saving points', settled)
+  settled = settleStamina({ pending: 3, anchorAt: beijing(13, 8), recoveredDate: '', recoveredCount: 0 }, { ...recovery, enabled: false }, beijing(13, 20))
+  assert(settled.staminaPending === 3, 'recovery off keeps pending as is', settled)
   console.log('logs:', Object.values(S.item_logs).filter((l) => l.openid === 'u1').map((l) => `${l.reason}:${l.itemType}${l.delta > 0 ? '+' : ''}${l.delta}`).join(' '))
   console.log(`\n${passed} passed, ${failed} failed`)
   process.exitCode = failed ? 1 : 0

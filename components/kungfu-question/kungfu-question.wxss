@@ -180,6 +180,18 @@
   box-shadow: 0 8rpx 0 var(--color-primary-deep);
 }
 
+.kq--plain .kq__board {
+  border-color: transparent;
+  background: var(--color-surface);
+}
+
+.kq--plain .kq__key--confirm {
+  background: var(--color-success);
+  box-shadow: 0 8rpx 0 var(--color-success-deep);
+  color: var(--color-on-accent);
+  letter-spacing: 0;
+}
+
 @keyframes kq-glow {
   0% { transform: scale(1); }
   30% { transform: scale(1.04); }

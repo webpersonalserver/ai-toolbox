@@ -73,4 +73,16 @@ const medalShareOf = (event, medalPopup) => {
   return isMedalShare && medalPopup.medal ? buildMedalShare(medalPopup.medal) : null
 }
 
-module.exports = { HIDDEN_FLOWER_TOAST, HIDDEN_MEDAL_POPUP, createHonorPresenter, medalShareOf, toMedalPopup }
+// Two reports in a row (answers, then the exam paper) are shown as one celebration.
+const mergeHonors = (first, second) => {
+  if (!first) return second
+  if (!second) return first
+  return {
+    ...second,
+    flowersGained: first.flowersGained + second.flowersGained,
+    flowerReasons: [...second.flowerReasons, ...first.flowerReasons],
+    newMedals: [...first.newMedals, ...second.newMedals]
+  }
+}
+
+module.exports = { mergeHonors, HIDDEN_FLOWER_TOAST, HIDDEN_MEDAL_POPUP, createHonorPresenter, medalShareOf, toMedalPopup }

@@ -34,9 +34,14 @@ const ensureTodayRecord = async (openid) => {
 const adRewardCountOf = (todayRecord, itemType) =>
   (todayRecord && todayRecord.adRewardCounts && todayRecord.adRewardCounts[itemType]) || 0
 
+const UNLIMITED = null
+
+// Remaining rewarded videos today; null when the config sets no daily limit.
 const adRemainingOf = (todayRecord, itemType, rules) => {
   if (!rules.ad.enabled || !rules.ad.rewards[itemType]) return 0
-  return Math.max((rules.ad.dailyLimits[itemType] || 0) - adRewardCountOf(todayRecord, itemType), 0)
+  const limit = rules.ad.dailyLimits[itemType]
+  if (limit === UNLIMITED) return UNLIMITED
+  return Math.max((limit || 0) - adRewardCountOf(todayRecord, itemType), 0)
 }
 
 const describeTodayStatus = (todayRecord, rules) => {
@@ -47,4 +52,6 @@ const describeTodayStatus = (todayRecord, rules) => {
   return { checkedIn: Boolean(todayRecord && todayRecord.checkedIn), adRemaining }
 }
 
-module.exports = { dailyDocId, getTodayRecord, ensureTodayRecord, adRewardCountOf, describeTodayStatus }
+const hasAdLeft = (remaining) => remaining === UNLIMITED || remaining > 0
+
+module.exports = { dailyDocId, getTodayRecord, ensureTodayRecord, adRewardCountOf, adRemainingOf, hasAdLeft, describeTodayStatus }

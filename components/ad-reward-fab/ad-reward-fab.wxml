@@ -1,0 +1,29 @@
+<block wx:if="{{offers.length}}">
+  <view class="ad-fab" hover-class="ad-fab--pressed" bindtap="openSheet">
+    <view class="ad-fab__icon">🎬</view>
+    <view class="ad-fab__text">看视频</view>
+    <view class="ad-fab__text">领奖励</view>
+  </view>
+
+  <view wx:if="{{sheetVisible}}" class="ad-sheet" bindtap="closeSheet" catchtouchmove="noop">
+    <view class="ad-sheet__panel" catchtap="noop">
+      <view class="ad-sheet__title">看一段视频，领一份奖励</view>
+      <view
+        wx:for="{{offers}}"
+        wx:key="itemType"
+        class="ad-sheet__offer"
+        hover-class="ad-sheet__offer--pressed"
+        data-item-type="{{item.itemType}}"
+        bindtap="watch"
+      >
+        <image class="ad-sheet__icon" src="{{item.icon}}" mode="aspectFit" />
+        <view class="ad-sheet__body">
+          <view class="ad-sheet__reward">{{item.label}} +{{item.amount}}</view>
+          <view wx:if="{{item.remainingText}}" class="ad-sheet__remaining">{{item.remainingText}}</view>
+        </view>
+        <view class="btn btn--primary ad-sheet__go">{{watchingType === item.itemType ? '加载中' : '去看'}}</view>
+      </view>
+      <view class="ad-sheet__cancel" bindtap="closeSheet">下次再说</view>
+    </view>
+  </view>
+</block>

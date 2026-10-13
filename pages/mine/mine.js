@@ -64,6 +64,11 @@ Page({
     })
   },
 
+  // Switching tabs keeps this page alive, so overlays would still be open when the player comes back.
+  onHide() {
+    this.setData({ editorVisible: false, rulesVisible: false })
+  },
+
   openProfileEditor() {
     this.setData({ editorVisible: true })
   },

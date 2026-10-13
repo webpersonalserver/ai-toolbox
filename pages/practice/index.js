@@ -4,11 +4,13 @@ const { practice } = require('../../utils/api')
 const { waitForPendingReport } = require('../../utils/practice/pending-report')
 
 const HONORS_URL = '/pages/practice/honors'
+// Shown until the cloud answers, so the card keeps its place and the list below does not jump.
+const PLACEHOLDER_HONORS = { flowers: '—', todayFlowers: 0, unlockedCount: '—', medalCount: '—', dayStreak: '—' }
 
 Page({
   data: {
     practices: PRACTICES,
-    honors: null
+    honors: PLACEHOLDER_HONORS
   },
 
   async onShow() {

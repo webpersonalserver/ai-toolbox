@@ -7,6 +7,7 @@ const { isAllCleared, syncProgressAfterSolve } = require('../lib/completion')
 const { ITEM_TYPES, changeItemsInTransaction } = require('../lib/items')
 const { ITEM_LOG_REASONS, writeItemLogs } = require('../lib/item-log')
 const { throwInsufficientItem } = require('../lib/item-next-step')
+const { issueDoubleOffer } = require('../lib/double-reward')
 const {
   parseGameType,
   hintStrategyOf,
@@ -161,11 +162,13 @@ const claimMilestones = async ({ openid, payload }) => {
   })
   throwIfFailed(outcome)
   await writeItemLogs(openid, outcome.deltas, ITEM_LOG_REASONS.MILESTONE, { gameType })
+  const rewards = Object.keys(outcome.deltas).map((type) => ({ type, amount: outcome.deltas[type] }))
   return {
     chestCount: outcome.chestCount,
     chests: outcome.chests,
-    rewards: Object.keys(outcome.deltas).map((type) => ({ type, amount: outcome.deltas[type] })),
-    items: outcome.items
+    rewards,
+    items: outcome.items,
+    doubleToken: await issueDoubleOffer(openid, rewards, `milestone:${gameType}`, rules)
   }
 }
 

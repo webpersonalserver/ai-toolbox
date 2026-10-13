@@ -4,7 +4,7 @@
     <view class="practice__subtitle">不限次数，想练多久练多久</view>
   </view>
 
-  <view wx:if="{{honors}}" class="practice__honors" hover-class="practice__card--pressed" bindtap="openHonors">
+  <view class="practice__honors" hover-class="practice__card--pressed" bindtap="openHonors">
     <view class="practice__honor">
       <view class="practice__honor-value">🌺 {{honors.flowers}}</view>
       <view class="practice__honor-label">小红花{{honors.todayFlowers ? ' · 今天 +' + honors.todayFlowers : ''}}</view>

@@ -1,7 +1,7 @@
 const { game, toastError } = require('./api')
 const { getSession, setItems } = require('./session')
 
-const HIDDEN_REWARD_POPUP = { visible: false, title: '', subtitle: '', badge: '', rewards: [] }
+const HIDDEN_REWARD_POPUP = { visible: false, title: '', subtitle: '', badge: '', rewards: [], doubleToken: '' }
 
 const chestPopupOf = (result) => {
   const bigChests = result.chests.filter((chest) => chest.isBig).length
@@ -12,7 +12,8 @@ const chestPopupOf = (result) => {
     title: result.chestCount > 1 ? `打开了 ${result.chestCount} 个宝箱` : '宝箱打开啦',
     subtitle: result.chestCount > 1 ? '奖励已经合并到一起' : '',
     badge: bigChests ? `大宝箱 ×${multiplier}` : '',
-    rewards: result.rewards
+    rewards: result.rewards,
+    doubleToken: result.doubleToken || ''
   }
 }
 

@@ -14,7 +14,8 @@
     </view>
 
     <view class="reward-popup__card">
-      <view wx:if="{{badge}}" class="reward-popup__badge">{{badge}}</view>
+      <view wx:if="{{doubled}}" class="reward-popup__badge">奖励翻倍 ×2</view>
+      <view wx:elif="{{badge}}" class="reward-popup__badge">{{badge}}</view>
       <view class="reward-popup__title">{{title}}</view>
       <view wx:if="{{subtitle}}" class="reward-popup__subtitle">{{subtitle}}</view>
       <view class="reward-popup__rewards">
@@ -28,7 +29,13 @@
           <view class="reward-popup__reward-label">{{item.label}}</view>
         </view>
       </view>
-      <button class="btn btn--primary reward-popup__confirm" bindtap="handleConfirm">{{confirmText}}</button>
+      <button
+        wx:if="{{doubleToken && !doubled}}"
+        class="btn btn--primary reward-popup__double"
+        loading="{{doubling}}"
+        bindtap="handleDouble"
+      >🎬 看视频再领一份</button>
+      <button class="btn {{doubleToken && !doubled ? 'btn--ghost' : 'btn--primary'}} reward-popup__confirm" bindtap="handleConfirm">{{confirmText}}</button>
     </view>
   </view>
 </view>

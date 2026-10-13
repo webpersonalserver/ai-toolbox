@@ -3,6 +3,7 @@ const { setSession, updateSession, setItems } = require('../../utils/session')
 const { describeRewards } = require('../../utils/items')
 const { HIDDEN_REWARD_POPUP, openMilestoneChests } = require('../../utils/milestone')
 const { countUnclaimedWelfare, buildChestRows, buildPracticeChestRows } = require('../../utils/welfare')
+const { adOffersOf, watchAdForItem } = require('../../utils/ad-reward')
 
 Page({
   data: {
@@ -14,6 +15,7 @@ Page({
     items: null,
     chestRows: [],
     practiceChestRows: [],
+    adOffers: [],
     unclaimedCount: 0,
     rewardPopup: HIDDEN_REWARD_POPUP
   },
@@ -34,6 +36,7 @@ Page({
         items: session.items,
         chestRows: buildChestRows(games),
         practiceChestRows: buildPracticeChestRows(practices),
+        adOffers: adOffersOf(session),
         unclaimedCount: countUnclaimedWelfare(session, games, practices)
       })
     } catch (error) {
@@ -59,7 +62,7 @@ Page({
     return this.runClaim('checkin', async () => {
       const result = await account.checkin()
       updateSession({ items: result.items, today: { checkedIn: true } })
-      return { visible: true, title: '打卡成功', subtitle: '明天记得再来哦', badge: '', rewards: result.rewards }
+      return { visible: true, title: '打卡成功', subtitle: '明天记得再来哦', badge: '', rewards: result.rewards, doubleToken: result.doubleToken || '' }
     })
   },
 
@@ -67,7 +70,7 @@ Page({
     return this.runClaim('recovery', async () => {
       const result = await account.claimRecoveredStamina()
       setItems(result.items)
-      return { visible: true, title: '体力恢复好啦', subtitle: '', badge: '', rewards: [{ type: 'stamina', amount: result.claimed }] }
+      return { visible: true, title: '体力恢复好啦', subtitle: '', badge: '', rewards: [{ type: 'stamina', amount: result.claimed }], doubleToken: result.doubleToken || '' }
     })
   },
 
@@ -86,8 +89,18 @@ Page({
         title: result.chestCount > 1 ? `打开了 ${result.chestCount} 个练习宝箱` : '练习宝箱打开啦',
         subtitle: '认真练习的奖励，拿去闯关吧',
         badge: '',
-        rewards: result.rewards
+        rewards: result.rewards,
+        doubleToken: result.doubleToken || ''
       }
+    })
+  },
+
+  watchAd(event) {
+    const { itemType } = event.currentTarget.dataset
+    return this.runClaim(`ad-${itemType}`, async () => {
+      const result = await watchAdForItem(itemType)
+      if (!result) return null
+      return { visible: true, title: '视频奖励到账', subtitle: '', badge: '', rewards: [{ type: itemType, amount: result.rewardAmount }], doubleToken: '' }
     })
   },
 

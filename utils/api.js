@@ -43,7 +43,8 @@ const account = {
   updateProfile: (profile) => call('account.updateProfile', profile),
   checkin: () => call('account.checkin'),
   grantAdReward: (itemType) => call('account.grantAdReward', { itemType }),
-  claimRecoveredStamina: () => call('account.claimRecoveredStamina')
+  claimRecoveredStamina: () => call('account.claimRecoveredStamina'),
+  claimDoubleReward: (token) => call('account.claimDoubleReward', { token })
 }
 
 const game = {
@@ -67,6 +68,7 @@ const rescue = {
 const practice = {
   stats: (practiceId) => call('practice.stats', { practiceId }),
   report: (report) => call('practice.report', report),
+  reportExam: (exam) => call('practice.reportExam', exam),
   honors: () => call('practice.honors'),
   syncProgress: (practiceId, progress, practiced) => call('practice.syncProgress', { practiceId, progress, practiced }),
   claimChests: (practiceId) => call('practice.claimChests', { practiceId })

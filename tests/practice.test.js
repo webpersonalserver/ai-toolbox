@@ -89,5 +89,33 @@ const flowerAt = (fromTotal, streak, countsForStreak) => rewardsPreview.expectsF
 expectReward(flowerAt(9, 1, true) && !flowerAt(10, 1, true), 'flower at every 10th answer')
 expectReward(flowerAt(3, 10, true) && !flowerAt(3, 10, false) && !flowerAt(3, 11, true), 'flower when a run reaches streak 10')
 
+const paperTools = require(path.join(__dirname, '..', 'utils', 'practice', 'arithmetic-exam'))
+TIER_ORDER.forEach((tier) => {
+  const paper = paperTools.buildExamPaper(tier, seededRng(tier))
+  expectReward(paper.length === 20 && new Set(paper.map((question) => question.equation)).size === 20, `tier ${tier} paper has 20 different questions`)
+  expectReward(paper.every((question) => question.tokens.filter((token) => token === '').length === 1 && question.answer.length <= TIERS[tier].maxInputDigits), `tier ${tier} paper: one blank, answer fits the keypad`)
+  paperTools.EXAM_LEVELS.forEach(({ level }, index) => {
+    if (index) expectReward(paperTools.TIME_LIMIT_SECONDS[tier][level] < paperTools.TIME_LIMIT_SECONDS[tier][level - 1], `tier ${tier} level ${level} is shorter than the level below`)
+  })
+})
+expectReward(paperTools.gradeOf(100).name === '满分小状元' && paperTools.gradeOf(85).name === '良好' && paperTools.gradeOf(55).name === '再练练', 'grades by score')
+expectReward(paperTools.describeSeconds(80) === '1 分 20 秒' && paperTools.describeSeconds(180) === '3 分钟' && paperTools.formatClock(65) === '1:05', 'time text')
+
+const Module = require('module')
+const realLoad = Module._load
+Module._load = function loadWithStubs(request, ...rest) {
+  if (request === './api') return { account: {}, toastError: () => {} }
+  if (request === './session') return { getSession: () => null, updateSession: () => {} }
+  if (request === './rewarded-ad') return { watchRewardedAd: async () => false }
+  return realLoad.call(this, request, ...rest)
+}
+const { adOffersOf } = require(path.join(__dirname, '..', 'utils', 'ad-reward'))
+Module._load = realLoad
+const adSession = (ad, adRemaining) => ({ rules: { ad: { enabled: true, adUnitId: 'unit', rewards: { stamina: 10, hint: 2 }, ...ad } }, today: { adRemaining } })
+expectReward(adOffersOf(adSession({ enabled: false }, { stamina: 10, hint: 10 })).length === 0, 'ads off: no entry')
+expectReward(adOffersOf(adSession({}, { stamina: 3, hint: 0 })).map((offer) => offer.itemType).join() === 'stamina', 'used-up item disappears from the offers')
+expectReward(adOffersOf(adSession({}, { stamina: 0, hint: 0 })).length === 0, 'both used up: entry disappears')
+expectReward(adOffersOf(adSession({}, { stamina: null, hint: 1 }))[0].remainingText === '随时都能看', 'unlimited stays available')
+
 console.log(failed ? `${failed} checks failed` : 'all practice checks passed')
 process.exitCode = failed ? 1 : 0

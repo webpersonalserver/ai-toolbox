@@ -36,7 +36,9 @@
 }
 
 .tiers__solved {
+  min-height: 32rpx;
   margin-top: 4rpx;
+  line-height: 32rpx;
   color: var(--color-primary-deep);
   font-size: 22rpx;
   font-weight: 700;
@@ -56,4 +58,25 @@
 .tiers__record-label {
   color: var(--color-ink-soft);
   font-size: 22rpx;
+}
+
+.tiers__exam {
+  display: inline-block;
+  margin-top: var(--space-sm);
+  padding: 8rpx 24rpx;
+  border-radius: 999rpx;
+  background: var(--color-surface);
+  box-shadow: 0 6rpx 0 var(--color-border);
+  font-size: var(--font-sm);
+  font-weight: 900;
+}
+
+.tiers__exam--pressed {
+  transform: translateY(6rpx);
+  box-shadow: none;
+}
+
+.tiers__exam-best {
+  color: var(--color-primary-deep);
+  font-weight: 700;
 }

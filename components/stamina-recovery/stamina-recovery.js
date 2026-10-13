@@ -25,13 +25,15 @@ Component({
     pending: 0,
     countdownText: '',
     isFull: false,
+    pendingFull: false,
     claiming: false
   },
 
   observers: {
     items(items) {
       if (!items) return
-      this.projection = { held: items.stamina, pending: items.staminaPending || 0, nextAt: items.nextStaminaAt, cap: items.staminaCap }
+      this.projection = { pending: items.staminaPending || 0, nextAt: items.nextStaminaAt, leftToday: items.recoveryLeftToday || 0 }
+      this.setData({ pendingFull: Boolean(items.pendingFull) })
       this.refresh()
     }
   },
@@ -77,7 +79,8 @@ Component({
       const intervalMs = this.intervalMs()
       while (projection.nextAt && intervalMs && projection.nextAt <= Date.now()) {
         projection.pending += 1
-        projection.nextAt = projection.held + projection.pending >= projection.cap ? null : projection.nextAt + intervalMs
+        projection.leftToday -= 1
+        projection.nextAt = projection.leftToday > 0 ? projection.nextAt + intervalMs : null
       }
       this.setData({
         pending: projection.pending,

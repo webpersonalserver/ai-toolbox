@@ -1,0 +1,22 @@
+<view wx:if="{{visible}}" class="certificate" catchtouchmove="noop">
+  <view class="certificate__paper">
+    <view class="certificate__border">
+      <view class="certificate__title">奖 状</view>
+      <view class="certificate__body">
+        <text class="certificate__name">{{nickname}}</text> 小朋友：
+      </view>
+      <view class="certificate__body certificate__body--indent">
+        在 {{achievement}} 中获得 <text class="certificate__score">{{score}}</text> 分，成绩优异，特发此状，以资鼓励！
+      </view>
+      <view class="certificate__footer">
+        <view class="certificate__issuer">解谜达人 · 趣味练习</view>
+        <view class="certificate__date">{{dateText}}</view>
+        <view class="certificate__seal"><view>优秀</view><view>学员</view></view>
+      </view>
+    </view>
+  </view>
+  <view class="certificate__actions">
+    <button class="btn btn--primary certificate__action" open-type="share" data-purpose="certificate">把奖状发给爸爸妈妈</button>
+    <button class="btn btn--ghost certificate__action certificate__action--light" bindtap="handleClose">看成绩</button>
+  </view>
+</view>

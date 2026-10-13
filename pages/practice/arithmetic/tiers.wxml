@@ -11,7 +11,10 @@
     <view class="tiers__main">
       <view class="tiers__label">{{item.label}}</view>
       <view class="tiers__example">{{item.example}}</view>
-      <view wx:if="{{item.solvedText}}" class="tiers__solved">{{item.solvedText}}</view>
+      <view class="tiers__solved">{{item.solvedText}}</view>
+      <view class="tiers__exam" hover-class="tiers__exam--pressed" data-tier="{{item.tier}}" catchtap="openExam">
+        ⏱ 限时考试<text wx:if="{{item.examText}}" class="tiers__exam-best"> · {{item.examText}}</text>
+      </view>
     </view>
     <view class="tiers__record">
       <view class="tiers__record-value">{{item.bestStreakText}}</view>

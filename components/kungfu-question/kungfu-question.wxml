@@ -1,4 +1,4 @@
-<view wx:if="{{question}}" class="kq">
+<view wx:if="{{question}}" class="kq {{plain ? 'kq--plain' : ''}}">
   <view class="card kq__board kq__board--{{state}}">
     <block wx:if="{{question.type === 'verse'}}">
       <view class="kq__verse-label">接口诀</view>
@@ -19,7 +19,7 @@
         <view wx:else class="kq__value kq__value--{{item.kind}}">{{item.text}}</view>
       </block>
     </view>
-    <view wx:if="{{state === 'revealed'}}" class="kq__reveal">记住：{{question.fact.verse}}（{{question.fact.small}} × {{question.fact.large}} = {{question.fact.product}}）</view>
+    <view wx:if="{{state === 'revealed'}}" class="kq__reveal">{{question.revealText}}</view>
   </view>
 
   <view wx:if="{{question.type === 'verse'}}" class="kq__choices">
@@ -42,7 +42,7 @@
       bindtap="handleKey"
     >
       <text wx:if="{{item === 'delete'}}">⌫</text>
-      <text wx:elif="{{item === 'confirm'}}">出招</text>
+      <text wx:elif="{{item === 'confirm'}}">{{confirmText}}</text>
       <text wx:else>{{item}}</text>
     </view>
   </view>

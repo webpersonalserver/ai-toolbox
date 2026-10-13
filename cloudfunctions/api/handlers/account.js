@@ -14,6 +14,8 @@ const {
 } = require('../lib/items')
 const { ITEM_LOG_REASONS, writeItemLogs } = require('../lib/item-log')
 const { isAdmin } = require('./admin')
+const { issueDoubleOffer, claimDoubleOffer } = require('../lib/double-reward')
+const { recordAdView } = require('../lib/ad-stats')
 
 const NICKNAME_MAX_LENGTH = 20
 const AVATAR_ROOT_DIR = 'avatars'
@@ -101,7 +103,7 @@ const login = async ({ openid }) => {
       avatarUploadDir: avatarUploadDirOf(openid),
       customized: Boolean(user.profileCustomized)
     },
-    items: toItemsView(settleUserItems(user, rules, now), rules),
+    items: toItemsView(settleUserItems(user, rules, now), rules, now),
     today: describeTodayStatus(todayRecord, rules),
     rules: toClientRules(rules)
   }
@@ -146,7 +148,8 @@ const checkin = async ({ openid }) => {
   })
   throwIfFailed(outcome)
   await writeItemLogs(openid, deltas, ITEM_LOG_REASONS.CHECKIN)
-  return { rewards: rules.checkinRewards, items: outcome.items }
+  const doubleToken = await issueDoubleOffer(openid, rules.checkinRewards, 'checkin', rules)
+  return { rewards: rules.checkinRewards, items: outcome.items, doubleToken }
 }
 
 const grantAdReward = async ({ openid, payload }) => {
@@ -157,20 +160,22 @@ const grantAdReward = async ({ openid, payload }) => {
   if (!isItemType(itemType) || !rules.ad.enabled || rewardAmount <= 0) {
     throw new BusinessError(ERROR_CODES.AD_UNAVAILABLE, '视频奖励暂未开放')
   }
-  const dailyLimit = rules.ad.dailyLimits[itemType] || 0
+  const dailyLimit = rules.ad.dailyLimits[itemType]
+  const isUnlimited = dailyLimit === null
   await ensureTodayRecord(openid)
   const outcome = await db.runTransaction(async (transaction) => {
     const dailyRef = transaction.collection('daily').doc(dailyDocId(openid))
     const { data: todayRecord } = await dailyRef.get()
     const rewardedCount = adRewardCountOf(todayRecord, itemType)
-    if (rewardedCount >= dailyLimit) {
+    if (!isUnlimited && rewardedCount >= (dailyLimit || 0)) {
       return { failure: { code: ERROR_CODES.AD_UNAVAILABLE, message: '今天的视频奖励已领完' } }
     }
     const { items } = await changeItemsInTransaction(transaction, openid, { [itemType]: rewardAmount }, rules, now)
-    await dailyRef.update({ data: { [`adRewardCounts.${itemType}`]: _.inc(1), updatedAt: db.serverDate() } })
-    return { items, adRemaining: dailyLimit - rewardedCount - 1 }
+    await dailyRef.update({ data: { [`adRewardCounts.${itemType}`]: _.inc(1), adViews: _.inc(1), updatedAt: db.serverDate() } })
+    return { items, adRemaining: isUnlimited ? null : dailyLimit - rewardedCount - 1, isFirstViewToday: !(todayRecord.adViews > 0) }
   })
   throwIfFailed(outcome)
+  await recordAdView(itemType, outcome.isFirstViewToday)
   await writeItemLogs(openid, { [itemType]: rewardAmount }, ITEM_LOG_REASONS.AD)
   return { itemType, rewardAmount, items: outcome.items, adRemaining: outcome.adRemaining }
 }
@@ -183,7 +188,12 @@ const claimRecoveredStamina = async ({ openid }) => {
     throw new BusinessError(ERROR_CODES.NOTHING_TO_CLAIM, '还没有恢复的体力可以领取')
   }
   await writeItemLogs(openid, { [ITEM_TYPES.STAMINA]: outcome.claimed }, ITEM_LOG_REASONS.RECOVERY)
-  return outcome
+  const doubleToken = await issueDoubleOffer(openid, [{ type: ITEM_TYPES.STAMINA, amount: outcome.claimed }], 'recovery', rules, {
+    minAmount: rules.ad.recoveryDoubleMinAmount
+  })
+  return { ...outcome, doubleToken }
 }
 
-module.exports = { login, updateProfile, checkin, grantAdReward, claimRecoveredStamina }
+const claimDoubleReward = async ({ openid, payload }) => claimDoubleOffer(openid, payload.token, await loadRules())
+
+module.exports = { login, updateProfile, checkin, grantAdReward, claimRecoveredStamina, claimDoubleReward }

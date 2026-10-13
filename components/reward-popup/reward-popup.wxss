@@ -237,3 +237,15 @@
   0% { transform: scale(0.3); opacity: 0; }
   100% { transform: scale(1); opacity: 1; }
 }
+
+.btn.reward-popup__double {
+  width: 100%;
+  margin-top: var(--space-lg);
+  background: var(--color-gold);
+  box-shadow: 0 8rpx 0 var(--color-primary-deep);
+  color: var(--color-ink);
+}
+
+.reward-popup__double + .reward-popup__confirm {
+  margin-top: var(--space-sm);
+}

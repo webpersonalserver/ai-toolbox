@@ -8,6 +8,8 @@ const { describeTitleProgress } = require('../../utils/milestone')
 const { GAME_ORDER, gameConfigOf } = require('../../utils/games')
 const { GUIDE_KEYS, hasSeenGuide, markGuideSeen } = require('../../utils/onboarding')
 const { countUnclaimedWelfare } = require('../../utils/welfare')
+const { adOffersOf } = require('../../utils/ad-reward')
+const { HIDDEN_REWARD_POPUP } = require('../../utils/milestone')
 
 const BEGINNER_GAME_TYPE = 'idiom'
 const WELFARE_URL = '/pages/welfare/welfare'
@@ -45,6 +47,8 @@ Page({
     checkinRewardText: '',
     unclaimedWelfare: 0,
     welfareDesc: '',
+    adOffers: [],
+    rewardPopup: HIDDEN_REWARD_POPUP,
     gameCards: GAME_ORDER.map((gameType) => gameConfigOf(gameType)),
     welcomeVisible: false,
     profileAvatarUrl: '',
@@ -79,6 +83,7 @@ Page({
     const session = getSession()
     if (!session) return
     this.setData({
+      adOffers: adOffersOf(session),
       items: session.items,
       checkedIn: session.today.checkedIn,
       checkinRewardText: describeRewards(session.rules.checkinRewards)
@@ -86,7 +91,23 @@ Page({
   },
 
   async handleCheckin() {
-    if (await checkinToday()) this.refresh()
+    const result = await checkinToday({ quiet: true })
+    if (!result) return
+    this.refresh()
+    this.setData({
+      rewardPopup: { visible: true, title: '打卡成功', subtitle: '明天记得再来哦', badge: '', rewards: result.rewards, doubleToken: result.doubleToken || '' }
+    })
+  },
+
+  handleAdRewarded(event) {
+    const { itemType, amount } = event.detail
+    this.syncSession()
+    this.setData({ rewardPopup: { visible: true, title: '视频奖励到账', subtitle: '想要更多，随时再来看', badge: '', rewards: [{ type: itemType, amount }], doubleToken: '' } })
+  },
+
+  closeRewardPopup() {
+    this.setData({ rewardPopup: HIDDEN_REWARD_POPUP })
+    this.syncSession()
   },
 
   openWelfare() {

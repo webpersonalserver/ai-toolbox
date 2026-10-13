@@ -309,6 +309,7 @@ Page({
 
   closeRewardPopup() {
     this.setData({ rewardPopup: HIDDEN_REWARD_POPUP })
+    this.syncItems()
   },
 
   noop() {},

@@ -36,6 +36,23 @@
     >领取</button>
   </view>
 
+  <block wx:if="{{adOffers.length}}">
+    <view class="welfare__section-title">看视频领奖励</view>
+    <view wx:for="{{adOffers}}" wx:key="itemType" class="card welfare__row">
+      <image class="welfare__icon welfare__icon--image" src="{{item.icon}}" mode="aspectFit" />
+      <view class="welfare__body">
+        <view class="welfare__name">看视频得{{item.label}} +{{item.amount}}</view>
+        <view class="welfare__desc">{{item.remainingText}}</view>
+      </view>
+      <button
+        class="btn btn--primary welfare__action"
+        loading="{{busyKey === 'ad-' + item.itemType}}"
+        data-item-type="{{item.itemType}}"
+        bindtap="watchAd"
+      >去看</button>
+    </view>
+  </block>
+
   <view class="welfare__section-title">闯关宝箱</view>
   <view
     wx:for="{{chestRows}}"
@@ -81,5 +98,6 @@
   subtitle="{{rewardPopup.subtitle}}"
   badge="{{rewardPopup.badge}}"
   rewards="{{rewardPopup.rewards}}"
+  double-token="{{rewardPopup.doubleToken}}"
   bind:close="closeRewardPopup"
 />

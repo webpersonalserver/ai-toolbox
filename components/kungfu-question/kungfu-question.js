@@ -1,6 +1,5 @@
-const MAX_INPUT_DIGITS = 2
 const WRONG_SHAKE_MS = 450
-const SYMBOLS = ['×', '=']
+const SYMBOLS = ['×', '+', '−', '=']
 const KEYPAD = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'delete', '0', 'confirm']
 
 const tokenKindOf = (token) => {
@@ -8,7 +7,8 @@ const tokenKindOf = (token) => {
   return SYMBOLS.includes(token) ? 'symbol' : 'number'
 }
 
-// Shows one 口诀 question (numeric keypad or verse choices) and reports each answer; the page decides what happens next.
+// Shows one question (numeric keypad or verse choices) and reports each answer; the page decides what happens next.
+// Used by 九九神功 (default look) and the arithmetic exam (plain look, 3-digit answers).
 Component({
   options: {
     styleIsolation: 'apply-shared'
@@ -17,7 +17,10 @@ Component({
   properties: {
     question: { type: Object, value: null },
     locked: { type: Boolean, value: false },
-    revealed: { type: Boolean, value: false }
+    revealed: { type: Boolean, value: false },
+    plain: { type: Boolean, value: false },
+    confirmText: { type: String, value: '出招' },
+    maxDigits: { type: Number, value: 2 }
   },
 
   data: {
@@ -58,7 +61,7 @@ Component({
       if (key === 'confirm') return this.submit(this.data.input)
       if (key === 'delete') return this.setData({ input: this.data.input.slice(0, -1), state: 'idle' })
       const current = this.data.input === '0' ? '' : this.data.input
-      if (current.length >= MAX_INPUT_DIGITS) return
+      if (current.length >= this.data.maxDigits) return
       this.setData({ input: current + key, state: 'idle' })
     },
 

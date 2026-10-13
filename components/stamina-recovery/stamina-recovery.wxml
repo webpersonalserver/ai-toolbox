@@ -9,6 +9,7 @@
     <text>{{claiming ? '领取中' : '领取 +' + pending}}</text>
   </view>
   <text wx:if="{{countdownText}}" class="stamina-recovery__countdown">{{countdownText}} 后 +1</text>
-  <text wx:elif="{{isFull && !pending}}" class="stamina-recovery__countdown">体力已满</text>
+  <text wx:elif="{{isFull && !pending}}" class="stamina-recovery__countdown">今日恢复已满，明天继续</text>
   <text wx:if="{{!showClaim && pending > 0}}" class="stamina-recovery__countdown">已恢复 {{pending}} 点待领取</text>
+  <text wx:if="{{pendingFull && pending > 0}}" class="stamina-recovery__countdown">攒满啦，领取后继续恢复</text>
 </view>

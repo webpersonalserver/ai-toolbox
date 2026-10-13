@@ -1,7 +1,7 @@
 const { account, ERROR_CODES, ApiError, toastError } = require('./api')
-const { getSession, ensureLogin, updateSession, setItems } = require('./session')
+const { ensureLogin, setItems } = require('./session')
 const { checkinToday } = require('./checkin')
-const { watchRewardedAd } = require('./rewarded-ad')
+const { watchAdForItem } = require('./ad-reward')
 const { ITEM_META, describeAmount, minutesUntil } = require('./items')
 
 const ITEM_NEXT_STEPS = {
@@ -48,20 +48,10 @@ const earnByCheckin = async ({ itemType, checkinReward }) => {
 const earnByAd = async ({ itemType, adReward }) => {
   const agreed = await confirm(titleOf(itemType), `看完一段视频可得 ${describeAmount(itemType, adReward)}`, '看视频')
   if (!agreed) return false
-  const watchedToEnd = await watchRewardedAd(getSession().rules.ad.adUnitId)
-  if (!watchedToEnd) {
-    wx.showToast({ title: '看完视频才能领取哦', icon: 'none' })
-    return false
-  }
-  try {
-    const result = await account.grantAdReward(itemType)
-    updateSession({ items: result.items })
-    wx.showToast({ title: `获得 ${describeAmount(itemType, result.rewardAmount)}`, icon: 'none' })
-    return true
-  } catch (error) {
-    toastError(error)
-    return false
-  }
+  const result = await watchAdForItem(itemType)
+  if (!result) return false
+  wx.showToast({ title: `获得 ${describeAmount(itemType, result.rewardAmount)}`, icon: 'none' })
+  return true
 }
 
 const openWelfareChests = async ({ itemType, welfareChests }) => {
@@ -82,7 +72,7 @@ const explainStaminaRecovery = async () => {
   const { items } = await ensureLogin({ force: true })
   const content = items.nextStaminaAt
     ? `${minutesUntil(items.nextStaminaAt)} 分钟后恢复 1 点体力，恢复的体力可以在顶部领取`
-    : '体力会慢慢恢复，休息一下再来吧'
+    : '今天的体力已经恢复满了，明天会继续恢复；也可以去「趣味」练习攒体力'
   notify('体力不足', content)
 }
 

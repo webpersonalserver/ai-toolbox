@@ -1,5 +1,5 @@
 const { db } = require('./cloud')
-const { getTodayRecord, describeTodayStatus } = require('./daily')
+const { getTodayRecord, describeTodayStatus, hasAdLeft } = require('./daily')
 const { sumRewardsByType } = require('./rules')
 const { ITEM_TYPES } = require('./items')
 const { ALL_GAME_TYPES } = require('./games')
@@ -64,7 +64,7 @@ const resolveNextStep = async (openid, itemType, rules, items) => {
     next = ITEM_NEXT_STEPS.CHECKIN
   } else if (welfareChests > 0) {
     next = ITEM_NEXT_STEPS.OPEN_CHESTS
-  } else if (today.adRemaining[itemType] > 0) {
+  } else if (hasAdLeft(today.adRemaining[itemType])) {
     next = ITEM_NEXT_STEPS.AD
   } else if (practiceStaminaRoom > 0) {
     next = ITEM_NEXT_STEPS.PRACTICE

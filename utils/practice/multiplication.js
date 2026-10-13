@@ -79,7 +79,11 @@ const verseChoicesOf = (fact, rng) => {
   return shuffle([fact.tail, ...distractors], rng)
 }
 
-const buildQuestion = (fact, type, rng = Math.random) => {
+const revealTextOf = (fact) => `记住：${fact.verse}（${fact.small} × ${fact.large} = ${fact.product}）`
+
+const buildQuestion = (fact, type, rng = Math.random) => ({ ...buildQuestionBody(fact, type, rng), revealText: revealTextOf(fact) })
+
+const buildQuestionBody = (fact, type, rng) => {
   const swapped = rng() < 0.5
   const [left, right] = swapped ? [fact.large, fact.small] : [fact.small, fact.large]
   if (type === QUESTION_TYPES.VERSE) {

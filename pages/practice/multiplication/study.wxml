@@ -1,4 +1,35 @@
+<view class="page study">
+  <view class="study__tip">
+    <view class="study__tip-label">心法要诀</view>
+    <view class="study__tip-text">{{technique.tip}}</view>
+  </view>
+  <view class="study__guide">每句口诀大声念一遍，念完点一下卡片（已念 {{readCount}} / {{cards.length}}）</view>
 
+  <view
+    wx:for="{{cards}}"
+    wx:key="key"
+    class="card study__card {{item.read ? 'study__card--read' : ''}}"
+    data-index="{{index}}"
+    bindtap="readCard"
+  >
+    <view class="study__main">
+      <view class="study__verse">{{item.verse}}</view>
+      <view class="study__equation">{{item.small}} × {{item.large}} = {{item.product}}</view>
+    </view>
+    <view class="study__dots">
+      <view wx:for="{{item.dotRows}}" wx:for-item="dotRow" wx:key="id" class="study__dot-row">
+        <view wx:for="{{dotRow.dots}}" wx:for-item="dot" wx:key="*this" class="study__dot"></view>
+      </view>
+    </view>
+    <view wx:if="{{item.read}}" class="study__check">✓</view>
+  </view>
+
+  <view class="study__footer">
+    <button class="btn btn--primary study__start" bindtap="startTraining">
+      {{readCount === cards.length ? '全部念完，开始练功' : '开始练功'}}
+    </button>
+  </view>
+</view>
 
 <flower-toast visible="{{flowerToast.visible}}" count="{{flowerToast.count}}" text="{{flowerToast.text}}" />
 <medal-popup visible="{{medalPopup.visible}}" is-new="{{medalPopup.isNew}}" medal="{{medalPopup.medal}}" bind:close="handleMedalClose" />

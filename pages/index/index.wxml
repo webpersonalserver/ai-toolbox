@@ -67,6 +67,18 @@
   </view>
 </view>
 
+<ad-reward-fab offers="{{adOffers}}" bind:rewarded="handleAdRewarded" />
+
+<reward-popup
+  visible="{{rewardPopup.visible}}"
+  title="{{rewardPopup.title}}"
+  subtitle="{{rewardPopup.subtitle}}"
+  badge="{{rewardPopup.badge}}"
+  rewards="{{rewardPopup.rewards}}"
+  double-token="{{rewardPopup.doubleToken}}"
+  bind:close="closeRewardPopup"
+/>
+
 <profile-editor
   visible="{{welcomeVisible}}"
   title="欢迎来到解谜达人"

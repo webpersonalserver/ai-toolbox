@@ -3,9 +3,11 @@ const { ERROR_CODES, BusinessError } = require('../lib/response')
 const { loadRules } = require('../lib/rules')
 const { computeClearStats } = require('../lib/stats')
 const { parseGameType } = require('../lib/games')
+const { recentAdStats } = require('../lib/ad-stats')
 
 const RECENT_COMPLETION_LIMIT = 20
 const DAILY_HISTORY_LIMIT = 30
+const AD_STATS_DAYS = 7
 
 const isAdmin = (rules, openid) => rules.admin.openids.includes(openid)
 
@@ -19,10 +21,11 @@ const assertAdmin = async (openid) => {
 const stats = async ({ openid, payload }) => {
   await assertAdmin(openid)
   const gameType = parseGameType(payload)
-  const [current, { data: recentCompletions }, { data: dailyHistory }] = await Promise.all([
+  const [current, { data: recentCompletions }, { data: dailyHistory }, adStats] = await Promise.all([
     computeClearStats(gameType),
     db.collection('completions').where({ gameType }).orderBy('completedAt', 'desc').limit(RECENT_COMPLETION_LIMIT).get(),
-    db.collection('stats_daily').where({ gameType }).orderBy('date', 'desc').limit(DAILY_HISTORY_LIMIT).get()
+    db.collection('stats_daily').where({ gameType }).orderBy('date', 'desc').limit(DAILY_HISTORY_LIMIT).get(),
+    recentAdStats(AD_STATS_DAYS)
   ])
   return {
     current,
@@ -39,7 +42,8 @@ const stats = async ({ openid, payload }) => {
       clearRate: snapshot.clearRate,
       totalLevels: snapshot.totalLevels,
       completionsToday: snapshot.completionsToday
-    }))
+    })),
+    adStats
   }
 }
 

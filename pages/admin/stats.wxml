@@ -61,4 +61,21 @@
       <view class="admin__cell">{{item.clearRateText}}</view>
     </view>
   </view>
+
+  <view class="admin__section-title">视频广告（近 7 天，所有玩法合计）</view>
+  <view class="card admin__list">
+    <view wx:if="{{!adStats.length}}" class="admin__empty">还没有人看过视频（视频功能开启后才会有数据）</view>
+    <view class="admin__row admin__row--head" wx:if="{{adStats.length}}">
+      <view class="admin__cell">日期</view>
+      <view class="admin__cell">看的人</view>
+      <view class="admin__cell">体力/提示/翻倍</view>
+      <view class="admin__cell">人均</view>
+    </view>
+    <view wx:for="{{adStats}}" wx:key="date" class="admin__row">
+      <view class="admin__cell">{{item.dateText}}</view>
+      <view class="admin__cell">{{item.viewers}}</view>
+      <view class="admin__cell">{{item.staminaViews}}/{{item.hintViews}}/{{item.doubleViews}}</view>
+      <view class="admin__cell">{{item.viewsPerViewer}} 次</view>
+    </view>
+  </view>
 </view>

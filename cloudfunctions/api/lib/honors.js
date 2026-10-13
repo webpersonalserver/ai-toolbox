@@ -8,6 +8,13 @@ const MULTIPLICATION_ROWS = 9
 const MAX_STARS_PER_ROW = 3
 const ARITHMETIC_TIER_KEYS = ['within10', 'within20', 'within100']
 const ARITHMETIC_TIER_GOAL = 20
+const FULL_SCORE = 100
+const HARDEST_EXAM_LEVEL = 3
+
+const examBestScores = (arithmetic) =>
+  Object.values(arithmetic.exams || {}).flatMap((levels) => Object.entries(levels).map(([levelKey, record]) => ({ levelKey, best: record.best })))
+const tiersWithFullScore = (arithmetic) =>
+  Object.values(arithmetic.exams || {}).filter((levels) => Object.values(levels).some((record) => record.best === FULL_SCORE)).length
 
 // Why a flower was given; the client turns each reason into a line of praise.
 const FLOWER_REASONS = {
@@ -16,7 +23,10 @@ const FLOWER_REASONS = {
   DAILY_FIRST: 'dailyFirst',
   ROW_RECITED: 'rowRecited',
   ROW_MASTERED: 'rowMastered',
-  ROW_PERFECT: 'rowPerfect'
+  ROW_PERFECT: 'rowPerfect',
+  EXAM_PERFECT: 'examPerfect',
+  EXAM_GREAT: 'examGreat',
+  EXAM_PASSED: 'examPassed'
 }
 
 // Numbers a medal can be measured by. A new kind of medal = one metric here + entries in MEDALS.
@@ -25,6 +35,10 @@ const METRICS = {
   arithmeticBestStreak: ({ arithmetic }) => Math.max(0, ...Object.values(arithmetic.tiers || {}).map((tier) => tier.bestStreak || 0)),
   arithmeticTiersReached: ({ arithmetic }) =>
     ARITHMETIC_TIER_KEYS.filter((key) => ((arithmetic.tiers || {})[key] || {}).solved >= ARITHMETIC_TIER_GOAL).length,
+  arithmeticFullScoreExams: ({ arithmetic }) => examBestScores(arithmetic).filter((record) => record.best === FULL_SCORE).length,
+  arithmeticFullScoreTiers: ({ arithmetic }) => tiersWithFullScore(arithmetic),
+  arithmeticHardestFullScore: ({ arithmetic }) =>
+    examBestScores(arithmetic).some((record) => record.levelKey === `level${HARDEST_EXAM_LEVEL}` && record.best === FULL_SCORE) ? 1 : 0,
   kungfuMasteredRows: ({ multiplication }) => Object.values(multiplication.rows).filter((row) => row.mastered).length,
   kungfuStars: ({ multiplication }) => Object.values(multiplication.rows).reduce((total, row) => total + row.stars, 0),
   kungfuGrandmaster: ({ multiplication }) => (multiplication.exam.passed ? 1 : 0),
@@ -40,6 +54,9 @@ const MEDALS = [
   { id: 'arith-solved-100', group: 'arithmetic', name: '小小计算家', icon: '🧮', metric: 'arithmeticSolved', target: 100, praise: '答对 100 道题，越算越厉害！' },
   { id: 'arith-solved-1000', group: 'arithmetic', name: '计算大师', icon: '🎓', metric: 'arithmeticSolved', target: 1000, praise: '答对 1000 道题，真正的计算大师！' },
   { id: 'arith-all-tiers', group: 'arithmetic', name: '三档全能', icon: '🌈', metric: 'arithmeticTiersReached', target: 3, praise: '三个档位都答对 20 题，样样都行！' },
+  { id: 'exam-full-score', group: 'arithmetic', name: '满分小状元', icon: '💯', metric: 'arithmeticFullScoreExams', target: 1, praise: '考试拿到 100 分，你是小状元！' },
+  { id: 'exam-all-tiers', group: 'arithmetic', name: '三档满分', icon: '🏆', metric: 'arithmeticFullScoreTiers', target: 3, praise: '三个档位都考过 100 分，太棒了！' },
+  { id: 'exam-lightning', group: 'arithmetic', name: '闪电手', icon: '⚡', metric: 'arithmeticHardestFullScore', target: 1, praise: '高级考试拿到满分，快如闪电！' },
   { id: 'kungfu-row-1', group: 'multiplication', name: '入门弟子', icon: '🥋', metric: 'kungfuMasteredRows', target: 1, praise: '练成第一重，正式拜入师门！' },
   { id: 'kungfu-row-5', group: 'multiplication', name: '半部秘籍', icon: '📖', metric: 'kungfuMasteredRows', target: 5, praise: '已经练成五重，秘籍过半啦！' },
   { id: 'kungfu-row-9', group: 'multiplication', name: '九重全通', icon: '🏯', metric: 'kungfuMasteredRows', target: 9, praise: '九重秘籍全部练成，了不起！' },

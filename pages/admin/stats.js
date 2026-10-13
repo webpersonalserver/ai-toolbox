@@ -11,6 +11,7 @@ const formatDate = (dateKey) => `${dateKey.slice(0, 4)}-${dateKey.slice(4, 6)}-$
 
 Page({
   data: {
+    adStats: [],
     loading: true,
     gameType: GAME_ORDER[0],
     gameTabs: GAME_ORDER.map((gameType) => gameConfigOf(gameType)),
@@ -55,7 +56,8 @@ Page({
           ...snapshot,
           dateText: formatDate(snapshot.date),
           clearRateText: formatRate(snapshot.clearRate)
-        }))
+        })),
+        adStats: (result.adStats || []).map((day) => ({ ...day, dateText: formatDate(day.date) }))
       })
     } catch (error) {
       this.setData({ loading: false })
