@@ -22,3 +22,6 @@ __pycache__/
 
 # 题库原始数据（下载缓存，不入库）
 .cache/
+
+# 朗读语音（scripts/make_speech.py 生成，上传到云存储 speech/，不入库）
+scripts/output/

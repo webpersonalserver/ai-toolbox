@@ -74,6 +74,10 @@ const practice = {
   claimChests: (practiceId) => call('practice.claimChests', { practiceId })
 }
 
+const speech = {
+  clipUrls: (clipNames) => call('speech.clipUrls', { clipNames })
+}
+
 const leaderboard = {
   list: (gameType) => call('leaderboard.list', { gameType })
 }
@@ -82,4 +86,4 @@ const admin = {
   stats: (gameType) => call('admin.stats', { gameType })
 }
 
-module.exports = { ERROR_CODES, ApiError, toastError, account, game, rescue, practice, leaderboard, admin }
+module.exports = { ERROR_CODES, ApiError, toastError, account, game, rescue, practice, speech, leaderboard, admin }

@@ -76,6 +76,7 @@ Page({
   },
 
   showQuestion() {
+    this.missedCurrent = false
     this.setData({
       question: this.questions[this.index],
       revealed: false,
@@ -108,7 +109,7 @@ Page({
   },
 
   handleCorrect() {
-    this.correctCount += 1
+    if (!this.missedCurrent) this.correctCount += 1
     const combo = this.data.combo + 1
     this.soundPlayer.play('correct')
     wx.vibrateShort({ type: 'light' })
@@ -120,21 +121,24 @@ Page({
     this.later(() => this.advance(), CORRECT_PAUSE_MS)
   },
 
-  // In the exam there is no second try: a miss costs a life and shows the answer.
+  // A miss costs a life; while lives remain the question stays until it is answered right, only the last life shows the answer.
   handleWrong() {
     this.lives -= 1
-    this.missedVerses.push(this.questions[this.index].fact.verse)
+    if (!this.missedCurrent) {
+      this.missedCurrent = true
+      this.missedVerses.push(this.questions[this.index].fact.verse)
+    }
     this.soundPlayer.play('wrong')
     wx.vibrateShort({ type: 'heavy' })
     this.setData({
-      locked: true,
-      revealed: true,
       combo: 0,
       lives: this.lives,
       hearts: heartsOf(this.lives),
-      feedbackLine: this.lives ? `中了一招！还剩 ${this.lives} 条命` : '体力耗尽……'
+      feedbackLine: this.lives ? `中了一招！还剩 ${this.lives} 条命，再想想` : '体力耗尽……'
     })
-    this.later(() => (this.lives ? this.advance() : this.finishExam(false)), WRONG_PAUSE_MS)
+    if (this.lives) return
+    this.setData({ locked: true, revealed: true })
+    this.later(() => this.finishExam(false), WRONG_PAUSE_MS)
   },
 
   finishExam(passed) {

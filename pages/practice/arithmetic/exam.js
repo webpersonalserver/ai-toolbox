@@ -22,7 +22,6 @@ const { buildCertificateShare, buildExamShare } = require('../../../utils/share'
 const PRACTICE_ID = 'arithmetic'
 const SECOND_MS = 1000
 const CORRECT_PAUSE_MS = 450
-const WRONG_PAUSE_MS = 1100
 const STAGES = { SELECT: 'select', RUNNING: 'running', RESULT: 'result' }
 const FULL_SCORE = EXAM_QUESTION_COUNT * POINTS_PER_QUESTION
 const HIDDEN_CHEER = { visible: false, title: '', subtitle: '', mascot: '', big: false }
@@ -58,7 +57,6 @@ Page({
     levels: [],
     level: null,
     question: null,
-    revealed: false,
     locked: false,
     progressText: '',
     clockText: '',
@@ -145,9 +143,9 @@ Page({
   },
 
   showQuestion() {
+    this.missedCurrent = false
     this.setData({
       question: this.paper[this.index],
-      revealed: false,
       locked: false,
       cheer: HIDDEN_CHEER,
       progressText: `第 ${this.index + 1} / ${this.paper.length} 题`
@@ -168,21 +166,21 @@ Page({
     wx.showToast({ title: '先按数字，再交答案', icon: 'none' })
   },
 
-  // One try per question in an exam: a miss shows the right answer and moves on.
+  // Only a first-try answer scores; a miss is noted once and the question stays until it is answered right.
   handleAnswered(event) {
     if (event.detail.correct) {
-      this.correctCount += 1
+      if (!this.missedCurrent) this.correctCount += 1
       this.soundPlayer.play('correct')
       this.setData({ locked: true })
       this.later(() => this.advance(), CORRECT_PAUSE_MS)
       return
     }
-    const question = this.paper[this.index]
-    this.wrongAnswers.push(question.equation)
+    if (!this.missedCurrent) {
+      this.missedCurrent = true
+      this.wrongAnswers.push(this.paper[this.index].equation)
+    }
     this.soundPlayer.play('wrong')
     wx.vibrateShort({ type: 'medium' })
-    this.setData({ locked: true, revealed: true })
-    this.later(() => this.advance(), WRONG_PAUSE_MS)
   },
 
   finishExam(timeUp) {

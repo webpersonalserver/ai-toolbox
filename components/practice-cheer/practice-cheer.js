@@ -1,3 +1,5 @@
+const { createSpeaker } = require('../../utils/practice/speech')
+
 const CONFETTI_COUNT = { normal: 28, big: 64 }
 const SPARK_COUNT = { normal: 14, big: 22 }
 const SUN_RAYS = Array.from({ length: 12 }, (_, index) => ({ id: index, style: `transform: rotate(${index * 30}deg)` }))
@@ -25,7 +27,7 @@ const buildSparks = (count) =>
     innerStyle: `background: ${pick(CELEBRATION_COLORS)}; animation-duration: ${randomBetween(0.6, 1).toFixed(2)}s`
   }))
 
-// Full-screen burst shown over practice screens; it never blocks taps.
+// Full-screen burst shown over practice screens; it never blocks taps. The praise text is also read aloud.
 Component({
   options: {
     styleIsolation: 'apply-shared'
@@ -51,6 +53,16 @@ Component({
       if (!visible) return
       const size = this.data.big ? 'big' : 'normal'
       this.setData({ confettiPieces: buildConfetti(CONFETTI_COUNT[size]), sparks: buildSparks(SPARK_COUNT[size]) })
+      this.speaker.speak(this.data.title, this.data.subtitle)
+    }
+  },
+
+  lifetimes: {
+    attached() {
+      this.speaker = createSpeaker()
+    },
+    detached() {
+      this.speaker.destroy()
     }
   }
 })

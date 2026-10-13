@@ -1,3 +1,11 @@
+/* The host must fill the page column too, otherwise .kq cannot grow and the keypad never reaches the bottom. */
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
 .kq {
   display: flex;
   flex-direction: column;
@@ -10,6 +18,7 @@
   align-items: center;
   justify-content: center;
   min-height: 300rpx;
+  margin-bottom: var(--space-lg);
   padding: var(--space-xl) var(--space-md);
   border: 4rpx solid var(--color-ink);
   background: var(--color-gold-soft);
@@ -113,7 +122,6 @@
   grid-template-columns: repeat(3, 1fr);
   gap: var(--space-md);
   margin-top: auto;
-  padding-bottom: env(safe-area-inset-bottom);
 }
 
 .kq__key,
@@ -156,7 +164,6 @@
   flex-direction: column;
   gap: var(--space-md);
   margin-top: auto;
-  padding-bottom: env(safe-area-inset-bottom);
 }
 
 .kq__choice {

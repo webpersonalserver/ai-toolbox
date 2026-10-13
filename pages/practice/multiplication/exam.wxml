@@ -4,7 +4,8 @@
     <view class="exam-intro__title">九九论剑</view>
     <view class="exam-intro__rules">
       <view>· 共 {{questionCount}} 题，九重口诀随机出</view>
-      <view>· 只有 {{lives}} 条命，答错一题少一条</view>
+      <view>· 只有 {{lives}} 条命，答错一次少一条</view>
+      <view>· 答错可以再答，答对才进入下一题</view>
       <view>· 闯完全部题目，即为神功大成</view>
     </view>
     <view wx:if="{{previousBest}}" class="exam-intro__best">{{previousBest}}</view>

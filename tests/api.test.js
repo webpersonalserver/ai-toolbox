@@ -562,6 +562,12 @@ const startedAttempt = { active: true, wrongCount: 0 }
   r = await main({ action: 'game.getLevel', payload: null }); assert(r.code === 40000, 'null payload is a 400, not a 500', r)
   sdk.testing.actAs('f1')
   r = await main({ action: 'practice.report', payload: { practiceId: 'multiplication', tier: 10, solvedDelta: 1, streak: 0, streakRunId: 'x' } }); assert(r.code === 40000, 'practice report for a practice without tiers is a 400', r)
+  // spoken praise clip links
+  const clipNames = Array.from({ length: 117 }, (_, index) => `${index.toString(16).padStart(12, '0')}.mp3`)
+  r = await call('f1', 'speech.clipUrls', { clipNames })
+  assert(r.code === 0 && Object.keys(r.data.urls).length === 117 && r.data.urls[clipNames[116]].includes('speech/000000000074.mp3') && r.data.expiresInSeconds === 86400, 'clip links come back for all 117 clips across batches of 50', r.data && r.data.urls[clipNames[116]])
+  r = await call('f1', 'speech.clipUrls', { clipNames: ['../secret.mp3'] }); assert(r.code === 40000, 'clip names outside the pattern are refused', r)
+  r = await call('f1', 'speech.clipUrls', { clipNames: [] }); assert(r.code === 40000, 'an empty clip list is refused', r)
   // one date key per request
   const { dailyDocId } = require(path.join(API_ROOT, 'lib', 'daily'))
   assert(dailyDocId('f1', '20261013') === 'f1_20261013', 'daily records can be addressed by an explicit date key', null)

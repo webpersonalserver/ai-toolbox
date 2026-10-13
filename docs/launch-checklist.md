@@ -203,6 +203,7 @@
   2. 把 `utils/share.js` 的 `SHARE_IMAGE_BASE` 改成该地址所在的目录
   3. 把 `assets/share/` 移到 `design/share/`（不打包，`tests/templates.test.js` 会改为检查这里的源文件）
   - 不升级的话，包快满时也可以先把分享图再压缩一次（500×400），9 张能降到约 300KB
+- [ ] **朗读语音**（目前已关闭，等换了音色、解决了延迟再做）：打开 `utils/practice/speech.js` 的 `SPEECH_ENABLED`；`scripts/output/speech/` 里的 mp3 全部上传到云存储的 `speech/` 文件夹（存储桶地址已写在 `cloudfunctions/api/lib/storage.js` 的 `STORAGE_ROOT`）；重新部署云函数 `api`；在开发者工具和真机上各答对一题，确认能听到夸奖语
 - [ ] **激励视频**：小程序累计访客满 1000 后开通流量主、新建激励视频广告位，在 `game_rules` 里填 `ad.adUnitId` 并把 `ad.enabled` 改成 `true`，不用发版
 - [x] **题库数据版权**：chinese-xinhua、chinese-poetry 是 MIT 许可，但只覆盖项目作者的整理工作，不覆盖收录的词典原文。已处理：1015 条成语释义全部改写成自己的表述；20 条引用现代作者作品（作者去世不满 50 年）的出处已删除；诗词和歇后语属于公有领域或民间俗语，保留。详见 README「数据来源与版权」
 - [ ] **分享图版权**：9 张分享图由 AI 生成，确认所用 AI 工具的用户协议允许商用；图上的 AI 生成标识必须保留

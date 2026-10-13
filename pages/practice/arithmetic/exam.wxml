@@ -1,7 +1,7 @@
 <view wx:if="{{stage === 'select'}}" class="page exam-select">
   <view class="exam-select__intro">
     <view class="exam-select__title">{{tierLabel}} · 限时考试</view>
-    <view class="exam-select__rule">每卷 {{questionCount}} 题，每题 5 分，满分 100 分。每题只能答一次，时间到自动交卷。</view>
+    <view class="exam-select__rule">每卷 {{questionCount}} 题，每题 5 分，满分 100 分。答错可以再改，答对才进入下一题，但只有第一次就答对才得分；时间到自动交卷。</view>
   </view>
   <view
     wx:for="{{levels}}"
@@ -34,7 +34,6 @@
   <kungfu-question
     question="{{question}}"
     locked="{{locked}}"
-    revealed="{{revealed}}"
     plain
     confirm-text="确定"
     max-digits="{{maxDigits}}"

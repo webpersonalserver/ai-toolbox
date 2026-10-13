@@ -8,6 +8,7 @@ const admin = require('./handlers/admin')
 const leaderboard = require('./handlers/leaderboard')
 const overview = require('./handlers/overview')
 const practice = require('./handlers/practice')
+const speech = require('./handlers/speech')
 
 const ROUTES = {
   'account.login': account.login,
@@ -34,6 +35,7 @@ const ROUTES = {
   'practice.syncProgress': practice.syncProgress,
   'practice.honors': practice.honors,
   'practice.claimChests': practice.claimChests,
+  'speech.clipUrls': speech.clipUrls,
   'leaderboard.list': leaderboard.list,
   'admin.stats': admin.stats
 }

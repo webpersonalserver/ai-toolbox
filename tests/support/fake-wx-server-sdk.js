@@ -193,6 +193,14 @@ module.exports = {
     deletedFiles.push(...fileList)
     return { fileList: fileList.map((fileID) => ({ fileID, status: 0 })) }
   },
+  // Every stored file exists except ones whose path contains "missing".
+  getTempFileURL: async ({ fileList }) => ({
+    fileList: fileList.map(({ fileID, maxAge }) =>
+      fileID.includes('missing')
+        ? { fileID, status: -1, tempFileURL: '', errMsg: 'file not exist' }
+        : { fileID, status: 0, tempFileURL: `https://temp.example/${fileID.split('/').slice(3).join('/')}?maxAge=${maxAge}` }
+    )
+  }),
   openapi: {
     security: {
       msgSecCheck: async ({ content }) => ({
