@@ -14,10 +14,11 @@ const EXAM_LEVELS = [
 ]
 const GRADES = [
   { minScore: 100, name: '满分小状元', mascot: '👑' },
-  { minScore: 90, name: '优秀', mascot: '🌟' },
-  { minScore: 80, name: '良好', mascot: '👍' },
-  { minScore: 60, name: '及格', mascot: '😊' },
-  { minScore: 0, name: '再练练', mascot: '💪' }
+  // Kid-friendly praise instead of school marks: even the lowest band sounds like a next step, not a verdict.
+  { minScore: 90, name: '超级棒', mascot: '🌟' },
+  { minScore: 80, name: '真不错', mascot: '👍' },
+  { minScore: 60, name: '有进步', mascot: '😊' },
+  { minScore: 0, name: '加油练练', mascot: '💪' }
 ]
 
 const gradeOf = (score) => GRADES.find((grade) => score >= grade.minScore)

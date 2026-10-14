@@ -5,6 +5,7 @@ const { FALLBACK_HELPER_NAME } = require('../../utils/rescue-notice')
 const { gameConfigOf, clueLabelOf, describePoemSource, splitTypoClue } = require('../../utils/games')
 const { splitClue } = require('../../utils/clue')
 const { withMinimumDuration } = require('../../utils/min-duration')
+const { createSoundPlayer } = require('../../utils/practice/sound')
 
 const MIN_CHECKING_MS = 550
 
@@ -41,7 +42,7 @@ const resolveViewState = (detail) => {
 
 const describeHelperBlock = (viewState, detail) => {
   if (viewState === VIEW_STATES.HELPER_DAILY_LIMIT) return detail.helperLimitMessage
-  if (viewState === VIEW_STATES.HELPER_LOCKED) return `答错 ${detail.maxWrongAnswersPerHelper} 次了，这道题你帮不上啦`
+  if (viewState === VIEW_STATES.HELPER_LOCKED) return `${detail.maxWrongAnswersPerHelper} 颗❤️ 用完啦，这道题你帮不上啦`
   return ''
 }
 
@@ -80,8 +81,13 @@ Page({
   },
 
   onLoad(query) {
+    this.soundPlayer = createSoundPlayer()
     this.setData({ rescueId: query.id || '' })
     this.loadRescue()
+  },
+
+  onUnload() {
+    this.soundPlayer.destroy()
   },
 
   async loadRescue() {
@@ -131,8 +137,14 @@ Page({
     try {
       const result = await withMinimumDuration(() => rescue.answer(this.data.rescueId, event.detail.answer), MIN_CHECKING_MS)
       if (result.correct) {
+        // Helping a friend is the best moment on this page, so it gets the same sound and buzz as passing a level.
+        this.soundPlayer.play('correct')
+        wx.vibrateShort({ type: 'heavy' })
         this.setData({ viewState: VIEW_STATES.SOLVED, helpedByMe: true, solution: result.solution })
-      } else if (result.attemptsLeft <= 0) {
+        return
+      }
+      this.soundPlayer.play('wrong')
+      if (result.attemptsLeft <= 0) {
         this.setData({
           viewState: VIEW_STATES.HELPER_LOCKED,
           helperAttemptsLeft: 0,

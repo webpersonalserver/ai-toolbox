@@ -164,8 +164,16 @@
   animation: play-result-pop 0.45s cubic-bezier(0.2, 1.4, 0.4, 1);
 }
 
+.play__result-title {
+  margin-bottom: var(--space-sm);
+  color: var(--color-success);
+  font-size: var(--font-title);
+  font-weight: 900;
+}
+
 .play__result-badges {
   display: flex;
+  justify-content: center;
   gap: var(--space-sm);
 }
 
@@ -229,8 +237,8 @@
 
 .btn.play__reward-btn {
   width: 180rpx;
-  height: 64rpx;
-  line-height: 64rpx;
+  height: 88rpx;
+  line-height: 88rpx;
   font-size: var(--font-sm);
 }
 
@@ -288,3 +296,54 @@
   100% { transform: scale(1); opacity: 1; }
 }
 
+/* 下一关 transition: the new level number swings in from the right while the next puzzle loads. */
+.play__next {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+}
+
+.play__next-label {
+  color: var(--game-color-deep);
+  font-size: var(--font-lg);
+  font-weight: 800;
+  letter-spacing: 8rpx;
+  animation: play-next-fade 0.4s ease-out both;
+}
+
+.play__next-level {
+  margin: var(--space-md) 0;
+  padding: var(--space-md) var(--space-xl);
+  border-radius: var(--radius-lg);
+  background: var(--game-color);
+  box-shadow: 0 12rpx 0 var(--game-color-deep);
+  color: var(--color-on-accent);
+  font-size: 96rpx;
+  font-weight: 900;
+  animation: play-next-swing 0.6s cubic-bezier(0.2, 1.4, 0.4, 1) 0.1s both;
+}
+
+.play__next-go {
+  color: var(--color-ink-soft);
+  font-size: var(--font-lg);
+  font-weight: 800;
+  animation: play-next-fade 0.4s ease-out 0.45s both, play-next-bob 1s ease-in-out 0.85s infinite;
+}
+
+@keyframes play-next-swing {
+  0% { transform: translateX(120%) rotate(8deg); opacity: 0; }
+  100% { transform: translateX(0) rotate(0deg); opacity: 1; }
+}
+
+@keyframes play-next-fade {
+  from { opacity: 0; transform: translateY(20rpx); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes play-next-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10rpx); }
+}

@@ -4,7 +4,8 @@ const SOUND_FILES = {
   correct: '/assets/sounds/correct.wav',
   milestone: '/assets/sounds/milestone.wav',
   wrong: '/assets/sounds/wrong.wav',
-  gong: '/assets/sounds/gong.wav'
+  gong: '/assets/sounds/gong.wav',
+  chest: '/assets/sounds/chest.wav'
 }
 
 // One audio context per sound, created on first use; call destroy() when the page unloads.

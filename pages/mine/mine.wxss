@@ -21,6 +21,7 @@
 
 .mine__items {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-sm);
   margin-top: var(--space-md);
@@ -159,10 +160,12 @@
   font-weight: 800;
 }
 
+/* 80rpx keeps the toggle easy to hit for small fingers. */
 .mine__title-toggle {
   display: flex;
   align-items: center;
   justify-content: center;
+  min-height: 80rpx;
   gap: 10rpx;
   margin-top: var(--space-md);
   color: var(--color-ink-faint);
@@ -186,7 +189,9 @@
   font-size: var(--font-sm);
 }
 
+/* Padding widens the tap area around the short label without moving it. */
 .mine__book {
+  padding: 20rpx 0 20rpx 24rpx;
   color: var(--game-color-deep);
   font-size: var(--font-sm);
   font-weight: 600;

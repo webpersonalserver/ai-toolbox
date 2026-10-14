@@ -1,15 +1,24 @@
 // Every line 喵算算 says in 数理乐园. Change the tone here, not in the pages.
-// images: drawn by scripts/draw_mascot.py; overwrite the PNGs to swap in an illustrated version.
+const { imagesOf } = require('../assets')
+
+// images: illustrated moods cut out by scripts/prepare_art.py. cheer (fists up) encourages after a so-so round,
+// wink goes with the step-by-step explanations.
 const MASCOT = {
   name: '喵算算',
   emoji: '🐱',
-  images: { normal: '/assets/mascot/normal.png', happy: '/assets/mascot/happy.png' }
+  images: {
+    normal: '/assets/mascot/normal.png',
+    happy: '/assets/mascot/happy.png',
+    cheer: '/assets/mascot/cheer.png',
+    wink: '/assets/mascot/wink.png'
+  }
 }
 
 const COPY = {
   start: '出发冒险！',
-  endless: '无尽挑战',
-  nextRound: '再来一轮！',
+  // Endless mode: no question limit, the goal is the longest run of correct answers.
+  endless: '继续挑战，看能连对几题',
+  nextRound: '再来一轮（10 题）',
   explainButton: '🐱 喵算算教你',
   explainNext: '下一步',
   explainDone: '我会啦！',
@@ -17,8 +26,8 @@ const COPY = {
   parkGreetings: ['喵～今天想去哪座乐园冒险呀？', '数理乐园的小岛们在等你哦！', '练一会儿就能攒小红花喵～', '准备好了吗？我们出发吧！'],
   openTag: '开放中',
   buildingTag: '🚧 建造中',
-  monsterHouse: '🐾 小怪兽收容所',
-  monsterHouseEmpty: '收容所空空的，一只小怪兽都没溜走，你太棒啦！',
+  monsterHouse: '🐾 小怪兽藏身洞',
+  monsterHouseEmpty: '藏身洞空空的，一只小怪兽都没有，你太棒啦！',
   monsterCaught: '抓到一只小怪兽！',
   monsterAllCaught: '小怪兽全部抓回来啦！',
   monsterRound: '再抓一轮！',
@@ -43,7 +52,7 @@ const COPY = {
   allMastered: '所有岛屿都插上小旗啦，你是数理小达人喵！',
   correct: ['喵呜～太厉害啦！', '这题被你秒杀了！', '算得又快又准喵！', '你的小脑瓜在发光！', '完全正确，给你一朵小红花～', '喵算算都要佩服你啦！'],
   retryCorrect: ['改对啦，真了不起喵！', '想明白了就是你的啦～'],
-  wrong: ['哎呀，差一丢丢～再想想喵？', '没关系，小怪兽溜走了，我们再抓一次！', '换个办法试试看喵～', '别急，慢慢来～'],
+  wrong: ['哎呀，差一丢丢～再想想喵？', '没关系，再试一次喵！', '换个办法试试看喵～', '别急，慢慢来～'],
   roundStars: {
     3: '三颗星！你是这座岛的小主人喵！',
     2: '两颗星！再来一轮冲三星吧～',
@@ -54,4 +63,7 @@ const COPY = {
 
 const pick = (lines) => lines[Math.floor(Math.random() * lines.length)]
 
-module.exports = { MASCOT, COPY, pick }
+// MASCOT with each picture swapped for its cloud link when one is known; pages set it on show.
+const mascotView = () => ({ ...MASCOT, images: imagesOf(MASCOT.images) })
+
+module.exports = { MASCOT, mascotView, COPY, pick }

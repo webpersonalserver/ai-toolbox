@@ -52,6 +52,26 @@ const PASS_SCORE = 60
 const emptyItemCounts = () => Object.fromEntries(ALL_ITEM_TYPES.map((type) => [type, 0]))
 const addItemCounts = (left, right) => Object.fromEntries(ALL_ITEM_TYPES.map((type) => [type, (left[type] || 0) + (right[type] || 0)]))
 
+const subtractItemCounts = (left, right) => Object.fromEntries(ALL_ITEM_TYPES.map((type) => [type, Math.max((left[type] || 0) - (right[type] || 0), 0)]))
+
+// Chests are kept one by one (pendingChestList) so the welfare bag can show each; pendingChestCount and
+// pendingRewards stay the totals. Chests saved before the list existed are only in the totals.
+const EARLIER_CHEST_ID = 'earlier'
+const CHEST_ID_PATTERN = /^[0-9a-z-]{1,32}$/
+
+const listedChestsOf = (chests, now) =>
+  chests.map((chest, index) => ({ chestId: `${now.toString(36)}-${index}`, source: chest.source, row: chest.row || null, rewards: chest.rewards, earnedAt: now }))
+
+// Every pending chest, oldest first; the pre-list ones come first as a single bundle with their count.
+const pendingPracticeChestsOf = (stats) => {
+  const listed = (stats.pendingChestList || []).map((chest) => ({ ...chest, count: 1 }))
+  const earlierCount = stats.pendingChestCount - listed.length
+  if (earlierCount <= 0) return listed
+  const listedTotals = sumRewardsByType(listed.flatMap((chest) => chest.rewards))
+  const earlierRewards = toRewardList(subtractItemCounts(stats.pendingRewards, listedTotals))
+  return [{ chestId: EARLIER_CHEST_ID, source: EARLIER_CHEST_ID, row: null, rewards: earlierRewards, earnedAt: 0, count: earlierCount }, ...listed]
+}
+
 const isIntegerBetween = (value, min, max) => Number.isInteger(value) && value >= min && value <= max
 
 // The old 加减运算 pages (and reports still waiting on phones) say "arithmetic"; it is 数理乐园 now.
@@ -94,6 +114,7 @@ const emptyStats = (openid, practiceId) => ({
   streakRun: null,
   pendingChestCount: 0,
   pendingRewards: emptyItemCounts(),
+  pendingChestList: [],
   rewardedMilestones: []
 })
 
@@ -230,7 +251,8 @@ const report = async ({ openid, payload }) => {
       units: { ...storedStats.units, [unitId]: nextUnit },
       streakRun: { runId: streakRunId, rewardedStreak: Math.max(rewardedStreak, streak) },
       pendingChestCount: storedStats.pendingChestCount + chests.length,
-      pendingRewards: addItemCounts(storedStats.pendingRewards, sumRewardsByType(chests.flatMap((chest) => chest.rewards)))
+      pendingRewards: addItemCounts(storedStats.pendingRewards, sumRewardsByType(chests.flatMap((chest) => chest.rewards))),
+      pendingChestList: [...(storedStats.pendingChestList || []), ...listedChestsOf(chests, Date.now())]
     }
     await statsRef.update({
       data: {
@@ -240,6 +262,7 @@ const report = async ({ openid, payload }) => {
         streakRun: _.set(nextStats.streakRun),
         pendingChestCount: nextStats.pendingChestCount,
         pendingRewards: _.set(nextStats.pendingRewards),
+        pendingChestList: _.set(nextStats.pendingChestList),
         recentReportIds: _.set(reportId ? [...recentReportIds, reportId].slice(-REMEMBERED_REPORT_IDS) : recentReportIds),
         updatedAt: db.serverDate()
       }
@@ -280,12 +303,14 @@ const syncProgress = async ({ openid, payload }) => {
       .filter((chest) => chest.rewards.length)
     const pendingChestCount = storedStats.pendingChestCount + chests.length
     const pendingRewards = addItemCounts(storedStats.pendingRewards, sumRewardsByType(chests.flatMap((chest) => chest.rewards)))
+    const pendingChestList = [...(storedStats.pendingChestList || []), ...listedChestsOf(chests, Date.now())]
     await statsRef.update({
       data: {
         progress: _.set(progress),
         rewardedMilestones: _.set([...rewarded]),
         pendingChestCount,
         pendingRewards: _.set(pendingRewards),
+        pendingChestList: _.set(pendingChestList),
         updatedAt: db.serverDate()
       }
     })
@@ -333,7 +358,7 @@ const reportExam = async ({ openid, payload }) => {
     const unitExams = unit.exams || {}
     const levelView = toExamView(unitExams).find((view) => view.level === level)
     if (!levelView.unlocked) {
-      return { failure: { code: ERROR_CODES.BAD_REQUEST, message: '这个等级还没解锁' } }
+      return { failure: { code: ERROR_CODES.BAD_REQUEST, message: '这一级还没解锁，先把前面的考过吧' } }
     }
     const previous = unitExams[levelKeyOf(level)] || { best: 0, bestSeconds: 0, attempts: 0 }
     const isNewBest = score > previous.best || (score === previous.best && (!previous.bestSeconds || seconds < previous.bestSeconds))
@@ -367,8 +392,9 @@ const mistakes = async ({ openid, payload }) => {
   return { unitId, mistakes: (unit.mistakes || []).map(({ key, data, correctStreak }) => ({ key, data, correctStreak })) }
 }
 
-const claimChests = async ({ openid, payload }) => {
-  const practiceId = parsePracticeId(payload)
+// Opens the given chests of one practice (every pending one when chestIds is null) and pays their rewards.
+// Chests already opened are skipped; nothing left to open is an error.
+const openPracticeChests = async (openid, practiceId, chestIds) => {
   const now = Date.now()
   const rules = await loadRules()
   const outcome = await db.runTransaction(async (transaction) => {
@@ -379,19 +405,43 @@ const claimChests = async ({ openid, payload }) => {
     } catch (missingError) {
       storedStats = null
     }
-    if (!storedStats || storedStats.pendingChestCount <= 0) {
-      return { failure: { code: ERROR_CODES.NOTHING_TO_CLAIM, message: '没有可以打开的练习宝箱' } }
+    const pending = storedStats ? pendingPracticeChestsOf(storedStats) : []
+    const chests = chestIds ? pending.filter((chest) => chestIds.includes(chest.chestId)) : pending
+    if (!chests.length) {
+      return { failure: { code: ERROR_CODES.NOTHING_TO_CLAIM, message: '没有可以打开的宝箱啦' } }
     }
-    const deltas = storedStats.pendingRewards
+    const deltas = addItemCounts(emptyItemCounts(), sumRewardsByType(chests.flatMap((chest) => chest.rewards)))
+    const openedCount = chests.reduce((total, chest) => total + chest.count, 0)
+    const openedIds = new Set(chests.map((chest) => chest.chestId))
     const { items } = await changeItemsInTransaction(transaction, openid, deltas, rules, now)
-    await statsRef.update({ data: { pendingChestCount: 0, pendingRewards: _.set(emptyItemCounts()), updatedAt: db.serverDate() } })
-    return { chestCount: storedStats.pendingChestCount, deltas, items }
+    await statsRef.update({
+      data: {
+        pendingChestCount: storedStats.pendingChestCount - openedCount,
+        pendingRewards: _.set(subtractItemCounts(storedStats.pendingRewards, deltas)),
+        pendingChestList: _.set((storedStats.pendingChestList || []).filter((chest) => !openedIds.has(chest.chestId))),
+        updatedAt: db.serverDate()
+      }
+    })
+    return { chests, chestCount: openedCount, deltas, items }
   })
   throwIfFailed(outcome)
   await writeItemLogs(openid, outcome.deltas, ITEM_LOG_REASONS.PRACTICE, { practiceId })
-  const rewards = toRewardList(outcome.deltas)
+  return { ...outcome, rules }
+}
+
+// The pending chests of one practice with what is inside, for the welfare bag.
+const pendingChestsOfPractice = async (openid, practiceId) => {
+  const storedStats = await readStats(openid, practiceId)
+  return storedStats ? pendingPracticeChestsOf(storedStats) : []
+}
+
+// Opens every pending chest of the practice at once.
+const claimChests = async ({ openid, payload }) => {
+  const practiceId = parsePracticeId(payload)
+  const { chestCount, deltas, items, rules } = await openPracticeChests(openid, practiceId, null)
+  const rewards = toRewardList(deltas)
   const doubleToken = await issueDoubleOffer(openid, rewards, `practice:${practiceId}`, rules)
-  return { chestCount: outcome.chestCount, rewards, items: outcome.items, doubleToken }
+  return { chestCount, rewards, items, doubleToken }
 }
 
 const summarizePractices = (openid) =>
@@ -450,4 +500,17 @@ const weekly = async ({ openid, now = Date.now() }) => {
   }
 }
 
-module.exports = { stats, report, reportExam, syncProgress, honors, mistakes, weekly, claimChests, summarizePractices }
+module.exports = {
+  stats,
+  report,
+  reportExam,
+  syncProgress,
+  honors,
+  mistakes,
+  weekly,
+  claimChests,
+  openPracticeChests,
+  pendingChestsOfPractice,
+  summarizePractices,
+  CHEST_ID_PATTERN
+}

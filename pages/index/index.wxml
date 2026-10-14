@@ -1,6 +1,6 @@
 <view class="page hall {{adOffers.length ? 'hall--with-fab' : ''}}">
   <view class="hall__header">
-    <view class="hall__title">解谜达人</view>
+    <view class="hall__title">喵喵状元郎</view>
     <view class="hall__items">
       <item-chip item-type="stamina" value="{{items.stamina}}" />
       <item-chip item-type="hint" value="{{items.hint}}" />
@@ -47,8 +47,8 @@
         <text wx:if="{{item.recommended}}" class="chip hall__game-recommend">新手推荐</text>
         <text wx:elif="{{item.titleName}}" class="chip hall__game-title">{{item.titleName}}</text>
       </view>
-      <view wx:if="{{item.allCleared}}" class="hall__game-desc">已通关全部关卡 · 更多挑战敬请期待</view>
-      <view wx:elif="{{item.total}}" class="hall__game-desc">已通过 {{item.solvedCount}} 关 · {{item.titleProgressText}}</view>
+      <view wx:if="{{item.allCleared}}" class="hall__game-desc">全部闯过啦！新关卡正在路上～</view>
+      <view wx:elif="{{item.total}}" class="hall__game-desc">已闯过 {{item.solvedCount}} 关 · {{item.titleProgressText}}</view>
       <view wx:else class="hall__game-desc">{{item.intro}}</view>
       <view wx:if="{{item.pendingChests > 0}}" class="hall__game-chest">有 {{item.pendingChests}} 个宝箱待打开</view>
     </view>
@@ -76,13 +76,14 @@
   badge="{{rewardPopup.badge}}"
   rewards="{{rewardPopup.rewards}}"
   double-token="{{rewardPopup.doubleToken}}"
+  sound="{{rewardPopup.sound}}"
   bind:close="closeRewardPopup"
 />
 
 <profile-editor
   visible="{{welcomeVisible}}"
-  title="欢迎来到解谜达人"
-  intro="点头像可以用微信头像，点昵称输入框，键盘上方可以一键填入微信昵称"
+  title="欢迎来到喵喵状元郎"
+  intro="换个头像，起个好听的名字吧！"
   cancel-text="先随便逛逛"
   avatar-url="{{profileAvatarUrl}}"
   nickname="{{profileNickname}}"

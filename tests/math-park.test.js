@@ -246,6 +246,9 @@ check(map.islands.length === 5 && map.islands.map((island) => island.order).join
 check(map.islands[0].isNextStop && map.nextStop === '数数岛' && !map.allMastered, 'a new player starts at 数数岛')
 check(map.islands.every((island) => !island.foggy), 'every island has something to play since 二期')
 check(map.islands[1].starsTotal === 9 && map.islands[3].starsTotal === 6, 'stars add up per playable unit (凑十岛: 3 units; 口诀岛: 九九 + 除法)')
+const streakMap = buildIslandMap('math', { 'add-sub-10': { solved: 40, bestStreak: 23 } }, {})
+const streakUnit = streakMap.islands.flatMap((island) => island.units).find((unit) => unit.id === 'add-sub-10')
+check(streakUnit.bestStreakText === '最多连对 23 题' && streakMap.islands[0].units[0].bestStreakText === '', 'unit cards show the longest run of correct answers once there is one', streakUnit)
 const threeStars = (unitIds) => Object.fromEntries(unitIds.map((unitId) => [unitId, { bestStars: 3 }]))
 const ALL_UNITS = ['split-10', 'add-sub-10', 'add-sub-20', 'chain-add-sub', 'compare', 'add-sub-100', 'division-table', 'add-sub-10000']
 map = buildIslandMap('math', threeStars(['split-10', 'add-sub-10']), {})
@@ -278,7 +281,17 @@ check(!unitCard({ caught: 0, mistakeCount: 0 }).cleared && !unitCard({ caught: 3
 
 check(kungfuStarsOf({}) === 0 && kungfuStarsOf({ masteredRows: 3 }) === 1 && kungfuStarsOf({ masteredRows: 9 }) === 2 && kungfuStarsOf({ grandmaster: true }) === 3, '九九神功 stars: started, all rows, grandmaster')
 const dots = routeDots([{ x: 30, y: 100 }, { x: 70, y: 500 }, { x: 30, y: 900 }])
-check(dots.length === 18 && dots.every((dot) => /left: [\d.]+%; top: \d+rpx/.test(dot.style)), 'route dots between every pair of islands', dots[0])
+const dotPoints = dots.map((dot) => {
+  const [, left, top] = dot.style.match(/left: ([\d.]+)%; top: (\d+)rpx/)
+  return { x: (Number(left) / 100) * 750, y: Number(top), leg: dot.id.split('-')[0] }
+})
+const gaps = dotPoints.slice(1).flatMap((point, index) => {
+  const previous = dotPoints[index]
+  return point.leg === previous.leg ? [Math.hypot(point.x - previous.x, point.y - previous.y)] : []
+})
+check(dots.length > 18 && new Set(dotPoints.map((point) => point.leg)).size === 2, 'route dots between every pair of islands', dots[0])
+check(gaps.every((gap) => gap > 30 && gap < 42), 'dots are evenly spaced along the route, never bunched', gaps)
+check(/animation-delay: 0.00s/.test(dots[0].style) && /animation-delay: 0.12s/.test(dots[1].style) && dots.every((dot) => dot.style.includes(`animation-duration: ${(dots.length * 0.12).toFixed(2)}s`)), 'the light runs from the first dot to the last, one loop for all', dots[1])
 
 console.log(failed ? `${failed} math park checks failed` : 'all math park checks passed')
 process.exitCode = failed ? 1 : 0

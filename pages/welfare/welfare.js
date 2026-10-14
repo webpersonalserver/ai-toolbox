@@ -1,22 +1,24 @@
-const { account, game, practice, toastError } = require('../../utils/api')
+const { account, game, toastError } = require('../../utils/api')
 const { setSession, updateSession, setItems } = require('../../utils/session')
-const { HIDDEN_REWARD_POPUP, openMilestoneChests } = require('../../utils/milestone')
-const { TASK_ACTIONS, countUnclaimedWelfare, buildChestRows, buildPracticeChestRows, buildTaskRows, countOpenTasks } = require('../../utils/welfare')
+const { HIDDEN_REWARD_POPUP, CHEST_SOUND } = require('../../utils/milestone')
+const { TASK_ACTIONS, countPendingChests, countUnclaimedWelfare, buildTaskRows, countOpenTasks } = require('../../utils/welfare')
 const { watchAdForItem } = require('../../utils/ad-reward')
 
 const PRACTICE_TAB_URL = '/pages/practice/index'
 const DAILY_URL = '/pages/daily/daily'
 const LOBBY_TAB_URL = '/pages/index/index'
 const KUNGFU_URL = '/pages/practice/multiplication/index'
+const CHEST_ROOM_URL = '/pages/welfare/chests'
 
 Page({
   data: {
     loading: true,
+    // Set when the overview could not be fetched, so the page never claims "all done" without knowing.
+    loadFailed: false,
     busyKey: '',
     taskRows: [],
     openTaskCount: 0,
-    chestRows: [],
-    practiceChestRows: [],
+    pendingChestCount: 0,
     unclaimedCount: 0,
     rewardPopup: HIDDEN_REWARD_POPUP
   },
@@ -32,16 +34,22 @@ Page({
       const taskRows = buildTaskRows({ session, games, practices, practiceEarnedToday })
       this.setData({
         loading: false,
+        loadFailed: false,
         taskRows,
         openTaskCount: countOpenTasks(taskRows),
-        chestRows: buildChestRows(games),
-        practiceChestRows: buildPracticeChestRows(practices),
+        pendingChestCount: countPendingChests(games, practices),
         unclaimedCount: countUnclaimedWelfare(session, games, practices)
       })
     } catch (error) {
-      this.setData({ loading: false })
-      toastError(error)
+      console.error('[welfare] load failed', error)
+      this.setData({ loading: false, loadFailed: true })
     }
+  },
+
+  // The skeleton shows again while retrying so the tap visibly does something.
+  retryLoad() {
+    this.setData({ loading: true })
+    this.loadWelfare()
   },
 
   async runClaim(busyKey, claim) {
@@ -61,7 +69,7 @@ Page({
     return this.runClaim('checkin', async () => {
       const result = await account.checkin()
       updateSession({ items: result.items, today: { checkedIn: true } })
-      return { visible: true, title: '打卡成功', subtitle: '明天记得再来哦', badge: '', rewards: result.rewards, doubleToken: result.doubleToken || '' }
+      return { visible: true, title: '打卡成功，真棒！', subtitle: '明天记得再来哦', badge: '', rewards: result.rewards, doubleToken: result.doubleToken || '', sound: CHEST_SOUND }
     })
   },
 
@@ -69,29 +77,13 @@ Page({
     return this.runClaim('recovery', async () => {
       const result = await account.claimRecoveredStamina()
       setItems(result.items)
-      return { visible: true, title: '体力恢复好啦', subtitle: '', badge: '', rewards: [{ type: 'stamina', amount: result.claimed }], doubleToken: result.doubleToken || '' }
+      return { visible: true, title: '体力恢复好啦', subtitle: '', badge: '', rewards: [{ type: 'stamina', amount: result.claimed }], doubleToken: result.doubleToken || '', sound: CHEST_SOUND }
     })
   },
 
-  openChests(event) {
-    const { gameType } = event.currentTarget.dataset
-    return this.runClaim(`chest-${gameType}`, () => openMilestoneChests(gameType))
-  },
-
-  openPracticeChests(event) {
-    const { practiceId } = event.currentTarget.dataset
-    return this.runClaim(`practice-${practiceId}`, async () => {
-      const result = await practice.claimChests(practiceId)
-      setItems(result.items)
-      return {
-        visible: true,
-        title: result.chestCount > 1 ? `打开了 ${result.chestCount} 个练习宝箱` : '练习宝箱打开啦',
-        subtitle: '认真练习的奖励，拿去闯关吧',
-        badge: '',
-        rewards: result.rewards,
-        doubleToken: result.doubleToken || ''
-      }
-    })
+  // Chests are opened in 我的宝箱, where each one shows what it is and can be opened alone or with the rest.
+  openChestRoom() {
+    wx.navigateTo({ url: CHEST_ROOM_URL })
   },
 
   handleTask(event) {
@@ -114,7 +106,7 @@ Page({
     return this.runClaim(`ad-${itemType}`, async () => {
       const result = await watchAdForItem(itemType)
       if (!result) return null
-      return { visible: true, title: '视频奖励到账', subtitle: '', badge: '', rewards: [{ type: itemType, amount: result.rewardAmount }], doubleToken: '' }
+      return { visible: true, title: '看完啦，奖励送给你！', subtitle: '', badge: '', rewards: [{ type: itemType, amount: result.rewardAmount }], doubleToken: '', sound: CHEST_SOUND }
     })
   },
 

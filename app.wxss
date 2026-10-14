@@ -94,6 +94,8 @@ page {
   margin: 0 0 var(--jelly-depth);
   padding: 0 var(--space-lg);
   border-radius: 999rpx;
+  /* A view styled as .btn is content-box by default; without this, width: 100% plus the side padding overflows its card. */
+  box-sizing: border-box;
   font-size: var(--font-md);
   font-weight: 800;
   line-height: 88rpx;
@@ -165,10 +167,10 @@ page {
 
 .game-tabs__tab {
   flex: 1;
-  padding: var(--space-sm) 0;
+  padding: 20rpx 0;
   border-radius: var(--radius-sm);
   color: var(--color-ink-soft);
-  font-size: var(--font-sm);
+  font-size: var(--font-md);
   font-weight: 600;
   text-align: center;
 }

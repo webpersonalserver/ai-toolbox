@@ -38,6 +38,8 @@ const buildPageLevels = ({ total, currentLevel, solved }, pageIndex) => {
 Page({
   data: {
     loading: true,
+    // The first load failed (network): show a retry card rather than the "no levels yet" empty state.
+    loadFailed: false,
     gameType: '',
     game: null,
     stages: [],
@@ -75,6 +77,7 @@ Page({
       this.levelList = levelList
       this.setData({
         loading: false,
+        loadFailed: false,
         pageCount: Math.ceil(levelList.total / LEVELS_PER_PAGE),
         solvedCount: levelList.solved.length,
         total: levelList.total,
@@ -87,9 +90,15 @@ Page({
       this.showPage(isFirstLoad ? pageIndexOf(levelList.currentLevel) : this.data.pageIndex)
       showRescueNotices(levelList.rescueNotices.map((notice) => ({ ...notice, gameName: this.data.game.name })))
     } catch (error) {
-      this.setData({ loading: false })
+      // A failed background refresh keeps the list already on screen; only an empty page needs the retry card.
+      this.setData({ loading: false, loadFailed: !this.levelList })
       toastError(error)
     }
+  },
+
+  retryLoad() {
+    this.setData({ loading: true, loadFailed: false })
+    this.refresh()
   },
 
   showPage(pageIndex) {
@@ -138,7 +147,7 @@ Page({
   handleLevelTap(event) {
     const { levelNo, status } = event.currentTarget.dataset
     if (status === LEVEL_STATUS.LOCKED) {
-      wx.showToast({ title: '先通过前面的关卡吧', icon: 'none' })
+      wx.showToast({ title: '先闯过前面的关，这关就会打开哦', icon: 'none' })
       return
     }
     // Fresh levels start straight away; a failed attempt still stops on the "再来一次" card (see play.autoStartIfRequested).

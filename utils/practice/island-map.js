@@ -12,14 +12,18 @@ const REVIEW_AFTER_DAYS = 7
 const DAY_MS = 24 * 60 * 60 * 1000
 const CHINA_UTC_OFFSET_MS = 8 * 60 * 60 * 1000
 
-// Placeholder art until the illustrations arrive (packageMath/assets/islands/<id>.png); swapped per island.
-const ISLAND_ART = {
-  counting: { emoji: '🍭', props: ['🍬', '🍬'], tone: 'gold' },
-  'make-ten': { emoji: '🏘️', props: ['🔟', '🫘'], tone: 'primary' },
-  hundred: { emoji: '🎋', props: ['🐼', '🎍'], tone: 'success' },
-  'times-table': { emoji: '⛰️', props: ['🥋', '📜'], tone: 'ink' },
-  'ten-thousand': { emoji: '🏰', props: ['🎏', '☁️'], tone: 'primary' }
+// image: the island picture on the map (cut out by scripts/prepare_art.py); emoji: a small mark beside the name.
+const ISLAND_IMAGE_BASE = '/packageMath/assets/islands/'
+const ISLAND_EMOJI = {
+  counting: '🍭',
+  'make-ten': '🏘️',
+  hundred: '🎋',
+  'times-table': '⛰️',
+  'ten-thousand': '🏰'
 }
+const ISLAND_ART = Object.fromEntries(
+  Object.entries(ISLAND_EMOJI).map(([id, emoji]) => [id, { emoji, image: `${ISLAND_IMAGE_BASE}${id}.png` }])
+)
 
 // 九九神功 keeps its own progress; on the map it earns stars like any unit.
 const kungfuStarsOf = ({ masteredRows = 0, grandmaster = false } = {}) => {
@@ -51,8 +55,9 @@ const toUnitView = (unit, unitStats, kungfu) => {
     started: unit.entryUrl ? (kungfu.masteredRows || 0) > 0 : (stats.solved || 0) > 0,
     lastPracticed: stats.lastPracticed || '',
     mistakeCount,
-    bestExamText: bestExam ? `最高 ${bestExam.best} 分` : '',
-    // Badges on the unit card: three stars, a full-score exam, and every caught monster gone from 收容所.
+    bestStreakText: stats.bestStreak ? `最多连对 ${stats.bestStreak} 题` : '',
+    bestExamText: bestExam ? `考试最高 ${bestExam.best} 分` : '',
+    // Badges on the unit card: three stars, a full-score exam, and every caught monster gone from 小怪兽藏身洞.
     badges: {
       stars: stars === MAX_STARS,
       fullScore: exams.some((exam) => exam.best === FULL_SCORE),
@@ -118,21 +123,54 @@ const buildIslandMap = (subjectId, unitStats = {}, kungfu = {}, now = Date.now()
   }
 }
 
-// Dots along a gentle S-curve between islands (x in %, y in rpx). Each leg starts below one island's name card
-// and ends above the next island, so the route never runs across a label.
-const ROUTE_DOTS_PER_LEG = 9
-const routeDots = (centres, { leaveBelow = 0, arriveAbove = 0 } = {}) =>
-  centres.slice(1).flatMap((next, leg) => {
-    const start = { x: centres[leg].x, y: centres[leg].y + leaveBelow }
-    const end = { x: next.x, y: next.y - arriveAbove }
-    const bend = (end.x - start.x) * 0.6
-    return Array.from({ length: ROUTE_DOTS_PER_LEG }, (_, step) => {
-      const t = (step + 1) / (ROUTE_DOTS_PER_LEG + 1)
-      const controlX = (start.x + end.x) / 2 + bend
-      const x = (1 - t) * (1 - t) * start.x + 2 * (1 - t) * t * controlX + t * t * end.x
-      const y = start.y + (end.y - start.y) * t
-      return { id: `${leg}-${step}`, style: `left: ${x.toFixed(1)}%; top: ${Math.round(y)}rpx` }
-    })
+// Dots along an S-curve between islands (x in %, y in rpx). Each leg starts below one island's name card and ends above
+// the next island, so the route never runs across a label. Dots sit at equal distances along the curve (not at equal
+// steps of the curve parameter, which bunches them where the curve turns), and carry a delay so a light runs down the
+// route from the first dot to the last, then starts again.
+const MAP_WIDTH_RPX = 750
+const ROUTE_DOT_SPACING_RPX = 36
+const CURVE_SAMPLES = 120
+const ROUTE_LIGHT_STEP_SECONDS = 0.12
+
+// Cubic Bézier that leaves start straight down and arrives at end straight down: a smooth S between two islands.
+const sCurvePoint = (start, end, t) => {
+  const middleY = (start.y + end.y) / 2
+  const along = (a, b, c, d) => (1 - t) ** 3 * a + 3 * (1 - t) ** 2 * t * b + 3 * (1 - t) * t ** 2 * c + t ** 3 * d
+  return { x: along(start.x, start.x, end.x, end.x), y: along(start.y, middleY, middleY, end.y) }
+}
+
+const evenlySpacedPoints = (start, end) => {
+  const samples = Array.from({ length: CURVE_SAMPLES + 1 }, (_, index) => sCurvePoint(start, end, index / CURVE_SAMPLES))
+  const toRpx = (point) => ({ x: (point.x / 100) * MAP_WIDTH_RPX, y: point.y })
+  const points = []
+  let travelled = 0
+  let nextAt = ROUTE_DOT_SPACING_RPX / 2
+  samples.slice(1).forEach((point, index) => {
+    const from = toRpx(samples[index])
+    const to = toRpx(point)
+    const segment = Math.hypot(to.x - from.x, to.y - from.y)
+    while (segment > 0 && nextAt <= travelled + segment) {
+      const ratio = (nextAt - travelled) / segment
+      points.push({ x: samples[index].x + (point.x - samples[index].x) * ratio, y: from.y + (to.y - from.y) * ratio })
+      nextAt += ROUTE_DOT_SPACING_RPX
+    }
+    travelled += segment
   })
+  return points
+}
+
+const routeDots = (centres, { leaveBelow = 0, arriveAbove = 0 } = {}) => {
+  const points = centres.slice(1).flatMap((next, leg) =>
+    evenlySpacedPoints({ x: centres[leg].x, y: centres[leg].y + leaveBelow }, { x: next.x, y: next.y - arriveAbove }).map((point, step) => ({
+      ...point,
+      id: `${leg}-${step}`
+    }))
+  )
+  const loopSeconds = (points.length * ROUTE_LIGHT_STEP_SECONDS).toFixed(2)
+  return points.map(({ id, x, y }, index) => ({
+    id,
+    style: `left: ${x.toFixed(1)}%; top: ${Math.round(y)}rpx; animation-delay: ${(index * ROUTE_LIGHT_STEP_SECONDS).toFixed(2)}s; animation-duration: ${loopSeconds}s`
+  }))
+}
 
 module.exports = { MAX_STARS, MONSTERS_FIRST_AT, REVIEW_AFTER_DAYS, buildIslandMap, kungfuStarsOf, routeDots }

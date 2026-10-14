@@ -1,7 +1,7 @@
 <view wx:if="{{stage === 'loading'}}" class="page daily daily--center">正在准备今天的题目…</view>
 
 <view wx:elif="{{stage === 'failed'}}" class="page daily daily--center">
-  <view>网络不太好，今天的挑战没拿到</view>
+  <view>网络开小差了，今天的挑战没拿到</view>
   <button class="btn btn--primary daily__action" bindtap="load">再试一次</button>
 </view>
 
@@ -58,20 +58,23 @@
   </block>
 </view>
 
-<view wx:else class="page daily">
+<view wx:else class="page daily daily-result">
   <view class="card daily__result">
     <view class="daily__badge">📅 {{dateText}}</view>
     <view class="daily__score {{result.perfect ? 'daily__score--perfect' : ''}}">{{result.correct}}<text class="daily__score-total">/{{result.total}}</text></view>
     <view class="daily__line">{{result.line}}</view>
     <view class="daily__time">用时 {{result.timeText}}</view>
     <view wx:if="{{result.rewardsText}}" class="daily__reward">{{result.rewardsText}}</view>
+    <button wx:if="{{rewardRetry}}" class="btn btn--primary daily__retry" loading="{{rewardSubmitting}}" bindtap="retryReward">再领一次</button>
     <view wx:if="{{result.fromEarlier}}" class="daily__muted">今天的挑战已经完成啦，明天再来～</view>
   </view>
   <view wx:if="{{result.missed.length}}" class="card daily__missed">
     <view class="daily__missed-title">这几道再看看</view>
-    <view wx:for="{{result.missed}}" wx:key="id" class="daily__missed-item">{{item.text}}</view>
+    <scroll-view scroll-y class="daily__missed-list">
+      <view wx:for="{{result.missed}}" wx:key="id" class="daily__missed-item">{{item.text}}</view>
+    </scroll-view>
   </view>
-  <button class="btn btn--primary daily__action" bindtap="backToLobby">回大厅</button>
+  <button class="btn {{rewardRetry ? 'btn--ghost' : 'btn--primary'}} daily__action daily-result__done" bindtap="backToLobby">完成啦</button>
 </view>
 
 <flower-toast visible="{{flowerToast.visible}}" count="{{flowerToast.count}}" text="{{flowerToast.text}}" />

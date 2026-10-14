@@ -14,13 +14,13 @@
     </view>
   </view>
 
-  <view class="sea__map" style="height: {{mapHeight}}rpx">
+  <view class="sea__map {{sailing ? 'sea__map--sailing' : ''}}" style="height: {{mapHeight}}rpx">
   <view wx:for="{{dots}}" wx:key="id" class="sea__dot" style="{{item.style}}"></view>
 
   <view
     wx:for="{{islands}}"
     wx:key="id"
-    class="island island--{{item.art.tone}} island--{{item.side}} {{item.foggy ? 'island--foggy' : ''}}"
+    class="island island--{{item.side}} {{item.foggy ? 'island--foggy' : ''}}"
     style="{{item.style}}"
     hover-class="island--pressed"
     data-id="{{item.id}}"
@@ -28,10 +28,7 @@
   >
     <view class="island__order">{{item.order}}</view>
     <view class="island__land">
-      <text class="island__art">{{item.art.emoji}}</text>
-      <view class="island__props">
-        <text wx:for="{{item.art.props}}" wx:for-item="prop" wx:key="*this">{{prop}}</text>
-      </view>
+      <image class="island__art" src="{{item.art.image}}" mode="aspectFit" />
       <text wx:if="{{item.flagged}}" class="island__flag">🚩</text>
       <view wx:if="{{item.foggy}}" class="island__fog">☁️☁️</view>
     </view>
@@ -51,6 +48,8 @@
     <view class="sheet__head">
       <view class="sheet__title">{{sheet.art.emoji}} {{sheet.name}}</view>
       <view class="sheet__fit">{{sheet.fitFor}}</view>
+      <!-- catchtap: the panel's own catchtap="noop" would stop a bubbling tap before it reached the sheet. -->
+      <view class="sheet__close" hover-class="sheet__close--pressed" catchtap="closeSheet">✕</view>
     </view>
     <view class="sheet__intro"><image class="sheet__intro-cat" src="{{mascot.images.normal}}" mode="aspectFit" /><text>{{sheet.intro}}</text></view>
     <view wx:for="{{sheet.units}}" wx:key="id" class="unit {{item.comingSoon ? 'unit--fog' : ''}}">
@@ -60,6 +59,7 @@
         <view wx:else class="unit__meta">
           <text class="unit__stars">{{item.stars >= 1 ? '⭐' : '☆'}}{{item.stars >= 2 ? '⭐' : '☆'}}{{item.stars >= 3 ? '⭐' : '☆'}}</text>
           <text wx:if="{{item.solved}}"> · 答对 {{item.solved}} 题</text>
+          <text wx:if="{{item.bestStreakText}}"> · {{item.bestStreakText}}</text>
           <text wx:if="{{item.bestExamText}}"> · {{item.bestExamText}}</text>
         </view>
         <view wx:if="{{!item.comingSoon && !item.hasOwnPages}}" class="unit__badges">
@@ -70,10 +70,10 @@
       </view>
       <view wx:if="{{!item.comingSoon}}" class="unit__actions">
         <view class="unit__go" hover-class="unit__go--pressed" data-unit-id="{{item.id}}" data-target="practice" catchtap="openUnit">{{copy.start}}</view>
-        <view wx:if="{{!item.hasOwnPages}}" class="unit__minor">
-          <text data-unit-id="{{item.id}}" data-target="exam" catchtap="openUnit">⏱ 考试</text>
-          <text data-unit-id="{{item.id}}" data-target="monsters" catchtap="openUnit">🐾 {{item.mistakeCount}}</text>
-        </view>
+        <block wx:if="{{!item.hasOwnPages}}">
+          <view class="unit__minor" hover-class="unit__minor--pressed" data-unit-id="{{item.id}}" data-target="exam" catchtap="openUnit">⏱ 考试</view>
+          <view wx:if="{{item.mistakeCount > 0}}" class="unit__minor" hover-class="unit__minor--pressed" data-unit-id="{{item.id}}" data-target="monsters" catchtap="openUnit">🐾 抓怪兽 {{item.mistakeCount}}</view>
+        </block>
       </view>
     </view>
   </view>

@@ -1,5 +1,5 @@
 {
-  "navigationBarTitleText": "解谜达人",
+  "navigationBarTitleText": "喵喵状元郎",
   "usingComponents": {
     "loading-skeleton": "/components/loading-skeleton/loading-skeleton",
     "reward-popup": "/components/reward-popup/reward-popup"

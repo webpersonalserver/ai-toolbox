@@ -1,4 +1,4 @@
-const { daily } = require('../../utils/api')
+const { daily, ApiError } = require('../../utils/api')
 const { getSession, updateSession } = require('../../utils/session')
 const { describeRewards } = require('../../utils/items')
 const { buildChallenge, describeSeconds } = require('../../utils/daily')
@@ -12,6 +12,10 @@ const SECOND_MS = 1000
 const RIGHT_PAUSE_MS = 700
 const WRONG_PAUSE_MS = 1600
 const DEFAULT_REWARDS = [{ type: 'stamina', amount: 5 }]
+
+// 4xxxx codes mean the cloud looked at the result and said no (e.g. the day has changed), so asking again cannot help;
+// network and server hiccups can.
+const isRejectedByServer = (error) => error instanceof ApiError && error.code >= 40000 && error.code < 50000
 
 const monthDayOf = (dateKey) => `${Number(dateKey.slice(4, 6))} 月 ${Number(dateKey.slice(6, 8))} 日`
 
@@ -35,6 +39,9 @@ Page({
     revealed: false,
     locked: false,
     result: null,
+    // True when the reward could not be delivered and the result is kept for 「再领一次」.
+    rewardRetry: false,
+    rewardSubmitting: false,
     flowerToast: HIDDEN_FLOWER_TOAST,
     medalPopup: HIDDEN_MEDAL_POPUP
   },
@@ -167,19 +174,43 @@ Page({
     const result = { correct: this.correctCount, total: this.questions.length, seconds: this.elapsedSeconds() }
     this.soundPlayer.play(result.correct === result.total ? 'milestone' : 'correct')
     this.setData({ stage: STAGES.RESULT, question: null, result: this.resultViewOf(result, this.missed, false) })
+    this.pendingResult = result
+    this.submitResult(false)
+  },
+
+  // Resubmitting is safe: the cloud pays inside a transaction only while today's record has no result yet, so a retry
+  // after a lost response just answers alreadyDone instead of paying twice.
+  async submitResult(isRetry) {
+    const result = this.pendingResult
+    if (!result || this.data.rewardSubmitting) return
+    this.setData({ rewardSubmitting: true })
     try {
       const outcome = await trackReport(daily.submit({ dateKey: this.dateKey, correct: result.correct, seconds: result.seconds }))
+      this.pendingResult = null
       if (outcome.alreadyDone) {
-        this.setData({ 'result.rewardsText': '今天已经领过挑战奖励啦' })
+        // On a retry this almost always means the first try did land and only its answer got lost.
+        updateSession({ today: { dailyChallenge: outcome.result } })
+        this.setData({ rewardRetry: false, 'result.rewardsText': isRetry ? '奖励已经送到啦！' : '今天已经领过挑战奖励啦' })
         return
       }
       if (outcome.items) updateSession({ items: outcome.items, today: { dailyChallenge: outcome.result } })
-      this.setData({ 'result.rewardsText': `获得 ${describeRewards(outcome.rewards)}` })
+      this.setData({ rewardRetry: false, 'result.rewardsText': `获得 ${describeRewards(outcome.rewards)}` })
       this.honorPresenter.present(outcome.honors)
     } catch (error) {
       console.error('[daily] result not saved', error)
-      this.setData({ 'result.rewardsText': '网络不太好，奖励没领到，回大厅再进来试试' })
+      if (isRejectedByServer(error)) {
+        this.pendingResult = null
+        this.setData({ rewardRetry: false, 'result.rewardsText': error.message })
+        return
+      }
+      this.setData({ rewardRetry: true, 'result.rewardsText': '奖励还没送到，点下面再领一次' })
+    } finally {
+      this.setData({ rewardSubmitting: false })
     }
+  },
+
+  retryReward() {
+    this.submitResult(true)
   },
 
   backToLobby() {

@@ -1,4 +1,4 @@
-const { COPY, MASCOT } = require('../../../utils/practice/copy')
+const { COPY, MASCOT, mascotView } = require('../../../utils/practice/copy')
 
 // 喵算算 explains a question one step at a time; each step's picture pops in fresh.
 Component({
@@ -30,7 +30,8 @@ Component({
 
     show(index) {
       const { steps } = this.data
-      this.setData({ index, shown: [{ ...steps[index], id: `${index}-${Date.now()}` }], isLast: index === steps.length - 1 })
+      // The cat picture is resolved on open (not on attach): setData while the component is still being created breaks the render layer.
+      this.setData({ index, shown: [{ ...steps[index], id: `${index}-${Date.now()}` }], isLast: index === steps.length - 1, mascot: mascotView() })
     },
 
     next() {

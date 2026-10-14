@@ -1,6 +1,7 @@
 const { practice } = require('../../../utils/api')
 const { unitOf } = require('../../../utils/practice/catalog')
-const { COPY, MASCOT } = require('../../../utils/practice/copy')
+const { COPY, MASCOT, mascotView } = require('../../../utils/practice/copy')
+const { imageOf } = require('../../../utils/assets')
 const { buildIslandMap, routeDots } = require('../../../utils/practice/island-map')
 const { readProgress, masteredRowCount } = require('../../../utils/practice/multiplication-records')
 const { waitForPendingReport } = require('../../../utils/practice/pending-report')
@@ -10,11 +11,13 @@ const SUBJECT_ID = 'math'
 const WEEKLY_URL = '/packageMath/pages/weekly/weekly'
 // Island centres inside the map area (the header sits above it, in normal flow).
 const TOP_PADDING_RPX = 210
-const ISLAND_SPACING_RPX = 440
+// An island (picture rising above its box + name card) spans about 220rpx above its centre and 170rpx below;
+// the spacing leaves the route room to wind between them.
+const ISLAND_SPACING_RPX = 580
 const BOTTOM_PADDING_RPX = 260
-// The route leaves from under an island's name card and arrives just above the next island.
-const ROUTE_LEAVE_BELOW_RPX = 220
-const ROUTE_ARRIVE_ABOVE_RPX = 205
+// The route leaves from under an island's name card and arrives just above the next island's picture.
+const ROUTE_LEAVE_BELOW_RPX = 195
+const ROUTE_ARRIVE_ABOVE_RPX = 235
 // Islands zig-zag across the sea so the route reads as a winding path.
 const ISLAND_X_PERCENT = [30, 70]
 
@@ -44,13 +47,26 @@ Page({
     recommendation: null,
     islands: [],
     dots: [],
+    // The light running along the route plays only while the page is on screen; re-adding the class restarts it
+    // from the first dot.
+    sailing: false,
     mapHeight: 0,
     sheet: null
   },
 
   onShow() {
+    this.setData({ mascot: mascotView() })
     this.render({})
+    this.setData({ sailing: true })
     this.loadStats()
+  },
+
+  onHide() {
+    this.setData({ sailing: false })
+  },
+
+  onUnload() {
+    this.setData({ sailing: false })
   },
 
   async loadStats() {
@@ -67,7 +83,12 @@ Page({
     const { islands, recommendation } = buildIslandMap(SUBJECT_ID, unitStats, kungfuSummary())
     const placed = islands.map((island, index) => {
       const { x, y } = islandPosition(index)
-      return { ...island, side: index % 2 ? 'right' : 'left', style: `left: ${x}%; top: ${y}rpx` }
+      return {
+        ...island,
+        art: { ...island.art, image: imageOf(island.art.image) },
+        side: index % 2 ? 'right' : 'left',
+        style: `left: ${x}%; top: ${y}rpx`
+      }
     })
     this.unitStats = unitStats
     this.setData({
@@ -80,7 +101,7 @@ Page({
     })
   },
 
-  // The boat's suggestion: monsters open 收容所, everything else starts a round.
+  // The boat's suggestion: monsters open 小怪兽藏身洞, everything else starts a round.
   openRecommendation() {
     const { unitId, reason } = this.data.recommendation
     wx.navigateTo({ url: unitRoutes(unitId)[reason === 'monsters' ? 'monsters' : 'practice'] })

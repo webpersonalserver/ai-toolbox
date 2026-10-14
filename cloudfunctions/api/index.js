@@ -9,6 +9,8 @@ const leaderboard = require('./handlers/leaderboard')
 const overview = require('./handlers/overview')
 const practice = require('./handlers/practice')
 const speech = require('./handlers/speech')
+const assets = require('./handlers/assets')
+const chests = require('./handlers/chests')
 const daily = require('./handlers/daily')
 
 const ROUTES = {
@@ -40,7 +42,10 @@ const ROUTES = {
   'daily.today': daily.today,
   'daily.submit': daily.submit,
   'practice.claimChests': practice.claimChests,
+  'chests.list': chests.list,
+  'chests.open': chests.open,
   'speech.clipUrls': speech.clipUrls,
+  'assets.imageUrls': assets.imageUrls,
   'leaderboard.list': leaderboard.list,
   'admin.stats': admin.stats,
   'admin.switches': admin.switches,
@@ -78,6 +83,6 @@ exports.main = async (event) => {
       return fail(error.code, error.message, error.data)
     }
     console.error(`[${action}] failed`, payload, error)
-    return fail(ERROR_CODES.INTERNAL, '服务开小差了，请稍后再试')
+    return fail(ERROR_CODES.INTERNAL, '哎呀，出了点小问题，再试一次吧')
   }
 }

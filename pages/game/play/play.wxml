@@ -11,14 +11,26 @@
     </view>
   </view>
 
+  <view wx:if="{{stage === 'next'}}" class="play__next">
+    <view class="play__next-label">下一关</view>
+    <view class="play__next-level">第 {{levelNo}} 关</view>
+    <view class="play__next-go">出发！</view>
+  </view>
+
+  <view wx:if="{{stage === 'error'}}" class="card play__ready">
+    <view class="play__ready-title">网络开小差了</view>
+    <view class="play__ready-desc">检查一下网络，再点一下试试</view>
+    <button class="btn btn--primary play__start" bindtap="loadLevel">再试一次</button>
+  </view>
+
   <view wx:if="{{stage === 'ready'}}" class="card play__ready">
     <block wx:if="{{attempt.failed}}">
-      <view class="play__ready-title">挑战失败</view>
-      <view class="play__ready-desc">答错 {{attempt.maxWrongAttempts}} 次了。再来一次，{{hintTexts.keptAfterFailure}}会保留。</view>
+      <view class="play__ready-title">差一点点！</view>
+      <view class="play__ready-desc">❤️ 用完啦，再来一次肯定行！{{hintTexts.keptAfterFailure}}会帮你留着</view>
     </block>
     <block wx:else>
       <view class="play__ready-title">准备好了吗？</view>
-      <view class="play__ready-desc">每次挑战有 {{attempt.maxWrongAttempts}} 次答错机会，答错用完即挑战失败。</view>
+      <view class="play__ready-desc">你有 {{attempt.maxWrongAttempts}} 颗❤️，答错一次少一颗，加油！</view>
     </block>
     <button class="btn btn--primary play__start" loading="{{busy}}" bindtap="handleStart">
       {{attempt.failed ? '再来一次' : '开始挑战'}}<image class="play__cost-icon" src="/assets/icons/stamina.png" mode="aspectFit" />-{{staminaCost}}
@@ -58,30 +70,32 @@
     />
 
     <view class="play__actions">
-      <button class="btn btn--ghost play__action" loading="{{busy}}" bindtap="handleHint">
+      <button class="btn btn--primary play__action" loading="{{busy}}" bindtap="handleHint">
         提示（{{hintsUsed}}/{{maxHints}}）
       </button>
-      <button wx:if="{{sharing}}" class="btn btn--primary play__action" bindtap="handleRescue">求助好友</button>
+      <!-- 求助好友 only after a miss, so children try on their own first. -->
+      <button wx:if="{{sharing && attempt.attemptsLeft < attempt.maxWrongAttempts}}" class="btn btn--ghost play__action" bindtap="handleRescue">求助好友</button>
     </view>
   </block>
 
   <view wx:if="{{stage === 'solved'}}" class="card play__result">
+    <view class="play__result-title">答对啦！</view>
     <view class="play__result-badges">
-      <view class="play__result-badge">过关</view>
-      <view wx:if="{{perfectPass}}" class="play__result-badge play__result-badge--perfect">完美通关</view>
+      <view class="play__result-badge">闯过第 {{levelNo}} 关</view>
+      <view wx:if="{{perfectPass}}" class="play__result-badge play__result-badge--perfect">满分过关</view>
     </view>
     <game-solution game-type="{{gameType}}" solution="{{solution}}" />
     <view wx:if="{{allCleared}}" class="play__all-cleared">
-      <view class="play__all-cleared-title">恭喜通关全部关卡！</view>
-      <view class="play__all-cleared-desc">更多挑战正在准备中，敬请期待</view>
+      <view class="play__all-cleared-title">全部闯过啦！</view>
+      <view class="play__all-cleared-desc">新关卡正在路上～</view>
     </view>
-    <view wx:if="{{titleUpgrade}}" class="play__reward play__reward--title">晋升为「{{titleUpgrade}}」！</view>
+    <view wx:if="{{titleUpgrade}}" class="play__reward play__reward--title">称号升级啦！你现在是「{{titleUpgrade}}」</view>
     <view wx:if="{{milestone && milestone.pendingChests > 0}}" class="play__reward">
       <view>解锁了 {{milestone.pendingChests}} 个宝箱</view>
       <button class="btn btn--primary play__reward-btn" loading="{{busy}}" bindtap="handleOpenChests">开宝箱</button>
     </view>
     <view wx:elif="{{milestone}}" class="play__reward-hint">
-      再通过 {{milestone.levelsToNextChest}} 关开{{milestone.nextChestIsBig ? '大' : ''}}宝箱：{{nextChestText}}
+      再闯过 {{milestone.levelsToNextChest}} 关开{{milestone.nextChestIsBig ? '大' : ''}}宝箱：{{nextChestText}}
     </view>
     <view class="play__actions">
       <button class="btn btn--muted play__action" bindtap="goLevelList">关卡列表</button>
@@ -126,5 +140,6 @@
   badge="{{rewardPopup.badge}}"
   rewards="{{rewardPopup.rewards}}"
   double-token="{{rewardPopup.doubleToken}}"
+  sound="{{rewardPopup.sound}}"
   bind:close="closeRewardPopup"
 />

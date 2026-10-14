@@ -20,7 +20,7 @@ Page({
     rows: [],
     exam: null,
     pendingChestCount: 0,
-    examRule: `${EXAM_QUESTION_COUNT} 题 · ${EXAM_LIVES} 条命，闯完就是神功大成`
+    examRule: `${EXAM_QUESTION_COUNT} 题 · ${EXAM_LIVES} 颗❤️，闯完就是神功大成`
   },
 
   onLoad() {
@@ -61,7 +61,7 @@ Page({
       exam: {
         passed: progress.exam.passed,
         passText: progress.exam.passed ? `已大成 ${progress.exam.passCount} 次 · 最快 ${describeSeconds(progress.exam.fastestSeconds)}` : '',
-        adviceText: masteredCount < ROW_COUNT ? '建议九重全部练成再来，不过随时都可以挑战' : '九重已全部练成，去证明自己吧！'
+        adviceText: masteredCount < ROW_COUNT ? '九重都练成再来更容易过关哦' : '九重已全部练成，去证明自己吧！'
       }
     })
   },
@@ -75,8 +75,8 @@ Page({
     wx.navigateTo({ url: `/pages/practice/multiplication/study?row=${row}` })
   },
 
-  openWelfare() {
-    wx.navigateTo({ url: '/pages/welfare/welfare' })
+  openChests() {
+    wx.navigateTo({ url: '/pages/welfare/chests' })
   },
 
   handleMedalClose() {

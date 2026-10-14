@@ -5,7 +5,7 @@
       <view class="game-guide__index">{{index + 1}}</view>
       <view class="game-guide__body">
         <view class="game-guide__section-title">{{item.title}}</view>
-        <view class="game-guide__section-text">{{item.text}}</view>
+        <view wx:if="{{item.text}}" class="game-guide__section-text">{{item.text}}</view>
       </view>
     </view>
     <button class="btn btn--primary game-guide__confirm" bindtap="handleConfirm">{{confirmText}}</button>

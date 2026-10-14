@@ -21,7 +21,7 @@ Page({
     this.honorPresenter = createHonorPresenter(this)
     const row = Math.min(Math.max(Number(query.row) || 1, 1), 9)
     const technique = techniqueOf(row)
-    wx.setNavigationBarTitle({ title: `研读 · ${technique.name}` })
+    wx.setNavigationBarTitle({ title: `背口诀 · ${technique.name}` })
     markStudied(row)
     this.setData({
       row,

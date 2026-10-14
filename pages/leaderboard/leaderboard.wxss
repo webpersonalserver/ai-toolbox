@@ -13,6 +13,13 @@
   text-align: center;
 }
 
+.leaderboard__empty-title {
+  margin-bottom: var(--space-xs);
+  color: var(--color-ink);
+  font-size: var(--font-lg);
+  font-weight: 800;
+}
+
 .leaderboard__open-seats {
   margin-top: var(--space-md);
   background: var(--color-gold-soft);

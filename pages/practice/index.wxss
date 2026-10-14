@@ -63,11 +63,8 @@
 }
 
 .practice__honors {
-  position: relative;
-  display: flex;
-  gap: var(--space-sm);
   margin-bottom: var(--space-xl);
-  padding: var(--space-md) var(--space-md) var(--space-xl);
+  padding: var(--space-lg) var(--space-md) var(--space-sm);
   border-radius: var(--radius-lg);
   background: var(--color-surface);
   box-shadow: 0 8rpx 0 var(--color-border);
@@ -77,11 +74,34 @@
   transform: translateY(6rpx);
 }
 
+.practice__honor-row {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+/* Rounded tiles rather than pills: the curved ends of a pill crowd a long label. */
 .practice__honor {
+  position: relative;
   flex: 1;
-  padding: var(--space-sm) 0;
-  border-radius: 999rpx;
+  min-width: 0;
+  padding: var(--space-md) var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-md);
   text-align: center;
+}
+
+/* Today's new flowers: a small tag on the tile's top edge, so the tile keeps one short label. */
+.practice__honor-today {
+  position: absolute;
+  top: -18rpx;
+  left: 50%;
+  padding: 2rpx 14rpx;
+  border-radius: 999rpx;
+  background: var(--color-primary);
+  color: var(--color-on-accent);
+  font-size: 20rpx;
+  font-weight: 800;
+  white-space: nowrap;
+  transform: translateX(-50%);
 }
 
 .practice__honor--flower { background: var(--color-primary-soft); }
@@ -89,20 +109,22 @@
 .practice__honor--streak { background: var(--color-success-soft); }
 
 .practice__honor-value {
-  font-size: var(--font-xl);
+  font-size: 40rpx;
   font-weight: 900;
+  line-height: 1.3;
 }
 
 .practice__honor-label {
+  margin-top: 4rpx;
   color: var(--color-ink-soft);
   font-size: 22rpx;
+  white-space: nowrap;
 }
 
 .practice__honors-link {
-  position: absolute;
-  right: var(--space-md);
-  bottom: 10rpx;
+  margin-top: var(--space-sm);
   color: var(--color-primary-deep);
+  text-align: right;
   font-size: 22rpx;
   font-weight: 800;
 }

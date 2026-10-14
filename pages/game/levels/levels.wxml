@@ -1,16 +1,22 @@
 <loading-skeleton wx:if="{{loading}}" rows="3" />
-<view class="page levels game-theme--{{gameType}}" wx:if="{{!loading}}">
+<view wx:if="{{!loading && loadFailed}}" class="page">
+  <view class="card levels__empty" bindtap="retryLoad">
+    <view class="levels__empty-title">📶 没连上网络</view>
+    <view class="levels__empty-desc">点我再试一次</view>
+  </view>
+</view>
+<view class="page levels game-theme--{{gameType}}" wx:if="{{!loading && !loadFailed}}">
   <view class="card levels__header">
     <view class="levels__title-row">
       <view class="chip">{{titleName}}</view>
       <view class="levels__links">
-        <text class="levels__link" bindtap="openLeaderboard">排行榜 ›</text>
-        <text class="levels__link" bindtap="openBook">{{game.bookName}} ›</text>
+        <view class="levels__link" bindtap="openLeaderboard">排行榜 ›</view>
+        <view class="levels__link" bindtap="openBook">{{game.bookName}} ›</view>
       </view>
     </view>
     <view class="levels__summary">
-      <text wx:if="{{allSolved}}">你已通关全部关卡，更多挑战敬请期待</text>
-      <text wx:else>已通过 {{solvedCount}} 关 · {{titleProgressText}}</text>
+      <text wx:if="{{allSolved}}">全部闯过啦！新关卡正在路上～</text>
+      <text wx:else>已闯过 {{solvedCount}} 关 · {{titleProgressText}}</text>
     </view>
     <button wx:if="{{pendingChests > 0}}" class="btn btn--primary levels__chest" loading="{{openingChests}}" bindtap="handleOpenChests">
       有 {{pendingChests}} 个宝箱待打开
@@ -51,7 +57,7 @@
       data-status="{{item.status}}"
       bindtap="handleLevelTap"
     >
-      <text wx:if="{{item.status === 'locked'}}" class="levels__lock">锁</text>
+      <text wx:if="{{item.status === 'locked'}}" class="levels__lock">🔒</text>
       <text wx:else>{{item.levelNo}}</text>
     </view>
   </view>
@@ -65,5 +71,6 @@
   badge="{{rewardPopup.badge}}"
   rewards="{{rewardPopup.rewards}}"
   double-token="{{rewardPopup.doubleToken}}"
+  sound="{{rewardPopup.sound}}"
   bind:close="closeRewardPopup"
 />

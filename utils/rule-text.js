@@ -6,13 +6,13 @@ const levelRulesOf = (rules, gameType) => ({ ...rules.level, ...((rules.levelByG
 const describeLevelOverrides = (rules) =>
   Object.entries(rules.levelByGame || {})
     .filter(([, overrides]) => overrides.maxWrongAttempts !== undefined && overrides.maxWrongAttempts !== rules.level.maxWrongAttempts)
-    .map(([gameType, overrides]) => `${gameConfigOf(gameType).name}答错 ${overrides.maxWrongAttempts} 次即失败`)
+    .map(([gameType, overrides]) => `${gameConfigOf(gameType).name}有 ${overrides.maxWrongAttempts} 颗❤️`)
 
 const buildRuleSections = (rules) => {
   const sections = [
     {
       title: '闯关',
-      text: [`每关消耗 ${rules.level.staminaCost} 点体力，答错 ${rules.level.maxWrongAttempts} 次挑战失败，再来一次需重新消耗体力`]
+      text: [`每关用 ${rules.level.staminaCost} 点体力，有 ${rules.level.maxWrongAttempts} 颗❤️，答错一次少一颗；❤️ 用完再来一次要重新用体力`]
         .concat(describeLevelOverrides(rules))
         .join('；')
     },
@@ -30,7 +30,7 @@ const buildRuleSections = (rules) => {
   const { everyLevels, bigChest, firstChestRewards } = rules.milestone
   sections.push({
     title: '宝箱',
-    text: `每通过 ${everyLevels} 关开一个宝箱，第一个就有 ${describeRewards(firstChestRewards)}，越往后越多；每第 ${bigChest.everyChests} 个是大宝箱，奖励翻 ${bigChest.multiplier} 倍。没领的宝箱可以在大厅的「福利袋」里领`
+    text: `每闯过 ${everyLevels} 关开一个宝箱，第一个就有 ${describeRewards(firstChestRewards)}，越往后越多；每第 ${bigChest.everyChests} 个是大宝箱，奖励翻 ${bigChest.multiplier} 倍。没开的宝箱可以在「我的宝箱」里打开`
   })
   if (rules.practice) {
     const { dailyCaps } = rules.practice
@@ -49,14 +49,15 @@ const describeStaminaSources = (rules) => {
   return `体力每 ${rules.staminaRecovery.intervalMinutes} 分钟恢复 1 点，${checkin}`
 }
 
+// First-run guide for a 6-10 year old: three short lines with an icon each, the detail in small print below.
+// There is deliberately no "挑战失败" line; losing all hearts is explained gently on the play page when it happens.
 const buildGuideSections = (rules, gameConfig, maxHints) => {
   const { staminaCost, maxWrongAttempts } = levelRulesOf(rules, gameConfig.gameType)
   const { hintEffect, keptAfterFailure } = hintTextsOf(gameConfig)
   return [
-    { title: '开始挑战', text: `每次挑战消耗 ${staminaCost} 点体力，有 ${maxWrongAttempts} 次答错机会` },
-    { title: '挑战失败', text: `答错 ${maxWrongAttempts} 次即失败，再来一次需要重新消耗体力，${keptAfterFailure}会保留` },
-    { title: '卡住了', text: `用提示${hintEffect}（每关最多 ${maxHints} 次），或者免费求助好友，好友答对你直接过关` },
-    { title: '补充体力', text: describeStaminaSources(rules) }
+    { title: `⚡ 开一关用 ${staminaCost} 点体力`, text: describeStaminaSources(rules) },
+    { title: `❤️ 有 ${maxWrongAttempts} 颗❤️，答错少一颗`, text: `用完了就再来一次，${keptAfterFailure}会帮你留着` },
+    { title: '💡 卡住了？用提示，或者求助好友', text: `提示能${hintEffect}（每关 ${maxHints} 次）；好友答对，你就直接过关` }
   ]
 }
 

@@ -142,22 +142,33 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8rpx 0;
+  padding: var(--space-xs) 0;
   font-size: var(--font-md);
+  line-height: 1.4;
 }
 
+/* A real button size (72rpx), so 去抓 is easy to hit and rows never overlap. */
 .week__catch {
-  padding: 4rpx 20rpx;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  height: 72rpx;
+  padding: 0 28rpx;
   border-radius: 999rpx;
   background: var(--color-primary-soft);
   color: var(--color-primary-deep);
-  font-size: var(--font-sm);
+  font-size: var(--font-md);
   font-weight: 800;
 }
 
 .week__empty {
   color: var(--color-ink-soft);
   text-align: center;
+}
+
+.week__retry {
+  margin-top: var(--space-md);
 }
 
 .week__share {

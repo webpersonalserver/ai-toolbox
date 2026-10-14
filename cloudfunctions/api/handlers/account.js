@@ -33,10 +33,10 @@ const assertNicknameSafe = async (openid, nickname) => {
     safe = await isTextSafe(openid, nickname, CONTENT_SCENES.PROFILE)
   } catch (error) {
     console.error('nickname content check failed', error)
-    throw new BusinessError(ERROR_CODES.CONTENT_RISKY, '昵称校验暂时不可用，请稍后再试')
+    throw new BusinessError(ERROR_CODES.CONTENT_RISKY, '名字暂时检查不了，等一会儿再试试吧')
   }
   if (!safe) {
-    throw new BusinessError(ERROR_CODES.CONTENT_RISKY, '昵称包含不当内容，请换一个')
+    throw new BusinessError(ERROR_CODES.CONTENT_RISKY, '这个名字不太合适，换一个吧')
   }
 }
 
@@ -103,10 +103,10 @@ const updateProfile = async ({ openid, payload }) => {
   const nickname = String(payload.nickname || '').trim()
   const avatarUrl = String(payload.avatarUrl || '')
   if (!nickname || nickname.length > NICKNAME_MAX_LENGTH) {
-    throw new BusinessError(ERROR_CODES.BAD_REQUEST, `昵称需为 1-${NICKNAME_MAX_LENGTH} 个字`)
+    throw new BusinessError(ERROR_CODES.BAD_REQUEST, `名字要在 1-${NICKNAME_MAX_LENGTH} 个字之间哦`)
   }
   if (avatarUrl && !isOwnAvatarFile(avatarUrl, openid)) {
-    throw new BusinessError(ERROR_CODES.BAD_REQUEST, '头像文件无效，请重新选择')
+    throw new BusinessError(ERROR_CODES.BAD_REQUEST, '这张头像用不了，换一张试试吧')
   }
   const { data: user } = await db.collection('users').doc(openid).get()
   if (nickname !== user.nickname) {
@@ -128,7 +128,7 @@ const checkin = async ({ openid }) => {
     const dailyRef = transaction.collection('daily').doc(dailyDocId(openid, dateKey))
     const { data: todayRecord } = await dailyRef.get()
     if (todayRecord.checkedIn) {
-      return { failure: { code: ERROR_CODES.ALREADY_CHECKED_IN, message: '今天已经打过卡了' } }
+      return { failure: { code: ERROR_CODES.ALREADY_CHECKED_IN, message: '今天已经打过卡啦，明天再来吧' } }
     }
     const { items } = await changeItemsInTransaction(transaction, openid, deltas, rules, now)
     await dailyRef.update({
@@ -148,7 +148,7 @@ const grantAdReward = async ({ openid, payload }) => {
   const rules = await loadRules()
   const rewardAmount = rules.ad.rewards[itemType] || 0
   if (!isItemType(itemType) || !rules.ad.enabled || rewardAmount <= 0) {
-    throw new BusinessError(ERROR_CODES.AD_UNAVAILABLE, '视频奖励暂未开放')
+    throw new BusinessError(ERROR_CODES.AD_UNAVAILABLE, '看视频领奖励还没开放哦')
   }
   const dailyLimit = rules.ad.dailyLimits[itemType]
   const isUnlimited = dailyLimit === null
@@ -158,7 +158,7 @@ const grantAdReward = async ({ openid, payload }) => {
     const { data: todayRecord } = await dailyRef.get()
     const rewardedCount = adRewardCountOf(todayRecord, itemType)
     if (!isUnlimited && rewardedCount >= (dailyLimit || 0)) {
-      return { failure: { code: ERROR_CODES.AD_UNAVAILABLE, message: '今天的视频奖励已领完' } }
+      return { failure: { code: ERROR_CODES.AD_UNAVAILABLE, message: '今天的视频奖励领完啦，明天再来吧' } }
     }
     const { items } = await changeItemsInTransaction(transaction, openid, { [itemType]: rewardAmount }, rules, now)
     await dailyRef.update({ data: { [`adRewardCounts.${itemType}`]: _.inc(1), adViews: _.inc(1), updatedAt: db.serverDate() } })
@@ -175,7 +175,7 @@ const claimRecoveredStamina = async ({ openid }) => {
   const rules = await loadRules()
   const outcome = await db.runTransaction((transaction) => claimPendingStaminaInTransaction(transaction, openid, rules, now))
   if (outcome.claimed <= 0) {
-    throw new BusinessError(ERROR_CODES.NOTHING_TO_CLAIM, '还没有恢复的体力可以领取')
+    throw new BusinessError(ERROR_CODES.NOTHING_TO_CLAIM, '还没有新的体力可以领，等一会儿再来吧')
   }
   await writeItemLogs(openid, { [ITEM_TYPES.STAMINA]: outcome.claimed }, ITEM_LOG_REASONS.RECOVERY)
   const doubleToken = await issueDoubleOffer(openid, [{ type: ITEM_TYPES.STAMINA, amount: outcome.claimed }], 'recovery', rules, {

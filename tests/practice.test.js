@@ -102,7 +102,7 @@ ADD_SUB_UNITS.forEach((unit, unitIndex) => {
     if (index) expectReward(unit.examSeconds[level] < unit.examSeconds[level - 1], `${unit.id} level ${level} is shorter than the level below`)
   })
 })
-expectReward(paperTools.gradeOf(100).name === '满分小状元' && paperTools.gradeOf(85).name === '良好' && paperTools.gradeOf(55).name === '再练练', 'grades by score')
+expectReward(paperTools.gradeOf(100).name === '满分小状元' && paperTools.gradeOf(85).name === '真不错' && paperTools.gradeOf(55).name === '加油练练', 'grades by score')
 expectReward(paperTools.describeSeconds(80) === '1 分 20 秒' && paperTools.describeSeconds(180) === '3 分钟' && paperTools.formatClock(65) === '1:05', 'time text')
 
 const Module = require('module')

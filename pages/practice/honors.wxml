@@ -11,7 +11,7 @@
     </view>
   </view>
 
-  <view class="honors__summary">已获得 {{honors.unlockedCount}} / {{honors.medalCount}} 枚奖章，点奖章看看怎么得</view>
+  <view class="honors__summary">已获得 {{honors.unlockedCount}} 枚奖章，点奖章看看怎么得</view>
 
   <view wx:for="{{honors.groups}}" wx:for-item="group" wx:for-index="groupIndex" wx:key="id" class="honors__group">
     <view class="honors__group-title">{{group.name}}</view>
@@ -35,6 +35,12 @@
   </view>
 
   <button wx:if="{{sharing}}" class="btn btn--ghost honors__share" open-type="share">分享我的荣誉墙</button>
+</view>
+<view wx:elif="{{failed}}" class="page">
+  <view class="card honors__failed">
+    <view>网络有点慢，荣誉墙没打开～</view>
+    <button class="btn btn--primary honors__retry" bindtap="retry">再试一次</button>
+  </view>
 </view>
 
 <medal-popup visible="{{medalPopup.visible}}" is-new="{{medalPopup.isNew}}" medal="{{medalPopup.medal}}" bind:close="handleMedalClose" />

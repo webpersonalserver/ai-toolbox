@@ -95,14 +95,15 @@
 }
 
 .btn.ad-sheet__go {
-  height: 68rpx;
+  height: 80rpx;
   margin: 0;
-  line-height: 68rpx;
+  line-height: 80rpx;
   font-size: var(--font-sm);
 }
 
+/* Full-width row with vertical padding so "下次再说" is easy to hit. */
 .ad-sheet__cancel {
-  padding-top: var(--space-sm);
+  padding: var(--space-md) 0;
   color: var(--color-ink-soft);
   text-align: center;
 }

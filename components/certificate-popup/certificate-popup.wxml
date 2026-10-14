@@ -9,7 +9,7 @@
         在 {{achievement}} 中获得 <text class="certificate__score">{{score}}</text> 分，成绩优异，特发此状，以资鼓励！
       </view>
       <view class="certificate__footer">
-        <view class="certificate__issuer">解谜达人 · 趣味练习</view>
+        <view class="certificate__issuer">喵喵状元郎 · 趣味练习</view>
         <view class="certificate__date">{{dateText}}</view>
         <view class="certificate__seal"><view>优秀</view><view>学员</view></view>
       </view>

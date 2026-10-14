@@ -9,6 +9,17 @@
   text-align: center;
 }
 
+.book__empty-title {
+  margin-bottom: var(--space-xs);
+  color: var(--color-ink);
+  font-size: var(--font-lg);
+  font-weight: 800;
+}
+
+.book__empty-btn {
+  margin-top: var(--space-lg);
+}
+
 .book__entry {
   margin-bottom: var(--space-md);
 }

@@ -1,5 +1,5 @@
 {
-  "navigationBarTitleText": "解谜达人",
+  "navigationBarTitleText": "喵喵状元郎",
   "usingComponents": {
     "char-puzzle": "/components/char-puzzle/char-puzzle",
     "game-solution": "/components/game-solution/game-solution",

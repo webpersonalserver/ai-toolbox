@@ -1,7 +1,8 @@
 const { game, toastError } = require('./api')
 const { getSession, setItems } = require('./session')
 
-const HIDDEN_REWARD_POPUP = { visible: false, title: '', subtitle: '', badge: '', rewards: [], doubleToken: '' }
+const HIDDEN_REWARD_POPUP = { visible: false, title: '', subtitle: '', badge: '', rewards: [], doubleToken: '', sound: '' }
+const CHEST_SOUND = 'chest'
 
 const chestPopupOf = (result) => {
   const bigChests = result.chests.filter((chest) => chest.isBig).length
@@ -13,7 +14,8 @@ const chestPopupOf = (result) => {
     subtitle: result.chestCount > 1 ? '奖励已经合并到一起' : '',
     badge: bigChests ? `大宝箱 ×${multiplier}` : '',
     rewards: result.rewards,
-    doubleToken: result.doubleToken || ''
+    doubleToken: result.doubleToken || '',
+    sound: CHEST_SOUND
   }
 }
 
@@ -31,7 +33,7 @@ const openMilestoneChests = async (gameType) => {
 
 const describeTitleProgress = (achievement) => {
   const { title, solvedCount } = achievement
-  return title.nextName ? `再通过 ${title.nextMinSolved - solvedCount} 关晋升「${title.nextName}」` : '已达最高段位'
+  return title.nextName ? `再闯过 ${title.nextMinSolved - solvedCount} 关升级「${title.nextName}」` : '已经是最高称号啦'
 }
 
-module.exports = { HIDDEN_REWARD_POPUP, openMilestoneChests, describeTitleProgress }
+module.exports = { HIDDEN_REWARD_POPUP, CHEST_SOUND, openMilestoneChests, describeTitleProgress }

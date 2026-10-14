@@ -1,4 +1,6 @@
 const CLOUD_FUNCTION_NAME = 'api'
+// Shown when the cloud gives no message of its own; the players are children, so keep it friendly and actionable.
+const FALLBACK_ERROR_MESSAGE = '哎呀，出了点小问题，再试一次吧'
 
 const ERROR_CODES = {
   NETWORK: -1,
@@ -25,17 +27,17 @@ const call = async (action, payload = {}) => {
     response = await wx.cloud.callFunction({ name: CLOUD_FUNCTION_NAME, data: { action, payload } })
   } catch (error) {
     console.error(`[api] ${action} failed`, error)
-    throw new ApiError(ERROR_CODES.NETWORK, '网络不太好，请稍后再试')
+    throw new ApiError(ERROR_CODES.NETWORK, '网络开小差了，再试一次吧')
   }
   const { code, message, data } = response.result || {}
   if (code !== 0) {
-    throw new ApiError(code, message || '请求失败', data)
+    throw new ApiError(code, message || FALLBACK_ERROR_MESSAGE, data)
   }
   return data
 }
 
 const toastError = (error) => {
-  wx.showToast({ title: error.message || '出错了', icon: 'none' })
+  wx.showToast({ title: error.message || FALLBACK_ERROR_MESSAGE, icon: 'none' })
 }
 
 const account = {
@@ -80,6 +82,16 @@ const speech = {
   clipUrls: (clipNames) => call('speech.clipUrls', { clipNames })
 }
 
+const chests = {
+  list: () => call('chests.list'),
+  open: (chestIds) => call('chests.open', { chestIds }),
+  openAll: () => call('chests.open', { all: true })
+}
+
+const assets = {
+  imageUrls: (imagePaths) => call('assets.imageUrls', { imagePaths })
+}
+
 const leaderboard = {
   list: (gameType) => call('leaderboard.list', { gameType })
 }
@@ -95,4 +107,4 @@ const daily = {
   submit: (result) => call('daily.submit', result)
 }
 
-module.exports = { ERROR_CODES, ApiError, toastError, account, game, rescue, practice, daily, speech, leaderboard, admin }
+module.exports = { ERROR_CODES, ApiError, toastError, account, game, rescue, practice, daily, speech, chests, assets, leaderboard, admin }

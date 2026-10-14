@@ -1,4 +1,4 @@
-const { practice, toastError } = require('../../utils/api')
+const { practice } = require('../../utils/api')
 const { HIDDEN_MEDAL_POPUP, toMedalPopup, medalShareOf } = require('../../utils/practice/honors')
 const { buildHonorsShare } = require('../../utils/share')
 const { isSwitchOn } = require('../../utils/switches')
@@ -8,18 +8,29 @@ Page({
   data: {
     sharing: true,
     loading: true,
+    failed: false,
     honors: null,
     medalPopup: HIDDEN_MEDAL_POPUP
   },
 
-  async onShow() {
+  onShow() {
     this.setData({ sharing: isSwitchOn('sharing') })
+    this.load()
+  },
+
+  // A failed load keeps the wall from an earlier visit; only an empty page shows the retry card.
+  async load() {
     try {
-      this.setData({ loading: false, honors: await practice.honors() })
+      this.setData({ loading: false, failed: false, honors: await practice.honors() })
     } catch (error) {
-      this.setData({ loading: false })
-      toastError(error)
+      console.error('[honors] wall unavailable', error)
+      this.setData({ loading: false, failed: !this.data.honors })
     }
+  },
+
+  retry() {
+    this.setData({ loading: true, failed: false })
+    this.load()
   },
 
   openMedal(event) {

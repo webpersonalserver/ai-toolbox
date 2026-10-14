@@ -1,0 +1,56 @@
+<loading-skeleton wx:if="{{loading}}" rows="3" />
+<view wx:elif="{{loadFailed}}" class="page chests">
+  <view class="chests__empty">
+    <view class="chests__empty-icon">📡</view>
+    <view>网络开小差了，奖励还在，别担心</view>
+    <button class="btn btn--primary chests__empty-action" bindtap="retryLoad">再试一次</button>
+  </view>
+</view>
+<view wx:else class="page chests">
+  <view wx:if="{{chestCount}}" class="chests__head">
+    <view class="chests__count">还有 <text class="chests__count-number">{{chestCount}}</text> 个宝箱没打开</view>
+    <button class="btn btn--primary chests__open-all" loading="{{busyId === 'all'}}" bindtap="openAll">全部打开</button>
+  </view>
+
+  <view wx:for="{{groups}}" wx:for-item="group" wx:key="key" class="chests__group {{group.gameType ? 'game-theme--' + group.gameType : ''}}">
+    <view class="chests__group-title">
+      <text class="chests__group-icon">{{group.icon}}</text>{{group.title}}
+    </view>
+    <view class="chests__grid">
+      <view
+        wx:for="{{group.cards}}"
+        wx:key="chestId"
+        class="chests__card {{item.isBig ? 'chests__card--big' : ''}} {{busyId === item.chestId ? 'chests__card--opening' : ''}}"
+        hover-class="chests__card--pressed"
+        data-chest-id="{{item.chestId}}"
+        bindtap="openOne"
+      >
+        <view class="chests__box">🎁</view>
+        <view class="chests__name">{{item.name}}</view>
+        <view class="chests__source">{{item.sourceText}}</view>
+        <view class="chests__rewards">{{item.rewardsText}}</view>
+        <view class="chests__tap">点我打开</view>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{!chestCount}}" class="chests__empty">
+    <view class="chests__empty-icon">🎉</view>
+    <view>你真棒！再闯几关又能攒到新宝箱</view>
+    <view class="chests__empty-actions">
+      <button class="btn btn--primary chests__empty-action" bindtap="goLevels">去闯关</button>
+      <button class="btn btn--ghost chests__empty-action" bindtap="goPractice">去趣味</button>
+    </view>
+  </view>
+</view>
+
+<reward-popup
+  visible="{{rewardPopup.visible}}"
+  title="{{rewardPopup.title}}"
+  subtitle="{{rewardPopup.subtitle}}"
+  badge="{{rewardPopup.badge}}"
+  rewards="{{rewardPopup.rewards}}"
+  double-token="{{rewardPopup.doubleToken}}"
+  sound="{{rewardPopup.sound}}"
+  bind:close="closeRewardPopup"
+/>

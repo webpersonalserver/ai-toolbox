@@ -197,8 +197,36 @@
   font-size: var(--font-sm);
 }
 
-.daily__missed {
+/* The page cannot scroll (disableScroll), so the result fills exactly one screen: the missed list shrinks and scrolls
+   inside its card, and the finish button never leaves the screen. */
+.daily-result {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  box-sizing: border-box;
+}
+
+.daily__result,
+.daily-result__done {
+  flex-shrink: 0;
+}
+
+.daily__retry {
   margin-top: var(--space-md);
+}
+
+.daily__missed {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  margin-top: var(--space-md);
+  overflow: hidden;
+}
+
+.daily__missed-list {
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: 320rpx;
 }
 
 .daily__missed-title {

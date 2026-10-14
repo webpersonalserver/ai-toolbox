@@ -63,7 +63,7 @@ Component({
 
     handleNicknameReview(event) {
       if (event.detail.pass) return
-      wx.showToast({ title: '昵称未通过微信安全检测，请换一个', icon: 'none' })
+      wx.showToast({ title: '这个名字不太合适，换一个吧', icon: 'none' })
       this.updateDraft({ nickname: '' })
     },
 

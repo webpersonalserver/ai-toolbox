@@ -3,7 +3,7 @@ const { getTodayRecord, describeTodayStatus, hasAdLeft } = require('./daily')
 const { sumRewardsByType } = require('./rules')
 const { ITEM_TYPES } = require('./items')
 const { ALL_GAME_TYPES } = require('./games')
-const { pendingChestCount, milestoneClaimedCount } = require('./achievement')
+const { pendingChestNosOf } = require('./achievement')
 const { practiceStatsDocId } = require('./practice-rewards')
 const { readMathStats } = require('./math-stats')
 const { ERROR_CODES, BusinessError } = require('./response')
@@ -41,7 +41,7 @@ const countWelfareChests = async (openid, rules) => {
   ])
   const levelChests = progresses
     .filter(Boolean)
-    .reduce((total, progress) => total + pendingChestCount(progress.solved.length, milestoneClaimedCount(progress), rules.milestone.everyLevels), 0)
+    .reduce((total, progress) => total + pendingChestNosOf(progress, rules.milestone.everyLevels).length, 0)
   const practiceChests = practiceStats.filter(Boolean).reduce((total, stats) => total + (stats.pendingChestCount || 0), 0)
   return levelChests + practiceChests
 }

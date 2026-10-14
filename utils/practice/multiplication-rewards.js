@@ -20,6 +20,6 @@ const syncProgress = async ({ practiced = false } = {}) => {
 }
 
 const describeNewChests = (result) =>
-  result && result.newChests.length ? `🎁 得到 ${result.newChests.length} 个宝箱，去「我的 › 福利袋」打开` : ''
+  result && result.newChests.length ? `🎁 得到 ${result.newChests.length} 个九九神功宝箱，去「我的宝箱」打开` : ''
 
 module.exports = { syncProgress, describeNewChests }

@@ -75,13 +75,18 @@
   animation: drill-wiggle 0.6s ease-in-out infinite;
 }
 
+/* 80rpx keeps the toggle easy to hit for small fingers. */
 .drill__sound {
-  padding: 8rpx 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 80rpx;
+  min-height: 80rpx;
   border-radius: 999rpx;
   background: var(--color-surface);
   box-shadow: 0 4rpx 0 var(--color-border);
   color: var(--color-ink-soft);
-  font-size: 22rpx;
+  font-size: 36rpx;
   font-weight: 700;
 }
 
@@ -96,6 +101,16 @@
   text-align: center;
   letter-spacing: 4rpx;
   animation: drill-pop 0.5s cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+
+.drill__stage {
+  flex: 1;
+  min-height: 0;
+  /* Bleed into the page padding so the card's shake and glow are not clipped by the scroll box. */
+  margin: 0 calc(-1 * var(--space-lg));
+  padding: 0 var(--space-lg) var(--space-sm);
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .drill__equation {
@@ -130,25 +145,30 @@
   line-height: 84rpx;
 }
 
-/* 分与合: the whole on top, two branches down to its parts. */
+/* 分与合: the whole on top, two branches down to its parts. Three numbers plus pictures stack tall,
+   so the card and circles are tighter than the one-line equation. */
 .drill__bond {
   flex-direction: column;
   align-items: center;
   gap: 0;
+  margin-top: var(--space-md);
+  padding: var(--space-md);
 }
 
 .drill__bond .drill__value,
 .drill__bond .drill__blank {
   min-width: 132rpx;
+  height: 104rpx;
   border-radius: 999rpx;
+  font-size: 72rpx;
   text-align: center;
+  line-height: 92rpx;
 }
 
 .drill__bond .drill__value {
   border: 6rpx solid var(--color-border);
   background: var(--color-surface);
   box-sizing: border-box;
-  line-height: 108rpx;
 }
 
 .drill__bond-lines {
@@ -183,8 +203,7 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: var(--space-md);
-  margin-top: auto;
-  padding-bottom: env(safe-area-inset-bottom);
+  flex-shrink: 0;
 }
 
 .drill__choice {
@@ -289,7 +308,7 @@
 
 .drill__feedback {
   min-height: 48rpx;
-  margin: var(--space-md) 0;
+  margin: var(--space-sm) 0;
   color: var(--color-primary-deep);
   font-size: var(--font-md);
   font-weight: 700;
@@ -299,16 +318,15 @@
 .drill__keypad {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-md);
-  margin-top: auto;
-  padding-bottom: env(safe-area-inset-bottom);
+  gap: var(--space-sm) var(--space-md);
+  flex-shrink: 0;
 }
 
 .drill__key {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 120rpx;
+  height: 108rpx;
   border-radius: var(--radius-md);
   background: var(--color-surface);
   box-shadow: 0 8rpx 0 var(--color-border);
@@ -572,5 +590,17 @@
 
 .round__back {
   margin-top: var(--space-md);
+  padding: 24rpx 0;
   color: var(--color-ink-soft);
+}
+
+/* Short screens (iPhone SE class): shrink the keys a little so the question keeps most of the room. */
+@media (max-height: 640px) {
+  .drill__key {
+    height: 92rpx;
+  }
+
+  .drill__choice {
+    height: 150rpx;
+  }
 }

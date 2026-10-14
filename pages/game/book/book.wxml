@@ -1,8 +1,18 @@
 <loading-skeleton wx:if="{{loading}}" rows="3" />
 <view class="page book" wx:if="{{!loading}}">
-  <view class="book__summary">已收录 {{total}} {{game.bookUnit}}</view>
+  <view wx:if="{{loadFailed}}" class="card book__empty" bindtap="retryLoad">
+    <view class="book__empty-title">📶 没连上网络</view>
+    <view>点我再试一次</view>
+  </view>
 
-  <view wx:if="{{!total}}" class="card book__empty">还没有收录内容，去闯关吧</view>
+  <block wx:else>
+  <view class="book__summary">已收录 {{total}} {{game.bookUnit}}<text wx:if="{{expandable && total}}"> · 点卡片看详细解释</text></view>
+
+  <view wx:if="{{!total}}" class="card book__empty">
+    <view class="book__empty-title">这里还空空的</view>
+    <view>每闯过一关，就会收进{{game.bookName}}哦</view>
+    <button class="btn btn--primary book__empty-btn" bindtap="goPlay">去闯第一关</button>
+  </view>
 
   <view
     wx:for="{{entries}}"
@@ -16,5 +26,5 @@
   </view>
 
   <view wx:if="{{loadingMore}}" class="book__footer">加载中…</view>
-  <view wx:elif="{{!hasMore && total && gameType === 'idiom'}}" class="book__footer">点击词条可查看出处</view>
+  </block>
 </view>

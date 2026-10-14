@@ -96,7 +96,7 @@ const create = async ({ openid, payload }) => {
   const existing = await findDoc('rescues', rescueId)
   if (existing && existing.status === RESCUE_STATUS.SOLVED) {
     await ensureRescuedLevelSolved(existing)
-    throw new BusinessError(ERROR_CODES.LEVEL_ALREADY_SOLVED, '好友已经帮你解开这一关啦，刷新一下看看')
+    throw new BusinessError(ERROR_CODES.LEVEL_ALREADY_SOLVED, '好友已经帮你过关啦，返回关卡看看吧')
   }
   const attempt = getAttempt(progress, levelNo)
   if (!attempt.active && attempt.wrongCount === 0) {
@@ -151,7 +151,7 @@ const view = async ({ openid, payload }) => {
 const answer = async ({ openid, payload }) => {
   const rescue = await getRescue(payload.rescueId)
   if (rescue.requesterOpenid === openid) {
-    throw new BusinessError(ERROR_CODES.RESCUE_SELF_HELP, '不能给自己救助哦，等好友来帮你吧')
+    throw new BusinessError(ERROR_CODES.RESCUE_SELF_HELP, '这是你自己发的求助哦，等好友来帮你吧')
   }
   if (rescue.status !== RESCUE_STATUS.OPEN) {
     throw new BusinessError(ERROR_CODES.RESCUE_CLOSED, closedRescueMessage(rescue))
@@ -164,7 +164,7 @@ const answer = async ({ openid, payload }) => {
   ])
   const { dailyLimitPerHelper, maxWrongAnswersPerHelper } = rules.rescue
   if (wrongAnswers >= maxWrongAnswersPerHelper) {
-    throw new BusinessError(ERROR_CODES.RESCUE_HELPER_LOCKED, `答错 ${maxWrongAnswersPerHelper} 次了，换一位好友来帮 TA 吧`)
+    throw new BusinessError(ERROR_CODES.RESCUE_HELPER_LOCKED, `${maxWrongAnswersPerHelper} 颗❤️ 用完啦，换一位好友来帮 TA 吧`)
   }
 
   if (String(payload.answer || '') !== level.answer) {

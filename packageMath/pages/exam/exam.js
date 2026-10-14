@@ -195,7 +195,6 @@ Page({
     const seconds = Math.max(this.elapsedSeconds(), 1)
     const score = this.correctCount * POINTS_PER_QUESTION
     const grade = gradeOf(score)
-    const unanswered = this.paper.length - this.index - (timeUp ? 0 : 1)
     const level = this.data.level
     this.setData({
       stage: STAGES.RESULT,
@@ -206,10 +205,11 @@ Page({
         mascot: grade.mascot,
         isFullScore: score === FULL_SCORE,
         correctText: `答对 ${this.correctCount} / ${this.paper.length} 题`,
-        timeText: timeUp ? `时间到！还有 ${Math.max(unanswered, 0)} 题没做` : `用时 ${describeSeconds(seconds)}（限时 ${describeSeconds(this.timeLimit)}）`,
+        timeText: timeUp ? `时间到啦！这次做了 ${this.index} 题，下次争取做完～` : `用时 ${describeSeconds(seconds)}（限时 ${describeSeconds(this.timeLimit)}）`,
         wrongAnswers: this.wrongQuestions.map((question, index) => ({ id: index, equation: question.equation })),
         newBest: false,
         unlockedLevelName: '',
+        unlockHint: '',
         nextLevel: null
       }
     })
@@ -229,7 +229,10 @@ Page({
     if (score >= UNLOCK_SCORE) {
       this.soundPlayer.play('milestone')
       this.setData({ cheer: { visible: true, title: `${score} 分！`, subtitle: gradeOf(score).name, mascot: gradeOf(score).mascot, big: false } })
+      return
     }
+    // Every finished paper is progress: a friendly chime instead of silence keeps a low score from feeling like failure.
+    this.soundPlayer.play('correct')
   },
 
   async showCertificate() {
@@ -255,7 +258,7 @@ Page({
     this.setData({ certificate: HIDDEN_CERTIFICATE })
   },
 
-  // Correct answers count as practice (totals, chests, flowers) and missed ones go to 小怪兽收容所;
+  // Correct answers count as practice (totals, chests, flowers) and missed ones hide in 小怪兽藏身洞;
   // then the paper itself is recorded.
   async submitResult({ level, seconds, score }) {
     const unitId = this.unit.id
@@ -270,8 +273,12 @@ Page({
       }
       const outcome = await trackReport(practice.reportExam({ practiceId: PRACTICE_ID, unitId, level, correct: this.correctCount, seconds }))
       this.honorPresenter.present(mergeHonors(answersHonors, outcome.honors))
-      const nextLevel = level < EXAM_LEVELS.length && outcome.exams[level].unlocked ? level + 1 : null
+      const hasHigherLevel = level < EXAM_LEVELS.length
+      const nextLevel = hasHigherLevel && outcome.exams[level].unlocked ? level + 1 : null
+      // Under the unlock score, name the next goal so the child knows what one more try can win.
+      const lockedLevelName = hasHigherLevel && !nextLevel && score < UNLOCK_SCORE ? levelOf(level + 1).name : ''
       this.setData({
+        'result.unlockHint': lockedLevelName ? `再考到 ${UNLOCK_SCORE} 分就能解锁${lockedLevelName}！` : '',
         'result.newBest': outcome.isNewBest && outcome.previousBest !== null,
         'result.unlockedLevelName': outcome.unlockedLevel ? levelOf(outcome.unlockedLevel).name : '',
         'result.nextLevel': nextLevel,

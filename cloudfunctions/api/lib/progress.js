@@ -37,17 +37,17 @@ const isLevelSolved = (progress, levelNo) => progress.solved.includes(levelNo)
 
 const findUnplayableReason = (progress, levelNo) => {
   if (levelNo > progress.currentLevel) {
-    return { code: ERROR_CODES.LEVEL_LOCKED, message: '关卡未解锁' }
+    return { code: ERROR_CODES.LEVEL_LOCKED, message: '先闯过前面的关，这关就会打开哦' }
   }
   if (isLevelSolved(progress, levelNo)) {
-    return { code: ERROR_CODES.LEVEL_ALREADY_SOLVED, message: '本关已通过' }
+    return { code: ERROR_CODES.LEVEL_ALREADY_SOLVED, message: '这关你已经闯过啦，去挑战下一关吧' }
   }
   return null
 }
 
 const assertLevelUnlocked = (progress, levelNo) => {
   if (levelNo > progress.currentLevel) {
-    throw new BusinessError(ERROR_CODES.LEVEL_LOCKED, '关卡未解锁')
+    throw new BusinessError(ERROR_CODES.LEVEL_LOCKED, '先闯过前面的关，这关就会打开哦')
   }
 }
 

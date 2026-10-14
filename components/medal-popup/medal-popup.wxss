@@ -95,7 +95,7 @@
 
 .medal-popup__name {
   margin-top: var(--space-md);
-  font-size: 60rpx;
+  font-size: 52rpx;
   font-weight: 900;
 }
 

@@ -61,6 +61,7 @@
   font-size: 40rpx;
 }
 
+/* A typed character gets a solid ink border; a hint-revealed (locked) one stays in the primary colour below. */
 .char-puzzle__slot--filled {
   border-style: solid;
   border-color: var(--color-ink);
@@ -71,30 +72,6 @@
   border-color: var(--color-primary);
   background: var(--color-primary-soft);
   color: var(--color-primary);
-}
-
-.char-puzzle__slots--wrong .char-puzzle__slots--medium {
-  gap: var(--space-sm);
-}
-
-.char-puzzle__slots--medium .char-puzzle__slot {
-  width: 112rpx;
-  height: 112rpx;
-  font-size: var(--font-xl);
-}
-
-.char-puzzle__slots--small {
-  gap: var(--space-xs);
-}
-
-.char-puzzle__slots--small .char-puzzle__slot {
-  width: 88rpx;
-  height: 96rpx;
-  font-size: 40rpx;
-}
-
-.char-puzzle__slot--filled {
-  border-color: var(--color-primary);
 }
 
 .char-puzzle__board {
@@ -151,12 +128,13 @@
   animation: char-puzzle-wave 0.9s ease-in-out infinite;
 }
 
-.char-puzzle__slots--checking .char-puzzle__slot:nth-child(2) { animation-delay: 0.1s; }
-.char-puzzle__slots--checking .char-puzzle__slot:nth-child(3) { animation-delay: 0.2s; }
-.char-puzzle__slots--checking .char-puzzle__slot:nth-child(4) { animation-delay: 0.3s; }
-.char-puzzle__slots--checking .char-puzzle__slot:nth-child(5) { animation-delay: 0.4s; }
-.char-puzzle__slots--checking .char-puzzle__slot:nth-child(6) { animation-delay: 0.5s; }
-.char-puzzle__slots--checking .char-puzzle__slot:nth-child(7) { animation-delay: 0.6s; }
+/* The slot is not always its cell's first child (pinyin may sit above it), so the wave is keyed on the cell. */
+.char-puzzle__slots--checking .char-puzzle__cell:nth-child(2) .char-puzzle__slot { animation-delay: 0.1s; }
+.char-puzzle__slots--checking .char-puzzle__cell:nth-child(3) .char-puzzle__slot { animation-delay: 0.2s; }
+.char-puzzle__slots--checking .char-puzzle__cell:nth-child(4) .char-puzzle__slot { animation-delay: 0.3s; }
+.char-puzzle__slots--checking .char-puzzle__cell:nth-child(5) .char-puzzle__slot { animation-delay: 0.4s; }
+.char-puzzle__slots--checking .char-puzzle__cell:nth-child(6) .char-puzzle__slot { animation-delay: 0.5s; }
+.char-puzzle__slots--checking .char-puzzle__cell:nth-child(7) .char-puzzle__slot { animation-delay: 0.6s; }
 
 .char-puzzle__thinking {
   display: flex;

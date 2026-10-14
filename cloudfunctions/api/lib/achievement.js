@@ -30,19 +30,44 @@ const chestRewards = (chestNo, rules) => {
 
 const claimedChestCount = (progress, everyLevels) => Math.floor(milestoneClaimedCount(progress) / everyLevels)
 
-const pendingChestCount = (solvedCount, claimedSolvedCount, everyLevels) =>
-  Math.max(Math.floor(solvedCount / everyLevels) - Math.floor(claimedSolvedCount / everyLevels), 0)
+const earnedChestCount = (progress, everyLevels) => Math.floor(progress.solved.length / everyLevels)
+
+// Chests opened one by one past milestoneClaimedSolvedCount; they move into it once the gap below them is filled.
+const openedChestNosOf = (progress) => progress.milestoneOpenedChestNos || []
+
+// Numbers of the chests earned but not opened yet, oldest first (chest n is earned at level n × everyLevels).
+const pendingChestNosOf = (progress, everyLevels) => {
+  const opened = new Set(openedChestNosOf(progress))
+  const firstNo = claimedChestCount(progress, everyLevels) + 1
+  const count = Math.max(earnedChestCount(progress, everyLevels) - firstNo + 1, 0)
+  return Array.from({ length: count }, (_, offset) => firstNo + offset).filter((chestNo) => !opened.has(chestNo))
+}
+
+// The milestone fields to store once chestNos (all pending) are opened.
+const milestoneAfterOpening = (progress, chestNos, everyLevels) => {
+  const opened = new Set([...openedChestNosOf(progress), ...chestNos])
+  let claimedChests = claimedChestCount(progress, everyLevels)
+  while (opened.has(claimedChests + 1)) {
+    claimedChests += 1
+    opened.delete(claimedChests)
+  }
+  return {
+    milestoneClaimedSolvedCount: claimedChests * everyLevels,
+    milestoneOpenedChestNos: [...opened].sort((left, right) => left - right)
+  }
+}
 
 const describeMilestone = (progress, rules) => {
   const { everyLevels } = rules.milestone
   const solvedCount = progress.solved.length
-  const nextChestNo = claimedChestCount(progress, everyLevels) + 1
+  // The next chest still to be earned (the "再通过 N 关" one), not the next one waiting to be opened.
+  const nextChestNo = Math.max(earnedChestCount(progress, everyLevels), claimedChestCount(progress, everyLevels)) + 1
   return {
     everyLevels,
     nextChestNo,
     nextChestIsBig: isBigChest(nextChestNo, rules),
     nextChestRewards: chestRewards(nextChestNo, rules),
-    pendingChests: pendingChestCount(solvedCount, milestoneClaimedCount(progress), everyLevels),
+    pendingChests: pendingChestNosOf(progress, everyLevels).length,
     levelsToNextChest: everyLevels - (solvedCount % everyLevels)
   }
 }
@@ -55,7 +80,8 @@ const describeAchievement = (progress, rules) => ({
 
 module.exports = {
   describeTitle,
-  pendingChestCount,
+  pendingChestNosOf,
+  milestoneAfterOpening,
   milestoneClaimedCount,
   claimedChestCount,
   chestRewards,

@@ -13,6 +13,14 @@ const EMPTY_NICKNAME_TEXT = '点击设置昵称'
 
 const displayAvatarOf = (avatarUrl) => avatarUrl || DEFAULT_AVATAR
 
+const isReleaseBuild = () => {
+  try {
+    return wx.getAccountInfoSync().miniProgram.envVersion === 'release'
+  } catch (error) {
+    return true
+  }
+}
+
 Page({
   data: {
     sharing: true,
@@ -99,8 +107,10 @@ Page({
     wx.navigateTo({ url: '/pages/admin/control' })
   },
 
-  // Shown only to admins; anyone can still long-press their name to copy it (needed to be added to admin.openids).
+  // Players (children) must not stumble into copying an id they cannot understand, so the long-press only works for
+  // admins, or in the 开发版/体验版 where the owner copies their own id before adding it to admin.openids.
   copyOpenid() {
+    if (!this.data.isAdmin && isReleaseBuild()) return
     wx.setClipboardData({ data: this.data.openid })
   },
 

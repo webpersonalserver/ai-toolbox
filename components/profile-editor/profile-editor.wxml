@@ -26,7 +26,7 @@
         bindnicknamereview="handleNicknameReview"
       />
     </view>
-    <view class="profile-sheet__tip">头像和昵称会展示在排行榜和好友求助页，请勿使用不当内容</view>
+    <view class="profile-sheet__tip">名字会出现在排行榜上哦，起个文明好听的名字吧</view>
 
     <view class="profile-sheet__actions">
       <button class="btn btn--muted profile-sheet__action" bindtap="handleCancel">{{cancelText}}</button>

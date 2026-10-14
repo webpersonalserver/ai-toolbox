@@ -1,15 +1,15 @@
 <view wx:if="{{!started}}" class="page exam-intro">
   <view class="exam-intro__card">
     <view class="exam-intro__icon">⚔️</view>
-    <view class="exam-intro__title">九九论剑</view>
+    <view class="exam-intro__title">九九大挑战</view>
     <view class="exam-intro__rules">
       <view>· 共 {{questionCount}} 题，九重口诀随机出</view>
-      <view>· 只有 {{lives}} 条命，答错一次少一条</view>
+      <view>· 有 {{lives}} 颗❤️，答错一次少一颗</view>
       <view>· 答错可以再答，答对才进入下一题</view>
       <view>· 闯完全部题目，即为神功大成</view>
     </view>
     <view wx:if="{{previousBest}}" class="exam-intro__best">{{previousBest}}</view>
-    <button class="btn btn--primary exam-intro__start" bindtap="startExam">开始考核</button>
+    <button class="btn btn--primary exam-intro__start" bindtap="startExam">开始挑战</button>
   </view>
 </view>
 

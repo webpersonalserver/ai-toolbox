@@ -108,3 +108,12 @@
   width: 100%;
   margin-top: var(--space-md);
 }
+
+.honors__failed {
+  color: var(--color-ink-soft);
+  text-align: center;
+}
+
+.honors__retry {
+  margin-top: var(--space-md);
+}

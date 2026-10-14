@@ -1,39 +1,17 @@
 const { gameConfigOf } = require('./games')
-const { PRACTICES } = require('./practice/registry')
 const { describeRewards, ITEM_META } = require('./items')
+
+// Unopened chests from every game and practice; they are all opened in 我的宝箱, so the welfare page shows one total.
+const countPendingChests = (games, practices = []) => {
+  const levelChests = games.reduce((total, summary) => total + summary.achievement.milestone.pendingChests, 0)
+  const practiceChests = practices.reduce((total, summary) => total + (summary.pendingChestCount || 0), 0)
+  return levelChests + practiceChests
+}
 
 const countUnclaimedWelfare = (session, games, practices = []) => {
   const checkin = session.today.checkedIn ? 0 : 1
   const recovery = session.items.staminaPending > 0 ? 1 : 0
-  const chests = games.reduce((total, summary) => total + summary.achievement.milestone.pendingChests, 0)
-  const practiceChests = practices.reduce((total, summary) => total + summary.pendingChestCount, 0)
-  return checkin + recovery + chests + practiceChests
-}
-
-const buildChestRows = (games) =>
-  games.map((summary) => {
-    const { milestone } = summary.achievement
-    const config = gameConfigOf(summary.gameType)
-    return {
-      gameType: summary.gameType,
-      name: config.name,
-      icon: config.icon,
-      pendingChests: milestone.pendingChests,
-      levelsToNextChest: milestone.levelsToNextChest,
-      nextChestIsBig: milestone.nextChestIsBig
-    }
-  })
-
-const buildPracticeChestRows = (practices = []) => {
-  const summaryById = Object.fromEntries(practices.map((summary) => [summary.practiceId, summary]))
-  return PRACTICES.filter((config) => summaryById[config.id]).map((config) => ({
-    practiceId: config.id,
-    name: config.name,
-    icon: config.icon,
-    chestHint: config.chestHint,
-    pendingChestCount: summaryById[config.id].pendingChestCount,
-    rewardText: describeRewards(summaryById[config.id].pendingRewards)
-  }))
+  return checkin + recovery + countPendingChests(games, practices)
 }
 
 const TASK_ACTIONS = {
@@ -58,7 +36,7 @@ const recoveryTask = (session) => {
   const progressText = `每 ${intervalMinutes} 分钟 +1，今天已恢复 ${items.recoveredToday || 0} / ${dailyCap} 点`
   const base = { key: TASK_ACTIONS.RECOVERY, icon: ITEM_ICONS.stamina, name: '自动恢复体力', progressText }
   if (items.staminaPending > 0) return taskRow({ ...base, actionText: `领取 +${items.staminaPending}` })
-  if ((items.recoveredToday || 0) >= dailyCap) return taskRow({ ...base, done: true, statusText: '今天已恢复满' })
+  if ((items.recoveredToday || 0) >= dailyCap) return taskRow({ ...base, done: true, statusText: '今天送完啦' })
   return taskRow({ ...base, statusText: '恢复中' })
 }
 
@@ -92,9 +70,9 @@ const practiceTask = (session, practiceEarnedToday) => {
   return taskRow({
     key: TASK_ACTIONS.PRACTICE,
     iconText: '算',
-    name: '去数理乐园攒宝箱',
+    name: '去「趣味」答题攒宝箱',
     progressText: `今天已攒 体力 ${earned.stamina} / ${caps.stamina}、提示 ${earned.hint} / ${caps.hint}`,
-    actionText: done ? '' : '去练习',
+    actionText: done ? '' : '去趣味',
     statusText: done ? '今天已攒满' : '',
     done
   })
@@ -110,7 +88,7 @@ const kungfuTask = (practices) => {
     name: '修炼九九神功',
     progressText: `已练成 ${masteredRows} / ${KUNGFU_ROWS} 重，每练成一重得体力宝箱`,
     actionText: done ? '' : '去修炼',
-    statusText: done ? '已全部领取' : '',
+    statusText: done ? '九重全练成！' : '',
     done
   })
 }
@@ -147,8 +125,11 @@ const dailyTask = (session) => {
   })
 }
 
+// Finished rows sink to the bottom (keeping their order) so what is still open is seen first.
+const doneLast = (rows) => [...rows.filter((row) => !row.done), ...rows.filter((row) => row.done)]
+
 const buildTaskRows = ({ session, games, practices, practiceEarnedToday }) =>
-  [
+  doneLast([
     taskRow({
       key: TASK_ACTIONS.CHECKIN,
       iconText: '签',
@@ -164,8 +145,8 @@ const buildTaskRows = ({ session, games, practices, practiceEarnedToday }) =>
     practiceTask(session, practiceEarnedToday),
     kungfuTask(practices),
     levelsTask(games)
-  ].filter(Boolean)
+  ].filter(Boolean))
 
 const countOpenTasks = (taskRows) => taskRows.filter((row) => !row.done && row.actionText).length
 
-module.exports = { TASK_ACTIONS, countUnclaimedWelfare, buildChestRows, buildPracticeChestRows, buildTaskRows, countOpenTasks }
+module.exports = { TASK_ACTIONS, countPendingChests, countUnclaimedWelfare, buildTaskRows, countOpenTasks }

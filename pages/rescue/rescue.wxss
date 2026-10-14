@@ -60,6 +60,18 @@
   font-weight: 700;
 }
 
+.rescue__result-title--big {
+  margin-bottom: var(--space-sm);
+  font-size: var(--font-xl);
+  font-weight: 900;
+  animation: rescue-cheer-pop 0.45s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+@keyframes rescue-cheer-pop {
+  0% { transform: scale(0.6); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
 
 
 

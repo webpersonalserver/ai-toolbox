@@ -9,7 +9,7 @@ const { GAME_ORDER, gameConfigOf } = require('../../utils/games')
 const { GUIDE_KEYS, hasSeenGuide, markGuideSeen } = require('../../utils/onboarding')
 const { countUnclaimedWelfare, buildTaskRows, countOpenTasks } = require('../../utils/welfare')
 const { adOffersOf } = require('../../utils/ad-reward')
-const { HIDDEN_REWARD_POPUP } = require('../../utils/milestone')
+const { HIDDEN_REWARD_POPUP, CHEST_SOUND } = require('../../utils/milestone')
 
 // Most players are in grades 1-2, so a brand-new player is pointed at 汉字闯关.
 const BEGINNER_GAME_TYPE = 'hanzi'
@@ -108,14 +108,14 @@ Page({
     if (!result) return
     this.refresh()
     this.setData({
-      rewardPopup: { visible: true, title: '打卡成功', subtitle: '明天记得再来哦', badge: '', rewards: result.rewards, doubleToken: result.doubleToken || '' }
+      rewardPopup: { visible: true, title: '打卡成功', subtitle: '明天记得再来哦', badge: '', rewards: result.rewards, doubleToken: result.doubleToken || '', sound: CHEST_SOUND }
     })
   },
 
   handleAdRewarded(event) {
     const { itemType, amount } = event.detail
     this.syncSession()
-    this.setData({ rewardPopup: { visible: true, title: '视频奖励到账', subtitle: '想要更多，随时再来看', badge: '', rewards: [{ type: itemType, amount }], doubleToken: '' } })
+    this.setData({ rewardPopup: { visible: true, title: '看完啦，奖励送给你！', subtitle: '想要更多，随时再来看', badge: '', rewards: [{ type: itemType, amount }], doubleToken: '', sound: CHEST_SOUND } })
   },
 
   closeRewardPopup() {
@@ -144,7 +144,7 @@ Page({
   handleWelcomeSkipped() {
     markGuideSeen(GUIDE_KEYS.PROFILE_WELCOME)
     this.setData({ welcomeVisible: false })
-    wx.showToast({ title: `已为你取名「${this.data.profileNickname}」，可在「我的」页修改`, icon: 'none', duration: 2500 })
+    wx.showToast({ title: `你叫「${this.data.profileNickname}」啦，随时可在「我的」里改`, icon: 'none', duration: 2500 })
   },
 
   continueGame(event) {

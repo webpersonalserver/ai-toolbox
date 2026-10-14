@@ -1,6 +1,6 @@
 <view class="page study">
   <view class="study__tip">
-    <view class="study__tip-label">心法要诀</view>
+    <view class="study__tip-label">记口诀小窍门</view>
     <view class="study__tip-text">{{technique.tip}}</view>
   </view>
   <view class="study__guide">每句口诀大声念一遍，念完点一下卡片（已念 {{readCount}} / {{cards.length}}）</view>

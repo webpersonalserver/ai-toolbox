@@ -1,7 +1,11 @@
 <view wx:if="{{stage === 'select'}}" class="page exam-select">
   <view class="exam-select__intro">
     <view class="exam-select__title">{{unitName}} · 限时考试</view>
-    <view class="exam-select__rule">每卷 {{questionCount}} 题，每题 5 分，满分 100 分。答错可以再改，答对才进入下一题，但只有第一次就答对才得分；时间到自动交卷。</view>
+    <view class="exam-select__rules">
+      <view class="exam-select__rule">📝 {{questionCount}} 道题</view>
+      <view class="exam-select__rule">⭐ 第一次答对才得分</view>
+      <view class="exam-select__rule">⏱ 时间到就交卷</view>
+    </view>
   </view>
   <view
     wx:for="{{levels}}"
@@ -51,10 +55,11 @@
     <view class="exam-result__line">{{result.correctText}}</view>
     <view class="exam-result__line">{{result.timeText}}</view>
     <view wx:if="{{result.unlockedLevelName}}" class="exam-result__unlock">🔓 解锁了{{result.unlockedLevelName}}考试！</view>
+    <view wx:if="{{result.unlockHint}}" class="exam-result__goal">{{result.unlockHint}}</view>
   </view>
 
   <view wx:if="{{result.wrongAnswers.length}}" class="card exam-result__wrong">
-    <view class="exam-result__wrong-title">这几只小怪兽溜进了收容所，再看看</view>
+    <view class="exam-result__wrong-title">这几只小怪兽躲进了藏身洞，去抓回来吧</view>
     <view wx:for="{{result.wrongAnswers}}" wx:key="id" class="exam-result__wrong-item">
       <text>{{item.equation}}</text>
       <text class="exam-result__explain" data-index="{{item.id}}" bindtap="openExplain">🐱 喵算算教你</text>

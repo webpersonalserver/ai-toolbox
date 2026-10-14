@@ -113,9 +113,42 @@ Page({
     })
   },
 
+  // The data path of a switch, so a cancelled change can be put back on screen.
+  switchPathOf(key) {
+    for (let groupIndex = 0; groupIndex < this.data.groups.length; groupIndex += 1) {
+      const itemIndex = this.data.groups[groupIndex].switches.findIndex((item) => item.key === key)
+      if (itemIndex >= 0) return `groups[${groupIndex}].switches[${itemIndex}].on`
+    }
+    return ''
+  },
+
+  // The native switch has already flipped; data still holds the old value, so writing the new value and then the old
+  // one makes the view redraw the switch back to where it was.
+  restoreSwitch(key, on) {
+    const path = this.switchPathOf(key)
+    if (!path) return
+    this.setData({ [path]: on }, () => this.setData({ [path]: !on }))
+  },
+
+  confirmChange() {
+    return new Promise((resolve) => {
+      wx.showModal({
+        title: '确定修改？',
+        content: '这个开关对所有玩家生效',
+        success: (result) => resolve(result.confirm),
+        fail: () => resolve(false)
+      })
+    })
+  },
+
+  // Every switch is live for all players at once, so a stray tap must not change anything without a second yes.
   async toggle(event) {
     const { key } = event.currentTarget.dataset
     const on = event.detail.value
+    if (!(await this.confirmChange())) {
+      this.restoreSwitch(key, on)
+      return
+    }
     this.setData({ saving: key })
     try {
       const { switches } = await admin.updateSwitches({ [key]: on })

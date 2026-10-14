@@ -8,8 +8,8 @@
     <image class="stamina-recovery__icon" src="/assets/icons/stamina.png" mode="aspectFit" />
     <text>{{claiming ? '领取中' : '领取 +' + pending}}</text>
   </view>
-  <text wx:if="{{countdownText}}" class="stamina-recovery__countdown">{{countdownText}} 后 +1</text>
-  <text wx:elif="{{isFull && !pending}}" class="stamina-recovery__countdown">今日恢复已满，明天继续</text>
+  <text wx:if="{{countdownText}}" class="stamina-recovery__countdown">{{countdownText}} 后送 1 点体力</text>
+  <text wx:elif="{{isFull && !pending}}" class="stamina-recovery__countdown">今天自动恢复的体力送完啦，明天再来</text>
   <text wx:if="{{!showClaim && pending > 0}}" class="stamina-recovery__countdown">已恢复 {{pending}} 点待领取</text>
   <text wx:if="{{pendingFull && pending > 0}}" class="stamina-recovery__countdown">攒满啦，领取后继续恢复</text>
 </view>

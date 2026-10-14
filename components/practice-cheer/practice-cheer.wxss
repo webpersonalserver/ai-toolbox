@@ -85,6 +85,7 @@
   top: 42%;
   left: 0;
   right: 0;
+  padding: 0 var(--space-xl);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -92,26 +93,31 @@
 }
 
 .cheer__mascot {
-  font-size: 140rpx;
+  font-size: 120rpx;
   line-height: 1.1;
   animation: cheer-anim-mascot 0.9s cubic-bezier(0.2, 1.8, 0.4, 1);
 }
 
 .cheer--big .cheer__mascot {
-  font-size: 200rpx;
+  font-size: 160rpx;
   animation: cheer-anim-mascot 0.9s cubic-bezier(0.2, 1.8, 0.4, 1), cheer-anim-wiggle 0.5s ease-in-out 0.9s 3;
 }
 
 .cheer__title {
+  /* Long titles (晋升「…」！) wrap inside the pill instead of running to the screen edge. */
+  max-width: 100%;
   margin-top: var(--space-sm);
-  padding: var(--space-md) var(--space-xl);
-  border-radius: 999rpx;
+  padding: var(--space-sm) var(--space-xl);
+  border-radius: 56rpx;
   background: var(--color-success);
   box-shadow: 0 12rpx 0 var(--color-success-deep);
+  box-sizing: border-box;
   color: var(--color-on-accent);
-  font-size: 72rpx;
+  font-size: 52rpx;
   font-weight: 900;
-  letter-spacing: 4rpx;
+  line-height: 1.3;
+  letter-spacing: 2rpx;
+  text-align: center;
   animation: cheer-pop 0.6s cubic-bezier(0.2, 1.8, 0.4, 1) 0.08s both;
 }
 
@@ -119,12 +125,15 @@
   background: var(--color-gold);
   box-shadow: 0 14rpx 0 var(--color-primary-deep);
   color: var(--color-ink);
-  font-size: 88rpx;
+  font-size: 60rpx;
 }
 
 .cheer__subtitle {
+  max-width: 100%;
   margin-top: var(--space-lg);
   padding: var(--space-xs) var(--space-lg);
+  box-sizing: border-box;
+  text-align: center;
   border-radius: 999rpx;
   background: var(--color-surface);
   box-shadow: 0 6rpx 0 var(--color-border);

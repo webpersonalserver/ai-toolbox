@@ -9,8 +9,14 @@
 </view>
 
 <loading-skeleton wx:if="{{loading}}" rows="4" />
-<view class="page leaderboard" wx:if="{{!loading}}">
-  <view class="leaderboard__summary">按通关数排名，展示前 {{size}} 名</view>
+<view wx:if="{{!loading && loadFailed}}" class="page leaderboard">
+  <view class="card leaderboard__empty" bindtap="retryLoad">
+    <view class="leaderboard__empty-title">📶 没连上网络</view>
+    <view>点我再试一次</view>
+  </view>
+</view>
+<view class="page leaderboard" wx:if="{{!loading && !loadFailed}}">
+  <view class="leaderboard__summary">按闯过的关数排名，展示前 {{size}} 名</view>
 
   <view wx:if="{{!entries.length}}" class="card leaderboard__empty">还没有人上榜，快去闯关吧</view>
 
@@ -32,14 +38,14 @@
   <view wx:if="{{openSeatsText}}" class="card leaderboard__open-seats">{{openSeatsText}}</view>
 </view>
 
-<view wx:if="{{!loading && me && !me.inTop}}" class="leaderboard__mine">
+<view wx:if="{{!loading && !loadFailed && me && !me.inTop}}" class="leaderboard__mine">
   <view class="leaderboard__row leaderboard__row--me">
     <view class="leaderboard__rank">{{me.rankText}}</view>
     <image wx:if="{{me.avatarUrl}}" class="leaderboard__avatar" src="{{me.avatarUrl}}" mode="aspectFill" />
     <view wx:else class="leaderboard__avatar leaderboard__avatar--empty">{{me.initial}}</view>
     <view class="leaderboard__body">
       <view class="leaderboard__name">{{me.displayName}}<text class="leaderboard__me-tag">我</text></view>
-      <view class="leaderboard__title">{{me.rank ? me.titleName : '暂未上榜，通过 1 关即可上榜'}}</view>
+      <view class="leaderboard__title">{{me.rank ? me.titleName : '还没上榜，闯过 1 关就能上榜'}}</view>
     </view>
     <view class="leaderboard__score">{{me.solvedCount}}<text class="leaderboard__unit"> 关</text></view>
   </view>

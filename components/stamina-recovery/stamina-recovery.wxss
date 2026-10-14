@@ -8,7 +8,10 @@
   display: inline-flex;
   align-items: center;
   margin-bottom: 6rpx;
-  padding: 4rpx 18rpx 4rpx 10rpx;
+  /* A finger-sized pill: children tap it, so it is at least 72rpx tall. */
+  min-height: 72rpx;
+  padding: 16rpx 24rpx;
+  box-sizing: border-box;
   border-radius: 999rpx;
   background: var(--color-primary);
   box-shadow: 0 6rpx 0 var(--color-primary-deep);
@@ -31,7 +34,7 @@
 
 .stamina-recovery__countdown {
   color: var(--color-ink-faint);
-  font-size: 22rpx;
+  font-size: var(--font-sm);
   font-variant-numeric: tabular-nums;
 }
 

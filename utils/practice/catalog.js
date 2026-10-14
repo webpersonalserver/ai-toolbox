@@ -44,7 +44,7 @@ const UNITS = {
     legacyTier: 10
   },
   'add-sub-20': {
-    name: '20 以内进退位',
+    name: '20 以内加减（凑十）',
     example: '8 + 5 = ?',
     skill: 'addSub',
     options: { max: 20, regroupRatio: 0.5, zeroRatio: 0.05 },

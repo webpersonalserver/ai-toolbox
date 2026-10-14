@@ -28,6 +28,8 @@ const describeOpenSeats = (size, taken) => {
 Page({
   data: {
     loading: true,
+    // The board for the current tab never loaded (network): show a retry card, not "nobody on the board yet".
+    loadFailed: false,
     gameType: '',
     gameTabs: GAME_ORDER.map((gameType) => gameConfigOf(gameType)),
     size: 0,
@@ -58,18 +60,27 @@ Page({
   async loadLeaderboard() {
     try {
       await ensureLogin()
-      const result = await leaderboard.list(this.data.gameType)
+      const { gameType } = this.data
+      const result = await leaderboard.list(gameType)
+      this.loadedGameType = gameType
       this.setData({
         loading: false,
+        loadFailed: false,
         size: result.size,
         entries: result.entries.map(withDisplayName),
         openSeatsText: describeOpenSeats(result.size, result.entries.length),
         me: withDisplayName(result.me)
       })
     } catch (error) {
-      this.setData({ loading: false })
+      // A failed pull-down refresh keeps the board already on screen; only a tab with nothing to show needs the card.
+      this.setData({ loading: false, loadFailed: this.loadedGameType !== this.data.gameType })
       toastError(error)
     }
+  },
+
+  retryLoad() {
+    this.setData({ loading: true, loadFailed: false })
+    this.loadLeaderboard()
   },
 
   onShareAppMessage() {

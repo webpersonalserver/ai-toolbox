@@ -1,5 +1,5 @@
 {
-  "navigationBarTitleText": "闭关考核",
+  "navigationBarTitleText": "九九大挑战",
   "disableScroll": true,
   "usingComponents": {
     "kungfu-question": "/components/kungfu-question/kungfu-question",

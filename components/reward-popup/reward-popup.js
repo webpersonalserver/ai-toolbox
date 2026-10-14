@@ -1,5 +1,6 @@
 const { ITEM_META } = require('../../utils/items')
 const { watchAdForDouble } = require('../../utils/ad-reward')
+const { createSoundPlayer } = require('../../utils/practice/sound')
 
 const DOUBLED_MULTIPLIER = 2
 
@@ -21,7 +22,9 @@ Component({
     badge: { type: String, value: '' },
     rewards: { type: Array, value: [] },
     confirmText: { type: String, value: '收下' },
-    doubleToken: { type: String, value: '' }
+    doubleToken: { type: String, value: '' },
+    // A sound from utils/practice/sound.js played as the popup appears ('chest' when chests are opened); '' is silent.
+    sound: { type: String, value: '' }
   },
 
   data: {
@@ -35,6 +38,9 @@ Component({
     'visible, doubleToken'(visible) {
       if (visible) this.setData({ doubled: false, doubling: false })
     },
+    visible(visible) {
+      if (visible && this.data.sound) this.soundPlayer.play(this.data.sound)
+    },
     rewards(rewards) {
       this.setData({
         rewardCards: rewards.map((reward) => ({
@@ -43,6 +49,15 @@ Component({
           label: (ITEM_META[reward.type] || {}).label || ''
         }))
       })
+    }
+  },
+
+  lifetimes: {
+    attached() {
+      this.soundPlayer = createSoundPlayer()
+    },
+    detached() {
+      this.soundPlayer.destroy()
     }
   },
 

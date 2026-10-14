@@ -61,7 +61,7 @@ const toQuestion = (level) => ({
 const today = async ({ openid }) => {
   const dateKey = todayInChina()
   const total = await countLevels(HANZI_GAME_TYPE)
-  if (!total) throw new BusinessError(ERROR_CODES.BAD_REQUEST, '今日挑战还没准备好')
+  if (!total) throw new BusinessError(ERROR_CODES.BAD_REQUEST, '今日挑战还在准备中，等一会儿再来吧')
   const [levels, todayRecord] = await Promise.all([
     Promise.all(pickLevelNos(dateKey, total).map(readLevel)),
     db.collection('daily').doc(dailyDocId(openid, dateKey)).get().then(({ data }) => data, () => null)

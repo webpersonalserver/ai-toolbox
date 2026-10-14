@@ -129,12 +129,13 @@ Page({
       this.missedVerses.push(this.questions[this.index].fact.verse)
     }
     this.soundPlayer.play('wrong')
-    wx.vibrateShort({ type: 'heavy' })
+    // A light buzz: a miss should nudge, not feel like a punishment.
+    wx.vibrateShort({ type: 'light' })
     this.setData({
       combo: 0,
       lives: this.lives,
       hearts: heartsOf(this.lives),
-      feedbackLine: this.lives ? `中了一招！还剩 ${this.lives} 条命，再想想` : '体力耗尽……'
+      feedbackLine: this.lives ? `被挡了一下！还有 ${this.lives} 颗❤️，稳住再来` : '这次先到这里，看看答案记一记！'
     })
     if (this.lives) return
     this.setData({ locked: true, revealed: true })
@@ -156,7 +157,7 @@ Page({
         result: {
           visible: true,
           kind: 'fail',
-          heading: '闭关考核',
+          heading: '九九大挑战',
           title: '差一点就神功大成！',
           subtitle: `闯到第 ${this.index + 1} 题，答对 ${this.correctCount} 题`,
           lines: ['这几句口诀再练练：', ...this.missedVerses],
@@ -166,7 +167,7 @@ Page({
       return
     }
     const chestsSynced = syncProgress({ practiced: true })
-    let title = '神功大成，宝刀未老！'
+    let title = '又一次神功大成！'
     if (fasterPass) title = '再破纪录，宗师风范！'
     if (firstPass) title = '恭喜你，神功大成！'
     this.soundPlayer.play('gong')
@@ -186,7 +187,7 @@ Page({
           heading: '',
           title,
           subtitle: '九九口诀，尽在掌握',
-          lines: [`答对 ${this.correctCount} / ${this.questions.length} 题`, `用时 ${describeSeconds(seconds)}`, `剩余 ${this.lives} 条命${this.lives === EXAM_LIVES ? ' · 毫发无伤！' : ''}`],
+          lines: [`答对 ${this.correctCount} / ${this.questions.length} 题`, `用时 ${describeSeconds(seconds)}`, `还剩 ${this.lives} 颗❤️${this.lives === EXAM_LIVES ? ' · 毫发无伤！' : ''}`],
           actions
         }
       })

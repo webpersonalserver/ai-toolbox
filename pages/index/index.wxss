@@ -111,6 +111,7 @@
 
 .hall__game-body {
   flex: 1;
+  min-width: 0;
 }
 
 .hall__game-name {
@@ -165,8 +166,11 @@
 }
 
 .hall__game-action {
+  flex-shrink: 0;
+  margin-left: var(--space-md);
   color: var(--game-color-deep);
   font-weight: 700;
+  white-space: nowrap;
 }
 
 /* Room under the last card so the floating video button never covers it. */

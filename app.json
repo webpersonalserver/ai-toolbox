@@ -9,6 +9,7 @@
     "pages/admin/control",
     "pages/rescue/rescue",
     "pages/welfare/welfare",
+    "pages/welfare/chests",
     "pages/daily/daily",
     "pages/practice/index",
     "pages/practice/honors",
@@ -21,7 +22,7 @@
   "window": {
     "backgroundTextStyle": "dark",
     "navigationBarBackgroundColor": "#FFF8EC",
-    "navigationBarTitleText": "解谜达人",
+    "navigationBarTitleText": "喵喵状元郎",
     "navigationBarTextStyle": "black",
     "backgroundColor": "#FFF8EC"
   },

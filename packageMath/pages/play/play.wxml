@@ -20,11 +20,11 @@
       <text wx:if="{{streak >= hotStreak}}" class="drill__fire">🔥</text>
     </view>
     <view class="drill__meta">
-      <view wx:if="{{monsterLoading}}" class="drill__best">正在打开收容所…</view>
+      <view wx:if="{{monsterLoading}}" class="drill__best">正在找小怪兽…</view>
       <view wx:elif="{{mode !== 'endless'}}" class="drill__round">
         <view wx:for="{{dots}}" wx:key="id" class="drill__round-dot drill__round-dot--{{item.state}}"></view>
       </view>
-      <view wx:else class="drill__best">无尽挑战 · 最佳 {{bestStreak}}</view>
+      <view wx:else class="drill__best">继续挑战 · 最多连对 {{bestStreak}} 题</view>
     </view>
     <view class="drill__sound" bindtap="toggleSound">{{soundEnabled ? '🔊' : '🔈'}}</view>
   </view>
@@ -37,34 +37,37 @@
       </view>
       <view class="drill__reward-streak">{{rewardBar.streakText}}</view>
     </view>
-    <view class="drill__chest {{chestBump ? 'drill__chest--bump' : ''}}" bindtap="openWelfare">
+    <view class="drill__chest {{chestBump ? 'drill__chest--bump' : ''}}" bindtap="bumpChest">
       <text class="drill__chest-icon">🎁</text>
       <text class="drill__chest-count">{{chestCount}}</text>
     </view>
   </view>
 
-  <view wx:if="{{story}}" class="drill__story">{{story}}</view>
+  <!-- Takes the space left above the keypad and scrolls when a tall question (分与合 with pictures) does not fit, so the keypad is never pushed off screen. -->
+  <view class="drill__stage">
+    <view wx:if="{{story}}" class="drill__story">{{story}}</view>
 
-  <view wx:if="{{bond}}" class="card drill__equation drill__bond drill__equation--{{inputState}}">
-    <template is="drill-node" data="{{token: bond.top, input, inputState}}" />
-    <view class="drill__bond-lines">
-      <view class="drill__bond-line drill__bond-line--left"></view>
-      <view class="drill__bond-line drill__bond-line--right"></view>
+    <view wx:if="{{bond}}" class="card drill__equation drill__bond drill__equation--{{inputState}}">
+      <template is="drill-node" data="{{token: bond.top, input, inputState}}" />
+      <view class="drill__bond-lines">
+        <view class="drill__bond-line drill__bond-line--left"></view>
+        <view class="drill__bond-line drill__bond-line--right"></view>
+      </view>
+      <view class="drill__bond-parts">
+        <template is="drill-node" data="{{token: bond.left, input, inputState}}" />
+        <template is="drill-node" data="{{token: bond.right, input, inputState}}" />
+      </view>
     </view>
-    <view class="drill__bond-parts">
-      <template is="drill-node" data="{{token: bond.left, input, inputState}}" />
-      <template is="drill-node" data="{{token: bond.right, input, inputState}}" />
+    <view wx:else class="card drill__equation drill__equation--{{inputState}} {{compact ? 'drill__equation--compact' : ''}}">
+      <block wx:for="{{tokens}}" wx:key="id">
+        <template is="drill-node" data="{{token: item, input, inputState}}" />
+      </block>
     </view>
-  </view>
-  <view wx:else class="card drill__equation drill__equation--{{inputState}} {{compact ? 'drill__equation--compact' : ''}}">
-    <block wx:for="{{tokens}}" wx:key="id">
-      <template is="drill-node" data="{{token: item, input, inputState}}" />
-    </block>
-  </view>
 
-  <view class="drill__feedback">{{feedbackLine}}</view>
-  <view class="drill__helpers">
-    <view wx:if="{{canExplain}}" class="drill__explain" hover-class="drill__explain--pressed" bindtap="openExplain">{{labels.explain}}</view>
+    <view class="drill__feedback">{{feedbackLine}}</view>
+    <view class="drill__helpers">
+      <view wx:if="{{canExplain}}" class="drill__explain" hover-class="drill__explain--pressed" bindtap="openExplain">{{labels.explain}}</view>
+    </view>
   </view>
 
   <view wx:if="{{choices.length}}" class="drill__choices">
@@ -103,7 +106,7 @@
       <text wx:for="{{roundResult.slots}}" wx:key="id" class="round__star round__star--{{item.id}} {{item.on ? 'round__star--on' : ''}}">★</text>
     </view>
     <view class="round__talk">
-      <image class="round__cat" src="{{roundResult.happy ? mascot.images.happy : mascot.images.normal}}" mode="aspectFit" />
+      <image class="round__cat" src="{{roundResult.happy ? mascot.images.happy : mascot.images.cheer}}" mode="aspectFit" />
       <view class="round__line">{{roundResult.line}}</view>
     </view>
     <view wx:if="{{roundResult.detail}}" class="round__detail">{{roundResult.detail}}</view>
@@ -116,6 +119,7 @@
       <view class="btn btn--primary round__action" bindtap="startRound">{{labels.nextRound}}</view>
       <view class="btn btn--ghost round__action" bindtap="startEndless">{{labels.endless}}</view>
     </block>
+    <view wx:if="{{chestCount > 0}}" class="btn btn--ghost round__action" bindtap="openChests">🎁 去开宝箱</view>
     <view class="round__back" bindtap="backToMap">回到地图</view>
   </view>
 </view>

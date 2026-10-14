@@ -12,7 +12,7 @@ const REVEAL_PAUSE_MS = 2200
 const MASTERY_CHEER_MS = 1800
 const PRAISES = ['好招式！', '内力大增！', '一招制胜！', '身手不凡！', '出手如电！', '功力见长！']
 const MASCOTS = ['🥋', '⚡', '🔥', '💥', '👊', '🌟']
-const ENCOURAGEMENTS = ['招式不对，再来！', '稳住内力，再想想', '差一点就打中了！']
+const ENCOURAGEMENTS = ['差一点点，再出一招！', '稳住内力，再想想', '差一点就打中了！']
 const HIDDEN_CHEER = { visible: false, title: '', subtitle: '', mascot: '', big: false }
 
 const pick = (list) => list[Math.floor(Math.random() * list.length)]
@@ -123,7 +123,7 @@ Page({
       combo: 0,
       locked: true,
       revealed: true,
-      feedbackLine: '这句口诀念三遍，过一会儿还会再考你'
+      feedbackLine: '跟着念三遍，等会儿它再出现，你一定能打中！'
     })
     this.later(() => this.advance(), REVEAL_PAUSE_MS)
   },
@@ -148,7 +148,7 @@ Page({
     if (realmAfter !== realmBefore) subtitle = `境界提升：${realmAfter}`
     const isLastRow = this.row >= ROW_COUNT
     const actions = [
-      isLastRow ? { key: 'exam', text: '闭关考核，冲击神功大成', primary: true } : { key: 'next', text: `修炼第${CHINESE_ORDINALS[this.row]}重`, primary: true },
+      isLastRow ? { key: 'exam', text: '⚔️ 九九大挑战，冲击神功大成', primary: true } : { key: 'next', text: `修炼第${CHINESE_ORDINALS[this.row]}重`, primary: true },
       { key: 'again', text: stars < 3 ? '再练一遍，冲三星' : '再练一遍', primary: false },
       { key: 'back', text: '返回秘籍', primary: false }
     ]

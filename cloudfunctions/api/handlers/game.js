@@ -1,6 +1,6 @@
 const { db, _ } = require('../lib/cloud')
 const { ERROR_CODES, BusinessError, throwIfFailed } = require('../lib/response')
-const { loadRulesForGame } = require('../lib/rules')
+const { loadRulesForGame, sumRewardsByType } = require('../lib/rules')
 const { countLevels, levelStages } = require('../lib/level-count')
 const { RESCUE_STATUS, closeOpenRescue, ensureRescuedLevelSolved } = require('../lib/rescue-store')
 const { isAllCleared, recordCompletionIfCleared, healProgress } = require('../lib/completion')
@@ -17,9 +17,8 @@ const {
 } = require('../lib/games')
 const {
   describeTitle,
-  pendingChestCount,
-  milestoneClaimedCount,
-  claimedChestCount,
+  pendingChestNosOf,
+  milestoneAfterOpening,
   chestRewards,
   isBigChest,
   describeAchievement
@@ -134,8 +133,11 @@ const summary = async ({ openid, payload }) => {
   }
 }
 
-const claimMilestones = async ({ openid, payload }) => {
-  const gameType = parseGameType(payload)
+const rewardListOf = (deltas) => Object.keys(deltas).map((type) => ({ type, amount: deltas[type] }))
+
+// Opens the given chests of one game (every pending one when chestNos is null) and pays their rewards.
+// Chests already opened (another tap, another device) are skipped; nothing left to open is an error.
+const openGameChests = async (openid, gameType, chestNos) => {
   const now = Date.now()
   const rules = await loadRulesForGame(gameType)
   await getProgress(openid, gameType)
@@ -144,33 +146,47 @@ const claimMilestones = async ({ openid, payload }) => {
   const outcome = await db.runTransaction(async (transaction) => {
     const progressRef = progressRefOf(transaction, openid, gameType)
     const { data: progress } = await progressRef.get()
-    const solvedCount = progress.solved.length
-    const chestCount = pendingChestCount(solvedCount, milestoneClaimedCount(progress), everyLevels)
-    if (chestCount <= 0) {
+    const pending = pendingChestNosOf(progress, everyLevels)
+    const chestNosToOpen = chestNos ? pending.filter((chestNo) => chestNos.includes(chestNo)) : pending
+    if (!chestNosToOpen.length) {
       return { failure: { code: ERROR_CODES.NO_MILESTONE_TO_CLAIM, message: '还没有可以打开的宝箱' } }
     }
-    const firstChestNo = claimedChestCount(progress, everyLevels) + 1
-    const chests = Array.from({ length: chestCount }, (_, offset) => {
-      const chestNo = firstChestNo + offset
-      return { chestNo, isBig: isBigChest(chestNo, rules), rewards: chestRewards(chestNo, rules) }
-    })
-    const deltas = {}
-    chests.forEach((chest) => chest.rewards.forEach((reward) => {
-      deltas[reward.type] = (deltas[reward.type] || 0) + reward.amount
-    }))
+    const chests = chestNosToOpen.map((chestNo) => ({ chestNo, isBig: isBigChest(chestNo, rules), rewards: chestRewards(chestNo, rules) }))
+    const deltas = sumRewardsByType(chests.flatMap((chest) => chest.rewards))
     const change = await changeItemsInTransaction(transaction, openid, deltas, rules, now)
-    const claimedSolvedCount = Math.floor(solvedCount / everyLevels) * everyLevels
-    await progressRef.update({ data: { milestoneClaimedSolvedCount: claimedSolvedCount } })
-    return { chestCount, chests, deltas, items: change.items }
+    const milestone = milestoneAfterOpening(progress, chestNosToOpen, everyLevels)
+    await progressRef.update({
+      data: { milestoneClaimedSolvedCount: milestone.milestoneClaimedSolvedCount, milestoneOpenedChestNos: _.set(milestone.milestoneOpenedChestNos) }
+    })
+    return { chests, deltas, items: change.items }
   })
   throwIfFailed(outcome)
   await writeItemLogs(openid, outcome.deltas, ITEM_LOG_REASONS.MILESTONE, { gameType })
-  const rewards = Object.keys(outcome.deltas).map((type) => ({ type, amount: outcome.deltas[type] }))
+  return { ...outcome, rules }
+}
+
+// The pending chests of one game with what is inside, for the welfare bag.
+const pendingGameChests = async (openid, gameType) => {
+  const [rules, progress] = await Promise.all([loadRulesForGame(gameType), getProgress(openid, gameType)])
+  const { everyLevels } = rules.milestone
+  return pendingChestNosOf(progress, everyLevels).map((chestNo) => ({
+    chestNo,
+    levelNo: chestNo * everyLevels,
+    isBig: isBigChest(chestNo, rules),
+    rewards: chestRewards(chestNo, rules)
+  }))
+}
+
+// Opens every pending chest of the game at once (the 开宝箱 button on the level list).
+const claimMilestones = async ({ openid, payload }) => {
+  const gameType = parseGameType(payload)
+  const { chests, deltas, items, rules } = await openGameChests(openid, gameType, null)
+  const rewards = rewardListOf(deltas)
   return {
-    chestCount: outcome.chestCount,
-    chests: outcome.chests,
+    chestCount: chests.length,
+    chests,
     rewards,
-    items: outcome.items,
+    items,
     doubleToken: await issueDoubleOffer(openid, rewards, `milestone:${gameType}`, rules)
   }
 }
@@ -257,7 +273,7 @@ const submit = async ({ openid, payload }) => {
     if (unplayableReason) return { failure: unplayableReason }
     const attempt = getAttempt(progress, levelNo)
     if (!attempt.active) {
-      return { failure: { code: ERROR_CODES.ATTEMPT_NOT_ACTIVE, message: '请先开始挑战' } }
+      return { failure: { code: ERROR_CODES.ATTEMPT_NOT_ACTIVE, message: '先点「开始挑战」再答题哦' } }
     }
     if (isCorrect) {
       const solved = await solveLevelInTransaction(transaction, openid, gameType, levelNo)
@@ -310,11 +326,11 @@ const useHint = async ({ openid, payload }) => {
     const unplayableReason = findUnplayableReason(progress, levelNo)
     if (unplayableReason) return { failure: unplayableReason }
     if (!getAttempt(progress, levelNo).active) {
-      return { failure: { code: ERROR_CODES.ATTEMPT_NOT_ACTIVE, message: '请先开始挑战' } }
+      return { failure: { code: ERROR_CODES.ATTEMPT_NOT_ACTIVE, message: '先点「开始挑战」再答题哦' } }
     }
     const hintsUsed = hintsUsedOnLevel(progress, levelNo)
     if (hintsUsed >= maxHints) {
-      return { failure: { code: ERROR_CODES.HINT_LIMIT_REACHED, message: `每关最多提示 ${maxHints} 次` } }
+      return { failure: { code: ERROR_CODES.HINT_LIMIT_REACHED, message: '这关的提示用完啦，自己想想，你可以的！' } }
     }
     const change = await changeItemsInTransaction(transaction, openid, hintDelta, rules, now)
     if (change.insufficientType) return { insufficientType: change.insufficientType, insufficientItems: change.items }
@@ -355,6 +371,8 @@ module.exports = {
   levelList,
   summary,
   claimMilestones,
+  openGameChests,
+  pendingGameChests,
   solvedBook,
   getLevel: getLevelDetail,
   startAttempt,

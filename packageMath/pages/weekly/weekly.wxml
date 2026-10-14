@@ -1,13 +1,16 @@
 <view class="page week">
   <view class="week__hero">
-    <image class="week__cat" src="{{week && week.practicedDays >= 3 ? mascot.images.happy : mascot.images.normal}}" mode="aspectFit" />
+    <image class="week__cat" src="{{week && week.practicedDays >= 3 ? mascot.images.happy : mascot.images.cheer}}" mode="aspectFit" />
     <view class="week__speech">
       <view class="week__title">本周小结</view>
       <view class="week__range">{{week ? week.rangeText : '正在翻小本本…'}}</view>
     </view>
   </view>
 
-  <view wx:if="{{failed}}" class="card week__empty">网络不太好，小结没拿到，回去再进来试试～</view>
+  <view wx:if="{{failed}}" class="card week__empty">
+    <view>网络不太好，小结没拿到～</view>
+    <button class="btn btn--primary week__retry" bindtap="retry">再试一次</button>
+  </view>
 
   <block wx:if="{{week}}">
     <view class="card week__card">
@@ -53,14 +56,14 @@
     </view>
 
     <view class="card week__card">
-      <view class="week__label">还在逃的小怪兽</view>
+      <view class="week__label">躲在藏身洞的小怪兽</view>
       <view wx:if="{{week.monsters.length}}">
         <view wx:for="{{week.monsters}}" wx:key="unitId" class="week__monster">
           <text>{{item.unitName}} · {{item.count}} 只</text>
           <text class="week__catch" data-unit-id="{{item.unitId}}" bindtap="catchMonsters">去抓 ›</text>
         </view>
       </view>
-      <view wx:else class="week__muted">一只都没有，收容所空空的！</view>
+      <view wx:else class="week__muted">藏身洞空空的，一只小怪兽都没有，你太棒啦！</view>
     </view>
 
     <button wx:if="{{sharing}}" class="btn btn--primary week__share" open-type="share">分享给爸爸妈妈</button>

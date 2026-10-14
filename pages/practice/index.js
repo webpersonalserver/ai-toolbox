@@ -1,5 +1,5 @@
 const { SUBJECTS } = require('../../utils/practice/catalog')
-const { COPY, MASCOT, pick } = require('../../utils/practice/copy')
+const { COPY, MASCOT, mascotView, pick } = require('../../utils/practice/copy')
 const { DEFAULT_SHARE } = require('../../utils/share')
 const { practice } = require('../../utils/api')
 const { waitForPendingReport } = require('../../utils/practice/pending-report')
@@ -7,7 +7,7 @@ const { waitForPendingReport } = require('../../utils/practice/pending-report')
 const HONORS_URL = '/pages/practice/honors'
 const WEEKLY_URL = '/packageMath/pages/weekly/weekly'
 // Shown until the cloud answers, so the card keeps its place and the list below does not jump.
-const PLACEHOLDER_HONORS = { flowers: '—', todayFlowers: 0, unlockedCount: '—', medalCount: '—', dayStreak: '—' }
+const PLACEHOLDER_HONORS = { flowers: '—', todayFlowers: 0, unlockedCount: '—', dayStreak: '—' }
 
 Page({
   data: {
@@ -20,7 +20,7 @@ Page({
   },
 
   async onShow() {
-    this.setData({ greeting: pick(COPY.parkGreetings) })
+    this.setData({ greeting: pick(COPY.parkGreetings), mascot: mascotView() })
     try {
       await waitForPendingReport()
       this.setData({ honors: await practice.honors() })

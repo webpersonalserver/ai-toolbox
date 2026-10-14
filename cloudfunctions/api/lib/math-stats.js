@@ -48,6 +48,7 @@ const emptyMathStats = (openid) => ({
   streakRun: null,
   pendingChestCount: 0,
   pendingRewards: emptyItemCounts(),
+  pendingChestList: [],
   recentReportIds: []
 })
 

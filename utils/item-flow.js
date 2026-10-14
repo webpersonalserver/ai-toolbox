@@ -20,15 +20,22 @@ const confirm = (title, content, confirmText) =>
     wx.showModal({ title, content, confirmText, success: (result) => resolve(result.confirm) })
   })
 
-const WELFARE_URL = '/pages/welfare/welfare'
+const CHEST_ROOM_URL = '/pages/welfare/chests'
 const PRACTICE_TAB_URL = '/pages/practice/index'
 
 const notify = (title, content) => wx.showModal({ title, content, showCancel: false, confirmText: '知道了' })
 
-const titleOf = (itemType) => `${ITEM_META[itemType].label}不足`
+// "用完啦" reads friendlier to a child than "不足", and every dialog below offers a way to get more.
+const titleOf = (itemType) => `${ITEM_META[itemType].label}用完啦`
+
+// Last resort once today's free supply is gone; the hint copy cheers the child on to try without one.
+const OUT_FOR_TODAY_TEXT = {
+  hint: '今天的提示用完啦，自己想一想，你一定行！明天还会送新的',
+  stamina: '今天的体力都送完啦，明天还会送新的！'
+}
 
 const claimRecovery = async ({ pendingStamina }) => {
-  const agreed = await confirm('体力不足', `有 ${pendingStamina} 点恢复的体力还没领取，现在领取？`, '领取')
+  const agreed = await confirm(titleOf('stamina'), `有 ${pendingStamina} 点体力等你领，现在就领？`, '领取')
   if (!agreed) return false
   try {
     const result = await account.claimRecoveredStamina()
@@ -55,25 +62,29 @@ const earnByAd = async ({ itemType, adReward }) => {
 }
 
 const openWelfareChests = async ({ itemType, welfareChests }) => {
-  const agreed = await confirm(titleOf(itemType), `福利袋里有 ${welfareChests} 个宝箱还没打开，里面有体力和提示`, '去开宝箱')
-  if (agreed) wx.navigateTo({ url: WELFARE_URL })
+  const agreed = await confirm(titleOf(itemType), `你有 ${welfareChests} 个宝箱还没打开，里面有体力和提示！`, '去开宝箱')
+  if (agreed) wx.navigateTo({ url: CHEST_ROOM_URL })
 }
 
 const suggestPractice = async ({ practiceStaminaRoom }) => {
   const agreed = await confirm(
-    '体力不足',
-    `去「趣味」的数理乐园闯关，答对题目就能攒体力宝箱（今天还能攒 ${practiceStaminaRoom} 点）`,
-    '去练习'
+    titleOf('stamina'),
+    `去「趣味」答题还能攒体力宝箱（今天还能攒 ${practiceStaminaRoom} 点）`,
+    '去趣味'
   )
   if (agreed) wx.switchTab({ url: PRACTICE_TAB_URL })
 }
 
+// The server only sends waitRecovery after practice chests are capped for today, so once recovery is also done
+// the 趣味 tab is offered as something fun to do rather than as another source of stamina.
 const explainStaminaRecovery = async () => {
   const { items } = await ensureLogin({ force: true })
-  const content = items.nextStaminaAt
-    ? `${minutesUntil(items.nextStaminaAt)} 分钟后恢复 1 点体力，恢复的体力可以在顶部领取`
-    : '今天的体力已经恢复满了，明天会继续恢复；也可以去「趣味」练习攒体力'
-  notify('体力不足', content)
+  if (items.nextStaminaAt) {
+    notify(titleOf('stamina'), `再等 ${minutesUntil(items.nextStaminaAt)} 分钟就送你 1 点体力～`)
+    return
+  }
+  const agreed = await confirm(titleOf('stamina'), `${OUT_FOR_TODAY_TEXT.stamina}先去「趣味」练练本领吧`, '去趣味')
+  if (agreed) wx.switchTab({ url: PRACTICE_TAB_URL })
 }
 
 /**
@@ -115,7 +126,7 @@ const runWithItem = async (action) => {
         await explainStaminaRecovery()
         return null
       default:
-        notify(titleOf(step.itemType), `今天的${ITEM_META[step.itemType].label}已经领完了，明天再来吧`)
+        notify(titleOf(step.itemType), OUT_FOR_TODAY_TEXT[step.itemType] || `今天的${ITEM_META[step.itemType].label}送完啦，明天再来吧`)
         return null
     }
     return earned ? runWithItem(action) : null

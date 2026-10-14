@@ -1,6 +1,6 @@
 const { practice } = require('../../../utils/api')
 const { unitOf } = require('../../../utils/practice/catalog')
-const { COPY, MASCOT } = require('../../../utils/practice/copy')
+const { COPY, MASCOT, mascotView } = require('../../../utils/practice/copy')
 const { waitForPendingReport } = require('../../../utils/practice/pending-report')
 const { buildWeeklyShare, DEFAULT_SHARE } = require('../../../utils/share')
 const { isSwitchOn } = require('../../../utils/switches')
@@ -13,7 +13,8 @@ const monthDayOf = (dateKey) => `${Number(dateKey.slice(4, 6))} 月 ${Number(dat
 const compareText = (solved, lastWeekSolved) => {
   if (!lastWeekSolved) return solved ? '上周还没开始，这周起步啦' : ''
   if (solved > lastWeekSolved) return `比上周多 ${solved - lastWeekSolved} 题 📈`
-  if (solved < lastWeekSolved) return `比上周少 ${lastWeekSolved - solved} 题，加把劲～`
+  // Never tell a child they did worse: point at how close beating last week is.
+  if (solved < lastWeekSolved) return `这周答对 ${solved} 题，下周多练一点点就能超过上周啦！`
   return '和上周一样多'
 }
 
@@ -44,7 +45,7 @@ Page({
   },
 
   onShow() {
-    this.setData({ sharing: isSwitchOn('sharing') })
+    this.setData({ sharing: isSwitchOn('sharing'), mascot: mascotView() })
     this.load()
   },
 
@@ -57,6 +58,11 @@ Page({
       console.error('[weekly] report unavailable', error)
       this.setData({ loading: false, failed: true })
     }
+  },
+
+  retry() {
+    this.setData({ loading: true, failed: false })
+    this.load()
   },
 
   catchMonsters(event) {

@@ -614,6 +614,38 @@ const startedAttempt = { active: true, wrongCount: 0 }
   assert(r.code === 0 && Object.keys(r.data.urls).length === 117 && r.data.urls[clipNames[116]].includes('speech/000000000074.mp3') && r.data.expiresInSeconds === 86400, 'clip links come back for all 117 clips across batches of 50', r.data && r.data.urls[clipNames[116]])
   r = await call('f1', 'speech.clipUrls', { clipNames: ['../secret.mp3'] }); assert(r.code === 40000, 'clip names outside the pattern are refused', r)
   r = await call('f1', 'speech.clipUrls', { clipNames: [] }); assert(r.code === 40000, 'an empty clip list is refused', r)
+  // chest room: every pending chest listed with its contents; open any one, in any order, or all at once
+  await call('c1', 'account.login'); await call('c1', 'game.summary', { gameType: 'idiom' })
+  S.progress['c1_idiom'].solved = Array.from({ length: 30 }, (_, i) => i + 1)
+  r = await call('c1', 'chests.list')
+  const gameChestIds = r.data.chests.filter((chest) => chest.kind === 'game').map((chest) => chest.chestId)
+  assert(r.code === 0 && gameChestIds.join() === 'game:idiom:1,game:idiom:2,game:idiom:3' && r.data.chests[2].levelNo === 30 && r.data.chests[2].rewards.length > 0, 'level chests are listed one by one with their contents', r.data)
+  r = await call('c1', 'chests.open', { chestIds: ['game:idiom:2'] })
+  assert(r.code === 0 && r.data.chests.length === 1 && r.data.chests[0].chestNo === 2 && S.progress.c1_idiom.milestoneClaimedSolvedCount === 0 && S.progress.c1_idiom.milestoneOpenedChestNos.join() === '2', 'a later chest can be opened first', r.data)
+  r = await call('c1', 'game.summary', { gameType: 'idiom' }); assert(r.data.achievement.milestone.pendingChests === 2, 'the opened chest leaves the pending count', r.data.achievement.milestone)
+  r = await call('c1', 'chests.open', { chestIds: ['game:idiom:2'] }); assert(r.code === 40016, 'a chest opens only once', r)
+  r = await call('c1', 'chests.open', { chestIds: ['game:idiom:1'] })
+  assert(r.code === 0 && S.progress.c1_idiom.milestoneClaimedSolvedCount === 20 && S.progress.c1_idiom.milestoneOpenedChestNos.length === 0, 'filling the gap folds opened chests back into the claimed count', S.progress.c1_idiom)
+  r = await call('c1', 'practice.report', { practiceId: 'arithmetic', tier: 10, solvedDelta: 20, streak: 10, streakRunId: 'c-run' })
+  S.practice_stats.c1_math.pendingChestCount += 2
+  S.practice_stats.c1_math.pendingRewards.stamina += 3
+  r = await call('c1', 'chests.list')
+  const practiceChests = r.data.chests.filter((chest) => chest.kind === 'practice')
+  assert(practiceChests.length === 3 && practiceChests[0].chestId === 'practice:math:earlier' && practiceChests[0].count === 2 && practiceChests[0].rewards[0].amount === 3 && practiceChests[1].source === 'solved', 'practice chests listed one by one; ones saved before the list come as one bundle', practiceChests)
+  r = await call('c1', 'chests.open', { chestIds: [practiceChests[2].chestId] })
+  assert(r.code === 0 && S.practice_stats.c1_math.pendingChestCount === 3 && S.practice_stats.c1_math.pendingChestList.length === 1, 'opening one practice chest leaves the others', S.practice_stats.c1_math)
+  const staminaBeforeAll = S.users.c1.items.stamina
+  r = await call('c1', 'chests.open', { all: true })
+  assert(r.code === 0 && r.data.chests.length === 3 && S.users.c1.items.stamina > staminaBeforeAll && S.practice_stats.c1_math.pendingChestCount === 0, 'open all opens every game and practice chest', r.data)
+  r = await call('c1', 'chests.list'); assert(r.data.chests.length === 0, 'nothing left after opening all', r.data)
+  r = await call('c1', 'chests.open', { all: true }); assert(r.code === 40016, 'open all with nothing left is refused', r)
+  r = await call('c1', 'chests.open', { chestIds: ['game:idiom:abc'] }); assert(r.code === 40000, 'malformed chest id refused', r)
+  r = await call('c1', 'chests.open', { chestIds: ['practice:math:a:b'] }); assert(r.code === 40000, 'chest id with extra parts refused', r)
+  // cloud image links
+  r = await call('f1', 'assets.imageUrls', { imagePaths: ['mascot/happy.png', 'islands/make-ten.png', 'share/default.jpg'] })
+  assert(r.code === 0 && r.data.urls['islands/make-ten.png'].includes('images/islands/make-ten.png') && Object.keys(r.data.urls).length === 3 && r.data.expiresInSeconds === 86400, 'image links come back keyed by their path under images/', r.data)
+  r = await call('f1', 'assets.imageUrls', { imagePaths: ['../avatars/someone.png'] }); assert(r.code === 40000, 'image paths outside images/ are refused', r)
+  r = await call('f1', 'assets.imageUrls', { imagePaths: [] }); assert(r.code === 40000, 'an empty image list is refused', r)
   // one date key per request
   const { dailyDocId } = require(path.join(API_ROOT, 'lib', 'daily'))
   assert(dailyDocId('f1', '20261013') === 'f1_20261013', 'daily records can be addressed by an explicit date key', null)

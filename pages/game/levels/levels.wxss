@@ -8,8 +8,17 @@
   justify-content: space-between;
 }
 
+/* Links are small text, so the tap area is padded out to a finger-sized 80rpx. */
+.levels__links {
+  display: flex;
+  align-items: center;
+}
+
 .levels__link {
-  margin-left: var(--space-md);
+  display: inline-flex;
+  align-items: center;
+  min-height: 80rpx;
+  padding: 0 var(--space-sm);
   color: var(--color-primary);
   font-size: var(--font-sm);
   font-weight: 600;
@@ -67,8 +76,8 @@
 .btn.levels__pager-btn {
   flex-shrink: 0;
   width: 180rpx;
-  height: 64rpx;
-  line-height: 64rpx;
+  height: 88rpx;
+  line-height: 88rpx;
   font-size: var(--font-sm);
 }
 
@@ -113,7 +122,7 @@
 }
 
 .levels__lock {
-  font-size: var(--font-sm);
+  font-size: var(--font-lg);
 }
 
 .levels__empty {

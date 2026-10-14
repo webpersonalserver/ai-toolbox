@@ -1,4 +1,4 @@
-const { game, rescue, toastError } = require('../../../utils/api')
+const { game, rescue, toastError, ERROR_CODES } = require('../../../utils/api')
 const { ensureLogin, getSession } = require('../../../utils/session')
 const { runWithItem } = require('../../../utils/item-flow')
 const { describeRewards } = require('../../../utils/items')
@@ -17,14 +17,20 @@ const PLAY_STAGES = {
   LOADING: 'loading',
   READY: 'ready',
   PLAYING: 'playing',
-  SOLVED: 'solved'
+  SOLVED: 'solved',
+  // The level could not be loaded (network): a retry card instead of an endless skeleton.
+  ERROR: 'error',
+  // 下一关 pressed: the "第 N 关" transition shown while the next level loads and starts.
+  NEXT: 'next'
 }
+// The transition stays at least this long so it reads as a step forward, not a flicker.
+const NEXT_LEVEL_TRANSITION_MS = 900
 
 const SHARE_PURPOSE_RESCUE = 'rescue'
 const AUTO_START_FLAG = '1'
 const CHEER_MS = 1600
 const BIG_CHEER_MS = 2600
-const PASS_PRAISES = ['过关啦！', '太厉害了！', '答对啦！', '漂亮！', '一猜就中！']
+const PASS_PRAISES = ['闯过啦！', '太厉害了！', '答对啦！', '漂亮！', '一猜就中！']
 const PASS_MASCOTS = ['🎉', '🥳', '🌟', '👏', '🤩']
 const BIG_MASCOTS = ['🏆', '👑', '🎁']
 const HIDDEN_CHEER = { visible: false, title: '', subtitle: '', mascot: '', big: false }
@@ -39,10 +45,10 @@ const pick = (list) => list[Math.floor(Math.random() * list.length)]
 
 // Bigger moments (new title, a chest unlocked, everything cleared) get the full-screen version.
 const passCheerOf = ({ titleUpgrade, unlockedChest, allCleared, perfectPass }) => {
-  if (allCleared) return { visible: true, title: '全部通关！', subtitle: '你是真正的解谜达人', mascot: '👑', big: true }
-  if (titleUpgrade) return { visible: true, title: `晋升「${titleUpgrade}」！`, subtitle: '段位又升了一级', mascot: pick(BIG_MASCOTS), big: true }
+  if (allCleared) return { visible: true, title: '全部闯过啦！', subtitle: '你是真正的喵喵状元郎', mascot: '👑', big: true }
+  if (titleUpgrade) return { visible: true, title: '称号升级啦！', subtitle: `你现在是「${titleUpgrade}」`, mascot: pick(BIG_MASCOTS), big: true }
   if (unlockedChest) return { visible: true, title: '解锁宝箱！', subtitle: '快去打开看看里面有什么', mascot: '🎁', big: true }
-  return { visible: true, title: pick(PASS_PRAISES), subtitle: perfectPass ? '零失误，完美通关！' : '', mascot: pick(PASS_MASCOTS), big: false }
+  return { visible: true, title: pick(PASS_PRAISES), subtitle: perfectPass ? '零失误，满分过关！' : '', mascot: pick(PASS_MASCOTS), big: false }
 }
 
 // Solving exactly the Nth level of a chest interval is the moment a chest unlocks; older unopened chests don't count.
@@ -154,16 +160,20 @@ Page({
   },
 
   async loadLevel() {
+    if (this.data.stage === PLAY_STAGES.ERROR) this.setData({ stage: PLAY_STAGES.LOADING })
     try {
       await ensureLogin()
       this.applyLevelDetail(await game.getLevel(this.data.gameType, this.data.levelNo))
       this.autoStartIfRequested()
     } catch (error) {
-      toastError(error)
+      // Leaving the skeleton up would look like the app froze; a retry card tells the child what to do.
+      // A cloud-side reason (e.g. the level is still locked) is worth showing as well.
+      if (error.code !== ERROR_CODES.NETWORK) toastError(error)
+      this.setData({ stage: PLAY_STAGES.ERROR })
     }
   },
 
-  // Only a fresh level starts by itself; a failed attempt stays on the "挑战失败" card so the player sees it.
+  // Only a fresh level starts by itself; a failed attempt stays on the "差一点点" card so the player sees it.
   autoStartIfRequested() {
     const { shouldAutoStart } = this
     this.shouldAutoStart = false
@@ -184,6 +194,7 @@ Page({
   onUnload() {
     clearTimeout(this.celebrationTimer)
     clearTimeout(this.cheerTimer)
+    clearTimeout(this.nextLevelTimer)
     this.soundPlayer.destroy()
   },
 
@@ -265,9 +276,11 @@ Page({
         return
       }
       this.setData({ attempt: result.attempt, hearts: buildHearts(result.attempt) })
+      this.soundPlayer.play('wrong')
       if (result.attempt.failed) {
         this.setData({ stage: PLAY_STAGES.READY })
-        wx.vibrateLong()
+        // A short buzz is enough; a long one feels like a punishment to young children.
+        wx.vibrateShort({ type: 'medium' })
       } else {
         this.selectComponent('#puzzle').showWrongAnswer()
       }
@@ -281,7 +294,7 @@ Page({
 
   handleHint() {
     if (this.data.hintsUsed >= this.data.maxHints) {
-      wx.showToast({ title: `每关最多提示 ${this.data.maxHints} 次，试试求助好友`, icon: 'none' })
+      wx.showToast({ title: '这关的提示用完啦，自己想想，你可以的！', icon: 'none' })
       return
     }
     return this.withBusy(async () => {
@@ -329,13 +342,31 @@ Page({
     this.setData({ rescueSheetVisible: false })
   },
 
-  goNextLevel() {
-    if (this.data.nextLevelNo) {
-      wx.redirectTo({
-        url: `/pages/game/play/play?gameType=${this.data.gameType}&levelNo=${this.data.nextLevelNo}&autoStart=${AUTO_START_FLAG}`
-      })
-    } else {
+  // 下一关 stays on this page: the "第 N 关" transition plays while the next level loads and its attempt starts, then
+  // the puzzle appears straight away. Only a choice for the child (out of stamina, the first-time guide) or a failed
+  // load stops on the ready card.
+  async goNextLevel() {
+    const { gameType, nextLevelNo, stage } = this.data
+    if (!nextLevelNo) {
       wx.navigateBack()
+      return
+    }
+    if (stage === PLAY_STAGES.NEXT) return
+    clearTimeout(this.cheerTimer)
+    this.setData({ stage: PLAY_STAGES.NEXT, levelNo: nextLevelNo, cheer: HIDDEN_CHEER, rescueSheetVisible: false })
+    wx.setNavigationBarTitle({ title: `${this.data.game.name} · 第 ${nextLevelNo} 关` })
+    const transitionDone = new Promise((resolve) => {
+      this.nextLevelTimer = setTimeout(resolve, NEXT_LEVEL_TRANSITION_MS)
+    })
+    try {
+      const [detail] = await Promise.all([game.getLevel(gameType, nextLevelNo), transitionDone])
+      const canStartNow = !detail.solved && !detail.puzzle && !detail.attempt.failed && hasSeenGuide(rulesGuideKeyOf(gameType))
+      const started = canStartNow ? await runWithItem(() => game.startAttempt(gameType, nextLevelNo)) : null
+      this.applyLevelDetail(started || detail)
+      if (!started && !hasSeenGuide(rulesGuideKeyOf(gameType))) this.handleStart()
+    } catch (error) {
+      toastError(error)
+      this.setData({ stage: PLAY_STAGES.READY })
     }
   },
 

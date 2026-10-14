@@ -1,6 +1,6 @@
 const { unitOf } = require('../../../utils/practice/catalog')
 const { skillOf } = require('../../../utils/practice/skills/index')
-const { COPY, MASCOT, pick } = require('../../../utils/practice/copy')
+const { COPY, MASCOT, mascotView, pick } = require('../../../utils/practice/copy')
 const { ROUND_SIZE, starsOfRound, nextStarHint } = require('../../../utils/practice/round')
 const { bestStreakOf, saveBestStreak, isSoundEnabled, setSoundEnabled } = require('../../../utils/practice/records')
 const { saveUnitReports, takeUnitReports } = require('../../../utils/practice/unit-reports')
@@ -12,7 +12,7 @@ const { HIDDEN_FLOWER_TOAST, HIDDEN_MEDAL_POPUP, createHonorPresenter, medalShar
 const { ARITHMETIC_SHARE } = require('../../../utils/share')
 
 const SUBJECT_ID = 'math'
-const WELFARE_URL = '/pages/welfare/welfare'
+const CHESTS_URL = '/pages/welfare/chests'
 const MAP_URL = '/packageMath/pages/map/map'
 const MODES = { ROUND: 'round', ENDLESS: 'endless', MONSTERS: 'monsters' }
 
@@ -23,6 +23,8 @@ const SECOND_VIBRATE_DELAY_MS = 150
 const REVEAL_PAUSE_MS = 2300
 const WRONG_SHAKE_MS = 450
 const RECORD_MIN_STREAK = 3
+// Breaking a streak this long is worth a word of praise before the retry.
+const PRAISED_STREAK = 3
 const HOT_STREAK = 3
 const SYMBOL_TOKENS = ['+', '−', '=', '×', '÷', '分成', '和', '合成']
 const CHOICE_LABELS = { '>': '大于', '<': '小于', '=': '等于' }
@@ -103,6 +105,7 @@ Page({
   },
 
   onLoad(query) {
+    this.setData({ mascot: mascotView() })
     this.unit = unitOf(query.unitId)
     this.skill = skillOf(this.unit.skill)
     this.bestAtStart = Math.max(bestStreakOf(this.unit.id), this.unit.legacyTier ? bestStreakOf(this.unit.legacyTier) : 0)
@@ -159,7 +162,7 @@ Page({
     this.nextQuestion()
   },
 
-  // 小怪兽收容所: up to one round of this unit's mistakes, oldest first. Answers here only review them.
+  // 小怪兽藏身洞: up to one round of this unit's mistakes, oldest first. Answers here only review them.
   async startMonsters() {
     this.setData({ mode: MODES.MONSTERS, monsterLoading: true, locked: true, roundResult: null })
     let monsters = []
@@ -175,7 +178,7 @@ Page({
     } catch (error) {
       console.error('[math] mistakes unavailable', error)
       this.setData({ monsterLoading: false })
-      wx.showToast({ title: '网络不太好，收容所的门没打开', icon: 'none' })
+      wx.showToast({ title: '网络不太好，藏身洞没打开', icon: 'none' })
       return
     }
     this.setData({ monsterLoading: false })
@@ -235,7 +238,7 @@ Page({
     return {
       ...base,
       happy: caught > 0,
-      line: caught ? `抓回 ${caught} 只小怪兽！还剩 ${remaining} 只` : `还有 ${remaining} 只小怪兽在逃，连续答对 2 次就能抓住喵～`,
+      line: caught ? `抓回 ${caught} 只小怪兽！还剩 ${remaining} 只` : `还有 ${remaining} 只小怪兽躲在藏身洞，连续答对 2 次就能抓住喵～`,
       detail,
       canContinue: true
     }
@@ -406,8 +409,13 @@ Page({
     return medalShareOf(event, this.data.medalPopup) || ARITHMETIC_SHARE
   },
 
-  openWelfare() {
-    wx.navigateTo({ url: WELFARE_URL })
+  // The top-bar chest only wiggles: leaving mid-question would lose the round. Chests open from the result card.
+  bumpChest() {
+    this.setData({ chestBump: false }, () => this.setData({ chestBump: true }))
+  },
+
+  openChests() {
+    wx.navigateTo({ url: CHESTS_URL })
   },
 
   later(callback, delayMs) {
@@ -499,7 +507,7 @@ Page({
     let subtitle = ''
     if (countsForStreak && streak >= 2) subtitle = `已经连对 ${streak} 题啦！`
     if (firstRecordMoment) subtitle = `连对 ${streak} 题，超过了以前的自己！`
-    if (expected.chest) subtitle = '🎁 得到一个宝箱！去福利袋打开'
+    if (expected.chest) subtitle = '🎁 得到一个宝箱！去「我的宝箱」打开'
 
     this.soundPlayer.play(big ? 'milestone' : 'correct')
     wx.vibrateShort({ type: 'heavy' })
@@ -523,6 +531,7 @@ Page({
   handleWrong() {
     if (this.firstTry && this.monsterKey) this.pendingReviews.push({ key: this.monsterKey, correct: false })
     if (this.firstTry && !this.monsterKey) this.pendingMistakes.push({ key: this.question.key, data: this.skill.toMistake(this.question) })
+    const brokenStreak = this.data.streak
     this.firstTry = false
     if (this.data.streak > 0) this.streakRunId = newRunId()
     this.wrongCount += 1
@@ -535,18 +544,20 @@ Page({
         canExplain: false,
         input: this.question.answer,
         inputState: 'revealed',
-        feedbackLine: `答案是 ${this.question.answer}，这只小怪兽先关进收容所，下次抓住它喵！`
+        feedbackLine: `答案是 ${this.question.answer}，这只小怪兽躲进藏身洞啦，下次去抓它喵！`
       })
       this.refreshRewardBar()
       this.later(() => this.finishQuestion('revealed'), REVEAL_PAUSE_MS)
       return
     }
     const remaining = MAX_WRONG_BEFORE_REVEAL - this.wrongCount
+    // A long streak just ended: praise it first so the miss does not feel like losing everything.
+    const line = brokenStreak >= PRAISED_STREAK ? `刚才连对 ${brokenStreak} 题，超棒！再来一次～` : pick(COPY.wrong)
     this.setData({
       streak: 0,
       inputState: 'wrong',
       canExplain: true,
-      feedbackLine: `${pick(COPY.wrong)}${remaining <= 2 ? `（再错 ${remaining} 次就告诉你答案）` : ''}`
+      feedbackLine: `${line}${remaining <= 2 ? `（再试 ${remaining} 次，喵算算就来帮你）` : ''}`
     })
     this.refreshRewardBar()
     this.later(() => this.setData({ input: '', inputState: 'idle' }), WRONG_SHAKE_MS)

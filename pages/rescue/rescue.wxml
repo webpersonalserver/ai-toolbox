@@ -11,9 +11,9 @@
 
   <block wx:if="{{viewState === 'solved'}}">
     <view class="card rescue__result">
-      <view class="rescue__result-title">
-        <block wx:if="{{helpedByMe}}">你帮 {{requesterName}} 解开了！</block>
-        <block wx:elif="{{isOwner}}">{{helperName}} 帮你解开了这一关</block>
+      <view wx:if="{{helpedByMe}}" class="rescue__result-title rescue__result-title--big">🎉 你帮 {{requesterName}} 过关啦！</view>
+      <view wx:else class="rescue__result-title">
+        <block wx:if="{{isOwner}}">{{helperName}} 帮你解开了这一关</block>
         <block wx:else>这道题已经被 {{helperName}} 解开了</block>
       </view>
       <game-solution game-type="{{gameType}}" solution="{{solution}}" compact />
@@ -56,7 +56,7 @@
       <view wx:if="{{clueHint}}" class="rescue__hint">释义：<text wx:for="{{clueHintSegments}}" wx:key="index" class="{{item.masked ? 'clue-mask clue-mask--small' : ''}}">{{item.text}}</text></view>
       <view wx:if="{{poemSource}}" class="rescue__hint">{{poemSource}}</view>
       <view wx:if="{{meaning}}" class="rescue__hint">💡 意思：{{meaning}}</view>
-      <view class="rescue__hint">你还有 {{helperAttemptsLeft}} 次答错机会</view>
+      <view class="rescue__hint">你有 {{helperAttemptsLeft}} 颗❤️，答错一次少一颗</view>
     </view>
     <char-puzzle
       id="puzzle"

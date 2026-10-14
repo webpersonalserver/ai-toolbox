@@ -139,6 +139,7 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: var(--space-md);
+  flex-shrink: 0;
   margin-top: auto;
 }
 
@@ -181,6 +182,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
+  flex-shrink: 0;
   margin-top: auto;
 }
 
@@ -243,4 +245,21 @@
   0%, 100% { transform: translateX(0); }
   20%, 60% { transform: translateX(-18rpx); }
   40%, 80% { transform: translateX(18rpx); }
+}
+
+/* Short screens (iPhone SE class): a smaller board and keys keep the keypad fully on screen. */
+@media (max-height: 640px) {
+  .kq__board {
+    min-height: 220rpx;
+    margin-bottom: var(--space-md);
+    padding: var(--space-md);
+  }
+
+  .kq__keypad {
+    gap: var(--space-sm) var(--space-md);
+  }
+
+  .kq__key {
+    height: 96rpx;
+  }
 }
