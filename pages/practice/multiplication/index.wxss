@@ -1,10 +1,10 @@
+/* Same soft candy cards as the rest of the app; the 武侠 feel comes from the words (境界, 招式) and icons. */
 .kungfu__hero {
   padding: var(--space-xl) var(--space-lg);
-  border: 6rpx solid var(--color-ink);
   border-radius: var(--radius-lg);
-  background: var(--color-ink);
-  box-shadow: 0 10rpx 0 var(--color-primary-deep);
-  color: var(--color-gold);
+  background: linear-gradient(160deg, var(--color-gold-soft), var(--color-primary-soft));
+  box-shadow: 0 10rpx 0 var(--color-border);
+  color: var(--color-ink);
   text-align: center;
 }
 
@@ -16,13 +16,14 @@
 
 .kungfu__realm {
   margin: var(--space-xs) 0;
+  color: var(--color-primary-deep);
   font-size: 80rpx;
   font-weight: 900;
   letter-spacing: 12rpx;
 }
 
 .kungfu__hero-progress {
-  color: var(--color-on-accent);
+  color: var(--color-ink-soft);
   font-size: var(--font-md);
 }
 
@@ -50,21 +51,21 @@
   margin-top: var(--space-lg);
 }
 
+/* Three states: practising (white), mastered (gold), locked (grey). */
 .kungfu__row {
   padding: var(--space-md) var(--space-xs);
-  border: 4rpx solid var(--color-ink);
   border-radius: var(--radius-md);
-  background: var(--color-gold-soft);
-  box-shadow: 0 8rpx 0 var(--color-ink);
+  background: var(--color-surface);
+  box-shadow: 0 8rpx 0 var(--color-border);
   text-align: center;
 }
 
 .kungfu__row--mastered {
-  background: var(--color-gold);
+  background: var(--color-gold-soft);
+  box-shadow: 0 8rpx 0 var(--color-gold);
 }
 
 .kungfu__row--locked {
-  border-color: var(--color-border);
   background: var(--color-surface-muted);
   box-shadow: 0 8rpx 0 var(--color-border);
   color: var(--color-ink-faint);
@@ -106,15 +107,15 @@
   gap: var(--space-md);
   margin-top: var(--space-xl);
   padding: var(--space-lg);
-  border: 6rpx solid var(--color-ink);
   border-radius: var(--radius-lg);
   background: var(--color-primary);
-  box-shadow: 0 10rpx 0 var(--color-ink);
+  box-shadow: 0 10rpx 0 var(--color-primary-deep);
   color: var(--color-on-accent);
 }
 
 .kungfu__exam--passed {
-  background: var(--color-gold);
+  background: var(--color-gold-soft);
+  box-shadow: 0 10rpx 0 var(--color-gold);
   color: var(--color-ink);
 }
 

@@ -7,11 +7,10 @@
 .exam-intro__card {
   width: 100%;
   padding: var(--space-xl) var(--space-lg);
-  border: 6rpx solid var(--color-ink);
   border-radius: var(--radius-lg);
-  background: var(--color-ink);
-  box-shadow: 0 12rpx 0 var(--color-primary-deep);
-  color: var(--color-gold);
+  background: linear-gradient(160deg, var(--color-gold-soft), var(--color-primary-soft));
+  box-shadow: 0 12rpx 0 var(--color-border);
+  color: var(--color-ink);
   text-align: center;
 }
 
@@ -20,6 +19,7 @@
 }
 
 .exam-intro__title {
+  color: var(--color-primary-deep);
   font-size: 88rpx;
   font-weight: 900;
   letter-spacing: 16rpx;
@@ -27,7 +27,7 @@
 
 .exam-intro__rules {
   margin: var(--space-lg) 0;
-  color: var(--color-on-accent);
+  color: var(--color-ink);
   font-size: var(--font-md);
   line-height: 1.9;
   text-align: left;

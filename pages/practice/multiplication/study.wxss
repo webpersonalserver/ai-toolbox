@@ -4,10 +4,10 @@
 
 .study__tip {
   padding: var(--space-md) var(--space-lg);
-  border: 4rpx solid var(--color-ink);
   border-radius: var(--radius-md);
-  background: var(--color-ink);
-  color: var(--color-gold);
+  background: var(--color-gold-soft);
+  box-shadow: 0 6rpx 0 var(--color-gold);
+  color: var(--color-ink);
 }
 
 .study__tip-label {

@@ -20,8 +20,10 @@
   min-height: 300rpx;
   margin-bottom: var(--space-lg);
   padding: var(--space-xl) var(--space-md);
-  border: 4rpx solid var(--color-ink);
+  border: 4rpx solid transparent;
+  border-radius: var(--radius-lg);
   background: var(--color-gold-soft);
+  box-shadow: 0 8rpx 0 var(--color-border);
 }
 
 .kq__board--correct {
@@ -164,9 +166,9 @@
 }
 
 .kq__key--confirm {
-  background: var(--color-ink);
+  background: var(--color-primary);
   box-shadow: 0 8rpx 0 var(--color-primary-deep);
-  color: var(--color-gold);
+  color: var(--color-on-accent);
   font-size: var(--font-lg);
   letter-spacing: 6rpx;
 }
