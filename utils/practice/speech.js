@@ -1,10 +1,10 @@
 const { isSoundEnabled } = require('./records')
 const SPEECH_CLIPS = require('./speech-clips')
 const { speech } = require('../api')
+const { isSwitchOn } = require('../switches')
 
-// Off for now: the clips start noticeably after the cheer animation and the built-in voice sounds robotic.
-// Turn on once there is better audio and the links are fetched ahead of time (e.g. when a practice page opens).
-const SPEECH_ENABLED = false
+// Off unless the admin turns 夸奖语音朗读 on in 控制中心: the clips start noticeably after the cheer animation and
+// the built-in voice sounds robotic, so it waits for better audio (and the clips uploaded to cloud storage).
 const SECOND_MS = 1000
 // Links are fetched again a little before they expire, so a cheer never starts on a dead link.
 const LINK_REFRESH_MARGIN_MS = 10 * 60 * SECOND_MS
@@ -52,7 +52,7 @@ const createSpeaker = () => {
     speak(...texts) {
       requestId += 1
       if (audio) audio.stop()
-      if (!SPEECH_ENABLED || !isSoundEnabled()) return
+      if (!isSwitchOn('praiseSpeech') || !isSoundEnabled()) return
       const clipNames = texts.map((text) => SPEECH_CLIPS[toSpeakableText(text)]).filter(Boolean)
       if (!clipNames.length) return
       const currentRequest = requestId

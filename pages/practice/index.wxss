@@ -1,86 +1,92 @@
-.practice__header {
+.practice {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Stars and clouds drifting behind everything. */
+.practice__sky {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+.practice__float {
+  position: absolute;
+  font-size: 36rpx;
+  opacity: 0.7;
+  animation: practice-float 5s ease-in-out infinite;
+}
+
+.practice__float--1 { top: 40rpx; right: 60rpx; }
+.practice__float--2 { top: 420rpx; left: 20rpx; font-size: 48rpx; animation-delay: 1.2s; }
+.practice__float--3 { top: 760rpx; right: 30rpx; animation-delay: 2.4s; }
+.practice__float--4 { top: 1100rpx; left: 70rpx; font-size: 28rpx; animation-delay: 0.6s; }
+
+.practice__hero {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-sm);
   margin-bottom: var(--space-lg);
 }
 
-.practice__title {
-  font-size: var(--font-title);
-  font-weight: 800;
-  letter-spacing: 4rpx;
-}
-
-.practice__subtitle {
-  color: var(--color-ink-soft);
-  font-size: var(--font-sm);
-}
-
-.practice__card {
-  display: flex;
-  align-items: center;
-  margin-bottom: var(--space-md);
-}
-
-.practice__card--pressed {
-  opacity: 0.85;
-}
-
-.practice__icon {
-  display: flex;
+.practice__mascot {
   flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  width: 112rpx;
-  height: 112rpx;
-  margin-right: var(--space-md);
-  border-radius: var(--radius-md);
-  background: var(--color-success);
-  box-shadow: 0 8rpx 0 var(--color-success-deep);
-  color: var(--color-on-accent);
-  font-size: var(--font-xl);
+  width: 150rpx;
+  height: 150rpx;
+  animation: practice-hop 2.6s ease-in-out infinite;
+}
+
+.practice__speech {
+  position: relative;
+  flex: 1;
+  margin-bottom: 30rpx;
+  padding: var(--space-md) var(--space-lg);
+  border-radius: 40rpx 40rpx 40rpx 8rpx;
+  background: var(--color-surface);
+  box-shadow: 0 8rpx 0 var(--color-border);
+}
+
+.practice__speech-name {
+  color: var(--color-primary-deep);
+  font-size: 22rpx;
   font-weight: 900;
 }
 
-.practice__body {
-  flex: 1;
-  min-width: 0;
-}
-
-.practice__name {
+.practice__speech-text {
+  margin-top: 4rpx;
   font-size: var(--font-lg);
-  font-weight: 800;
-}
-
-.practice__intro {
-  color: var(--color-ink-soft);
-  font-size: var(--font-sm);
-}
-
-.practice__arrow {
-  color: var(--color-ink-faint);
-  font-size: var(--font-xl);
-}
-
-.practice__more {
-  margin-top: var(--space-lg);
-  color: var(--color-ink-faint);
-  font-size: var(--font-sm);
-  text-align: center;
+  font-weight: 900;
 }
 
 .practice__honors {
   position: relative;
   display: flex;
-  align-items: center;
-  margin-bottom: var(--space-lg);
-  padding: var(--space-lg) var(--space-md) var(--space-xl);
+  gap: var(--space-sm);
+  margin-bottom: var(--space-xl);
+  padding: var(--space-md) var(--space-md) var(--space-xl);
   border-radius: var(--radius-lg);
-  background: var(--color-primary-soft);
-  box-shadow: 0 8rpx 0 var(--color-primary);
+  background: var(--color-surface);
+  box-shadow: 0 8rpx 0 var(--color-border);
+}
+
+.practice__card--pressed {
+  transform: translateY(6rpx);
 }
 
 .practice__honor {
   flex: 1;
+  padding: var(--space-sm) 0;
+  border-radius: 999rpx;
   text-align: center;
 }
+
+.practice__honor--flower { background: var(--color-primary-soft); }
+.practice__honor--medal { background: var(--color-gold-soft); }
+.practice__honor--streak { background: var(--color-success-soft); }
 
 .practice__honor-value {
   font-size: var(--font-xl);
@@ -95,8 +101,170 @@
 .practice__honors-link {
   position: absolute;
   right: var(--space-md);
-  bottom: 8rpx;
+  bottom: 10rpx;
   color: var(--color-primary-deep);
   font-size: 22rpx;
   font-weight: 800;
+}
+
+.practice__weekly {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: calc(-1 * var(--space-md)) 0 var(--space-xl);
+  padding: var(--space-md) var(--space-lg);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: 0 8rpx 0 var(--color-border);
+  font-size: var(--font-md);
+  font-weight: 900;
+}
+
+.practice__weekly-hint {
+  color: var(--color-primary-deep);
+  font-size: 22rpx;
+  font-weight: 700;
+}
+
+/* Each park is a gate: icon in a round portal, a tag, and a big GO. */
+.practice__subject {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+  padding: var(--space-xl) var(--space-lg);
+  border-radius: 48rpx;
+  overflow: hidden;
+}
+
+.practice__subject--math {
+  background: repeating-linear-gradient(135deg, var(--color-success-soft) 0 28rpx, rgba(255, 255, 255, 0.45) 28rpx 56rpx), var(--color-success-soft);
+  box-shadow: 0 12rpx 0 var(--color-success);
+}
+
+.practice__subject--chinese { background: var(--color-primary-soft); }
+.practice__subject--english { background: var(--color-gold-soft); }
+
+.practice__subject--open {
+  animation: practice-breathe 3s ease-in-out infinite;
+}
+
+.practice__subject--fog {
+  border: 4rpx dashed var(--color-border);
+  opacity: 0.75;
+}
+
+.practice__subject--pressed {
+  transform: translateY(8rpx) scale(0.98);
+}
+
+.practice__portal {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 140rpx;
+  height: 140rpx;
+  border-radius: 50%;
+  background: var(--color-surface);
+  box-shadow: 0 8rpx 0 var(--color-border), inset 0 0 0 8rpx var(--color-gold-soft);
+  font-size: 72rpx;
+}
+
+.practice__subject--open .practice__portal {
+  animation: practice-wobble 2.4s ease-in-out infinite;
+}
+
+.practice__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.practice__subject-tag {
+  display: inline-block;
+  padding: 2rpx 16rpx;
+  border-radius: 999rpx;
+  background: var(--color-surface);
+  color: var(--color-success-deep);
+  font-size: 22rpx;
+  font-weight: 900;
+}
+
+.practice__subject--fog .practice__subject-tag {
+  color: var(--color-ink-soft);
+}
+
+.practice__subject-name {
+  margin-top: 6rpx;
+  font-size: 52rpx;
+  font-weight: 900;
+  letter-spacing: 2rpx;
+}
+
+.practice__intro {
+  color: var(--color-ink-soft);
+  font-size: var(--font-sm);
+  line-height: 1.5;
+}
+
+.practice__go {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 112rpx;
+  height: 112rpx;
+  border-radius: 50%;
+  background: var(--color-primary);
+  box-shadow: 0 8rpx 0 var(--color-primary-deep);
+  color: var(--color-on-accent);
+  font-size: var(--font-xl);
+  font-weight: 900;
+  animation: practice-hop 1.6s ease-in-out infinite;
+}
+
+.practice__clouds {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 200rpx;
+  pointer-events: none;
+}
+
+.practice__cloud {
+  position: absolute;
+  font-size: 56rpx;
+  animation: practice-drift 6s ease-in-out infinite;
+}
+
+.practice__cloud--1 { top: 24rpx; right: 30rpx; }
+.practice__cloud--2 { bottom: 24rpx; right: 110rpx; font-size: 40rpx; animation-delay: 2s; }
+
+@keyframes practice-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-18rpx) rotate(12deg); }
+}
+
+@keyframes practice-hop {
+  0%, 100% { transform: translateY(0); }
+  45% { transform: translateY(-14rpx); }
+  60% { transform: translateY(0); }
+}
+
+@keyframes practice-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.015); }
+}
+
+@keyframes practice-wobble {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-8deg); }
+  75% { transform: rotate(8deg); }
+}
+
+@keyframes practice-drift {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(-24rpx); }
 }

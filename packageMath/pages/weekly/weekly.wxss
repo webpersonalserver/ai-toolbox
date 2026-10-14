@@ -1,0 +1,165 @@
+.week__hero {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+.week__cat {
+  flex-shrink: 0;
+  width: 128rpx;
+  height: 128rpx;
+}
+
+.week__title {
+  font-size: var(--font-xl);
+  font-weight: 900;
+}
+
+.week__range {
+  color: var(--color-ink-soft);
+  font-size: var(--font-sm);
+}
+
+.week__card {
+  margin-bottom: var(--space-md);
+}
+
+.week__label {
+  margin-bottom: var(--space-sm);
+  font-size: var(--font-md);
+  font-weight: 900;
+}
+
+.week__days {
+  display: flex;
+  justify-content: space-between;
+}
+
+.week__day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6rpx;
+}
+
+.week__day-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64rpx;
+  height: 64rpx;
+  border: 4rpx dashed var(--color-border);
+  border-radius: 50%;
+  font-size: 36rpx;
+  box-sizing: border-box;
+}
+
+.week__day-mark--on {
+  border-style: solid;
+  border-color: var(--color-gold);
+  background: var(--color-gold-soft);
+}
+
+.week__day--today .week__weekday {
+  color: var(--color-primary-deep);
+  font-weight: 900;
+}
+
+.week__day--future {
+  opacity: 0.4;
+}
+
+.week__weekday {
+  color: var(--color-ink-soft);
+  font-size: var(--font-sm);
+}
+
+.week__comment {
+  margin-top: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  background: var(--color-primary-soft);
+  font-size: var(--font-sm);
+  font-weight: 700;
+}
+
+.week__stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+
+.week__stat {
+  text-align: center;
+}
+
+.week__stat-value {
+  font-size: var(--font-xl);
+  font-weight: 900;
+}
+
+.week__stat-label {
+  color: var(--color-ink-soft);
+  font-size: 22rpx;
+}
+
+.week__stat-note {
+  margin-top: 4rpx;
+  color: var(--color-success-deep);
+  font-size: 22rpx;
+  font-weight: 700;
+}
+
+.week__medals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.week__medal {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  padding: 6rpx 18rpx;
+  border-radius: 999rpx;
+  background: var(--color-gold-soft);
+  font-size: var(--font-sm);
+  font-weight: 800;
+}
+
+.week__medal-icon {
+  font-size: 36rpx;
+}
+
+.week__muted {
+  color: var(--color-ink-soft);
+  font-size: var(--font-sm);
+}
+
+.week__monster {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8rpx 0;
+  font-size: var(--font-md);
+}
+
+.week__catch {
+  padding: 4rpx 20rpx;
+  border-radius: 999rpx;
+  background: var(--color-primary-soft);
+  color: var(--color-primary-deep);
+  font-size: var(--font-sm);
+  font-weight: 800;
+}
+
+.week__empty {
+  color: var(--color-ink-soft);
+  text-align: center;
+}
+
+.week__share {
+  margin-top: var(--space-md);
+}

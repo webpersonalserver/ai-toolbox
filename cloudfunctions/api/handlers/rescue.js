@@ -16,6 +16,7 @@ const {
 const { parseGameType } = require('../lib/games')
 const { countLevels } = require('../lib/level-count')
 const { recordCompletionIfCleared } = require('../lib/completion')
+const { loadSwitches } = require('../lib/switches')
 
 const EMPTY_PROFILE = { nickname: '', avatarUrl: '' }
 
@@ -86,6 +87,7 @@ const recordWrongAnswer = async (rescueId, helperOpenid) => {
 const helperLimitMessage = (limit) => `你今天已经帮 TA 解过 ${limit} 关了，明天再来吧`
 
 const create = async ({ openid, payload }) => {
+  if (!(await loadSwitches()).sharing) throw new BusinessError(ERROR_CODES.FORBIDDEN, '好友求助暂时关闭了')
   const gameType = parseGameType(payload)
   const levelNo = Number(payload.levelNo)
   const progress = await getProgress(openid, gameType)
@@ -121,12 +123,13 @@ const create = async ({ openid, payload }) => {
 const view = async ({ openid, payload }) => {
   const rescue = await getRescue(payload.rescueId)
   const isOwner = rescue.requesterOpenid === openid
-  const [level, rules, requester, helpedCount, wrongAnswers] = await Promise.all([
+  const [level, rules, requester, helpedCount, wrongAnswers, switches] = await Promise.all([
     getLevel(rescue.gameType, rescue.levelNo),
     loadRules(),
     findProfile(rescue.requesterOpenid),
     isOwner ? 0 : helpedCountToday(rescue.requesterOpenid, openid),
-    isOwner ? 0 : wrongAnswersOf(rescue._id, openid)
+    isOwner ? 0 : wrongAnswersOf(rescue._id, openid),
+    loadSwitches()
   ])
   const { dailyLimitPerHelper, maxWrongAnswersPerHelper } = rules.rescue
   return {
@@ -140,7 +143,7 @@ const view = async ({ openid, payload }) => {
     helperLimitMessage: helperLimitMessage(dailyLimitPerHelper),
     helperAttemptsLeft: Math.max(maxWrongAnswersPerHelper - wrongAnswers, 0),
     maxWrongAnswersPerHelper,
-    puzzle: toPuzzle(level),
+    puzzle: toPuzzle(level, switches),
     solution: rescue.status === RESCUE_STATUS.SOLVED ? toSolution(level) : null
   }
 }

@@ -1,16 +1,19 @@
 const { practice, toastError } = require('../../utils/api')
 const { HIDDEN_MEDAL_POPUP, toMedalPopup, medalShareOf } = require('../../utils/practice/honors')
 const { buildHonorsShare } = require('../../utils/share')
+const { isSwitchOn } = require('../../utils/switches')
 
 
 Page({
   data: {
+    sharing: true,
     loading: true,
     honors: null,
     medalPopup: HIDDEN_MEDAL_POPUP
   },
 
   async onShow() {
+    this.setData({ sharing: isSwitchOn('sharing') })
     try {
       this.setData({ loading: false, honors: await practice.honors() })
     } catch (error) {

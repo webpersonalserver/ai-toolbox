@@ -6,13 +6,12 @@
     "pages/game/book/book",
     "pages/leaderboard/leaderboard",
     "pages/admin/stats",
+    "pages/admin/control",
     "pages/rescue/rescue",
     "pages/welfare/welfare",
+    "pages/daily/daily",
     "pages/practice/index",
     "pages/practice/honors",
-    "pages/practice/arithmetic/tiers",
-    "pages/practice/arithmetic/play",
-    "pages/practice/arithmetic/exam",
     "pages/practice/multiplication/index",
     "pages/practice/multiplication/study",
     "pages/practice/multiplication/train",
@@ -60,5 +59,25 @@
   },
   "style": "v2",
   "sitemapLocation": "sitemap.json",
-  "lazyCodeLoading": "requiredComponents"
+  "lazyCodeLoading": "requiredComponents",
+  "subPackages": [
+    {
+      "root": "packageMath",
+      "name": "math",
+      "pages": [
+        "pages/map/map",
+        "pages/play/play",
+        "pages/exam/exam",
+        "pages/weekly/weekly"
+      ]
+    }
+  ],
+  "preloadRule": {
+    "pages/practice/index": {
+      "network": "all",
+      "packages": [
+        "math"
+      ]
+    }
+  }
 }

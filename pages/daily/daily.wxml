@@ -1,0 +1,78 @@
+<view wx:if="{{stage === 'loading'}}" class="page daily daily--center">正在准备今天的题目…</view>
+
+<view wx:elif="{{stage === 'failed'}}" class="page daily daily--center">
+  <view>网络不太好，今天的挑战没拿到</view>
+  <button class="btn btn--primary daily__action" bindtap="load">再试一次</button>
+</view>
+
+<view wx:elif="{{stage === 'intro'}}" class="page daily">
+  <view class="card daily__intro">
+    <view class="daily__badge">📅 {{dateText}}</view>
+    <view class="daily__title">今日挑战</view>
+    <view class="daily__rule">10 道题：汉字和算术轮流来，每题只有一次机会，答错会告诉你正确答案。</view>
+    <view class="daily__dots">
+      <view wx:for="{{dots}}" wx:key="id" class="daily__dot daily__dot--{{item.subject}}">{{item.subject === 'hanzi' ? '字' : '算'}}</view>
+    </view>
+    <view class="daily__reward">完成就送 {{rewardText}} 和小红花，全对还有额外小红花</view>
+    <button class="btn btn--primary daily__action" bindtap="start">开始挑战</button>
+  </view>
+</view>
+
+<view wx:elif="{{stage === 'running'}}" class="page daily daily-run">
+  <view class="daily-run__top">
+    <view class="daily-run__progress">{{progressText}}</view>
+    <view class="daily-run__clock">⏱ {{clockText}}</view>
+  </view>
+  <view class="daily__dots daily__dots--small">
+    <view wx:for="{{dots}}" wx:key="id" class="daily__dot daily__dot--small daily__dot--{{item.state}}"></view>
+  </view>
+
+  <block wx:if="{{question.subject === 'hanzi'}}">
+    <view class="card daily-run__board">
+      <view class="daily-run__prompt">{{question.prompt}}</view>
+      <view class="daily-run__clue daily-run__clue--{{question.kind}}">{{question.clue}}</view>
+    </view>
+    <view class="daily-run__choices">
+      <view
+        wx:for="{{question.board}}"
+        wx:key="*this"
+        class="daily-run__choice {{picked === item ? 'daily-run__choice--' + choiceState : ''}} {{revealed && item === question.answer ? 'daily-run__choice--right' : ''}}"
+        hover-class="daily-run__choice--pressed"
+        data-choice="{{item}}"
+        bindtap="pickChoice"
+      >{{item}}</view>
+    </view>
+  </block>
+  <block wx:else>
+    <view wx:if="{{question.story}}" class="daily-run__story">{{question.story}}</view>
+    <kungfu-question
+      question="{{question}}"
+      locked="{{locked}}"
+      revealed="{{revealed}}"
+      plain
+      confirm-text="确定"
+      max-digits="{{question.maxDigits}}"
+      bind:answered="handleAnswered"
+      bind:empty="handleEmpty"
+    />
+  </block>
+</view>
+
+<view wx:else class="page daily">
+  <view class="card daily__result">
+    <view class="daily__badge">📅 {{dateText}}</view>
+    <view class="daily__score {{result.perfect ? 'daily__score--perfect' : ''}}">{{result.correct}}<text class="daily__score-total">/{{result.total}}</text></view>
+    <view class="daily__line">{{result.line}}</view>
+    <view class="daily__time">用时 {{result.timeText}}</view>
+    <view wx:if="{{result.rewardsText}}" class="daily__reward">{{result.rewardsText}}</view>
+    <view wx:if="{{result.fromEarlier}}" class="daily__muted">今天的挑战已经完成啦，明天再来～</view>
+  </view>
+  <view wx:if="{{result.missed.length}}" class="card daily__missed">
+    <view class="daily__missed-title">这几道再看看</view>
+    <view wx:for="{{result.missed}}" wx:key="id" class="daily__missed-item">{{item.text}}</view>
+  </view>
+  <button class="btn btn--primary daily__action" bindtap="backToLobby">回大厅</button>
+</view>
+
+<flower-toast visible="{{flowerToast.visible}}" count="{{flowerToast.count}}" text="{{flowerToast.text}}" />
+<medal-popup visible="{{medalPopup.visible}}" is-new="{{medalPopup.isNew}}" medal="{{medalPopup.medal}}" bind:close="handleMedalClose" />

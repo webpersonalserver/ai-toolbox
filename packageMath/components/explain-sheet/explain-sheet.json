@@ -1,0 +1,6 @@
+{
+  "component": true,
+  "usingComponents": {
+    "number-picture": "/packageMath/components/number-picture/number-picture"
+  }
+}

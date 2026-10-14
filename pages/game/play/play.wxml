@@ -24,7 +24,7 @@
       {{attempt.failed ? '再来一次' : '开始挑战'}}<image class="play__cost-icon" src="/assets/icons/stamina.png" mode="aspectFit" />-{{staminaCost}}
     </button>
     <view class="play__recovery"><stamina-recovery items="{{items}}" bind:claimed="syncItems" /></view>
-    <button wx:if="{{attempt.failed}}" class="btn btn--ghost play__start" bindtap="handleRescue">求助好友（免费）</button>
+    <button wx:if="{{attempt.failed && sharing}}" class="btn btn--ghost play__start" bindtap="handleRescue">求助好友（免费）</button>
     <view class="play__guide-link" bindtap="openGuide">玩法说明</view>
   </view>
 
@@ -33,13 +33,15 @@
       <image wx:for="{{hearts}}" wx:key="index" class="play__heart {{item ? '' : 'play__heart--lost'}}" src="{{item ? '/assets/icons/heart-full.png' : '/assets/icons/heart-empty.png'}}" mode="aspectFit" />
     </view>
     <view class="card play__clue">
-      <view class="play__clue-label">{{game.clueLabel}}</view>
-      <view wx:if="{{gameType === 'typo'}}" class="play__typo">
+      <view class="play__clue-label">{{clueLabel}}</view>
+      <view wx:if="{{gameType === 'hanzi'}}" class="play__hanzi play__hanzi--{{hanziKind}}">{{clue}}</view>
+      <view wx:elif="{{gameType === 'typo'}}" class="play__typo">
         <text wx:for="{{clueChars}}" wx:key="index" class="play__typo-char {{item.wrong ? 'play__typo-char--wrong' : ''}}">{{item.char}}</text>
       </view>
       <view wx:else class="play__clue-text"><text wx:for="{{clueSegments}}" wx:key="index" class="{{item.masked ? 'clue-mask' : ''}}">{{item.text}}</text></view>
       <view wx:if="{{clueHint}}" class="play__clue-hint">释义：<text wx:for="{{clueHintSegments}}" wx:key="index" class="{{item.masked ? 'clue-mask clue-mask--small' : ''}}">{{item.text}}</text></view>
       <view wx:if="{{poemSource}}" class="play__clue-source">{{poemSource}}</view>
+      <view wx:if="{{meaning}}" class="play__meaning">💡 意思：{{meaning}}</view>
     </view>
 
     <char-puzzle
@@ -48,6 +50,7 @@
       answer-length="{{answerLength}}"
       revealed="{{revealed}}"
       eliminated="{{eliminated}}"
+      answer-pinyin="{{answerPinyin}}"
       columns="{{game.boardColumns}}"
       disabled="{{submitting}}"
       checking="{{submitting}}"
@@ -58,7 +61,7 @@
       <button class="btn btn--ghost play__action" loading="{{busy}}" bindtap="handleHint">
         提示（{{hintsUsed}}/{{maxHints}}）
       </button>
-      <button class="btn btn--primary play__action" bindtap="handleRescue">求助好友</button>
+      <button wx:if="{{sharing}}" class="btn btn--primary play__action" bindtap="handleRescue">求助好友</button>
     </view>
   </block>
 

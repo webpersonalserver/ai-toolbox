@@ -2,7 +2,7 @@ const { rescue, ERROR_CODES, toastError } = require('../../utils/api')
 const { ensureLogin } = require('../../utils/session')
 const { DEFAULT_SHARE } = require('../../utils/share')
 const { FALLBACK_HELPER_NAME } = require('../../utils/rescue-notice')
-const { gameConfigOf, describePoemSource, splitTypoClue } = require('../../utils/games')
+const { gameConfigOf, clueLabelOf, describePoemSource, splitTypoClue } = require('../../utils/games')
 const { splitClue } = require('../../utils/clue')
 const { withMinimumDuration } = require('../../utils/min-duration')
 
@@ -53,6 +53,10 @@ Page({
     poemSource: '',
     clueChars: [],
     clueHint: '',
+    meaning: '',
+    answerPinyin: [],
+    hanziKind: '',
+    clueLabel: '',
     clueSegments: [],
     clueHintSegments: [],
     viewState: '',
@@ -103,6 +107,10 @@ Page({
         poemSource: describePoemSource(detail.puzzle),
         clueChars: splitTypoClue(detail.puzzle.clue, detail.puzzle.wrongPosition),
         clueHint: detail.puzzle.clueHint || '',
+        meaning: detail.puzzle.meaning || '',
+        answerPinyin: detail.puzzle.answerPinyin || [],
+        hanziKind: detail.puzzle.kind || '',
+        clueLabel: clueLabelOf(gameConfigOf(detail.gameType), detail.puzzle),
         clueSegments: splitClue(detail.puzzle.clue),
         clueHintSegments: splitClue(detail.puzzle.clueHint),
         levelNo: detail.puzzle.levelNo,

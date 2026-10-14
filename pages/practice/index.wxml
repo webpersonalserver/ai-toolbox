@@ -1,40 +1,58 @@
 <view class="page practice">
-  <view class="practice__header">
-    <view class="practice__title">趣味练习</view>
-    <view class="practice__subtitle">不限次数，想练多久练多久</view>
+  <view class="practice__sky" aria-hidden="true">
+    <text class="practice__float practice__float--1">⭐</text>
+    <text class="practice__float practice__float--2">☁️</text>
+    <text class="practice__float practice__float--3">✨</text>
+    <text class="practice__float practice__float--4">⭐</text>
+  </view>
+
+  <view class="practice__hero">
+    <image class="practice__mascot" src="{{mascot.images.happy}}" mode="aspectFit" />
+    <view class="practice__speech">
+      <view class="practice__speech-name">{{mascot.name}}</view>
+      <view class="practice__speech-text">{{greeting}}</view>
+    </view>
   </view>
 
   <view class="practice__honors" hover-class="practice__card--pressed" bindtap="openHonors">
-    <view class="practice__honor">
+    <view class="practice__honor practice__honor--flower">
       <view class="practice__honor-value">🌺 {{honors.flowers}}</view>
       <view class="practice__honor-label">小红花{{honors.todayFlowers ? ' · 今天 +' + honors.todayFlowers : ''}}</view>
     </view>
-    <view class="practice__honor">
+    <view class="practice__honor practice__honor--medal">
       <view class="practice__honor-value">🏅 {{honors.unlockedCount}}/{{honors.medalCount}}</view>
       <view class="practice__honor-label">奖章</view>
     </view>
-    <view class="practice__honor">
+    <view class="practice__honor practice__honor--streak">
       <view class="practice__honor-value">🔥 {{honors.dayStreak}}</view>
       <view class="practice__honor-label">连续练习天数</view>
     </view>
     <view class="practice__honors-link">荣誉墙 ›</view>
   </view>
 
-  <view
-    wx:for="{{practices}}"
-    wx:key="id"
-    class="card practice__card"
-    hover-class="practice__card--pressed"
-    data-url="{{item.entryUrl}}"
-    bindtap="openPractice"
-  >
-    <view class="practice__icon">{{item.icon}}</view>
-    <view class="practice__body">
-      <view class="practice__name">{{item.name}}</view>
-      <view class="practice__intro">{{item.intro}}</view>
-    </view>
-    <view class="practice__arrow">›</view>
+  <view class="practice__weekly" hover-class="practice__card--pressed" bindtap="openWeekly">
+    <text>{{weeklyLabel}}</text>
+    <text class="practice__weekly-hint">这周练得怎么样？给爸爸妈妈看看 ›</text>
   </view>
 
-  <view class="practice__more">更多练习正在准备中</view>
+  <view
+    wx:for="{{subjects}}"
+    wx:key="id"
+    class="practice__subject practice__subject--{{item.id}} {{item.open ? 'practice__subject--open' : 'practice__subject--fog'}}"
+    hover-class="practice__subject--pressed"
+    data-id="{{item.id}}"
+    bindtap="openSubject"
+  >
+    <view class="practice__portal">{{item.icon}}</view>
+    <view class="practice__body">
+      <view class="practice__subject-tag">{{item.open ? tags.open : tags.building}}</view>
+      <view class="practice__subject-name">{{item.name}}</view>
+      <view class="practice__intro">{{item.intro}}</view>
+    </view>
+    <view wx:if="{{item.open}}" class="practice__go">GO</view>
+    <view wx:else class="practice__clouds">
+      <text class="practice__cloud practice__cloud--1">☁️</text>
+      <text class="practice__cloud practice__cloud--2">☁️</text>
+    </view>
+  </view>
 </view>

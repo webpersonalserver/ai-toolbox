@@ -50,6 +50,22 @@
   color: var(--color-ink-soft);
 }
 
+.kq__value--word {
+  color: var(--color-ink-soft);
+  font-size: 44rpx;
+}
+
+.kq__equation--compact .kq__value,
+.kq__equation--compact .kq__blank {
+  height: 96rpx;
+  font-size: 60rpx;
+  line-height: 96rpx;
+}
+
+.kq__equation--compact .kq__blank {
+  min-width: 100rpx;
+}
+
 .kq__blank {
   min-width: 132rpx;
   padding: 0 var(--space-sm);
@@ -169,6 +185,17 @@
 .kq__choice {
   font-size: 64rpx;
   letter-spacing: 8rpx;
+}
+
+/* Signs for 比大小 sit side by side. */
+.kq__choices--row {
+  flex-direction: row;
+}
+
+.kq__choices--row .kq__choice {
+  flex: 1;
+  height: 160rpx;
+  font-size: 88rpx;
 }
 
 .kq__choice--correct {

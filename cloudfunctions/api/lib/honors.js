@@ -1,20 +1,23 @@
 const { db, _ } = require('./cloud')
 const { chinaDateKey } = require('./date')
 const { practiceStatsDocId } = require('./practice-rewards')
+const { MATH_UNITS, readMathStats } = require('./math-stats')
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const HONORS_DOC_KEY = 'honors'
 const MULTIPLICATION_ROWS = 9
 const MAX_STARS_PER_ROW = 3
-const ARITHMETIC_TIER_KEYS = ['within10', 'within20', 'within100']
+// The 加减 medals (三档全能, 三档满分…) are about the three add/subtract units that replaced the old tiers.
+const ADD_SUB_UNIT_IDS = Object.keys(MATH_UNITS).filter((unitId) => MATH_UNITS[unitId].legacyTier)
 const ARITHMETIC_TIER_GOAL = 20
 const FULL_SCORE = 100
 const HARDEST_EXAM_LEVEL = 3
 
-const examBestScores = (arithmetic) =>
-  Object.values(arithmetic.exams || {}).flatMap((levels) => Object.entries(levels).map(([levelKey, record]) => ({ levelKey, best: record.best })))
-const tiersWithFullScore = (arithmetic) =>
-  Object.values(arithmetic.exams || {}).filter((levels) => Object.values(levels).some((record) => record.best === FULL_SCORE)).length
+const unitsOf = (math) => Object.values(math.units || {})
+const examBestScores = (math) =>
+  unitsOf(math).flatMap((unit) => Object.entries(unit.exams || {}).map(([levelKey, record]) => ({ levelKey, best: record.best })))
+const addSubUnitsWithFullScore = (math) =>
+  ADD_SUB_UNIT_IDS.map((unitId) => (math.units || {})[unitId] || {}).filter((unit) => Object.values(unit.exams || {}).some((record) => record.best === FULL_SCORE)).length
 
 // Why a flower was given; the client turns each reason into a line of praise.
 const FLOWER_REASONS = {
@@ -26,23 +29,45 @@ const FLOWER_REASONS = {
   ROW_PERFECT: 'rowPerfect',
   EXAM_PERFECT: 'examPerfect',
   EXAM_GREAT: 'examGreat',
-  EXAM_PASSED: 'examPassed'
+  EXAM_PASSED: 'examPassed',
+  ISLAND_MASTER: 'islandMaster',
+  DAILY_CHALLENGE: 'dailyChallenge',
+  DAILY_PERFECT: 'dailyPerfect'
 }
+
+// 岛主: every unit on an island has three stars. 口诀岛 also needs 九九神功 大成 (its three stars).
+const MAX_ROUND_STARS = 3
+const ISLANDS = [
+  { id: 'counting', name: '数数岛', icon: '🍭' },
+  { id: 'make-ten', name: '凑十岛', icon: '🏘️' },
+  { id: 'hundred', name: '百数岛', icon: '🎋' },
+  { id: 'times-table', name: '口诀岛', icon: '⛰️', needsKungfu: true },
+  { id: 'ten-thousand', name: '万数岛', icon: '🏰' }
+]
+const islandMetricOf = (island) => `island:${island.id}`
+const isIslandMastered = (island, { math, multiplication }) => {
+  const unitIds = Object.keys(MATH_UNITS).filter((unitId) => MATH_UNITS[unitId].island === island.id)
+  const unitsDone = unitIds.every((unitId) => (((math.units || {})[unitId] || {}).bestStars || 0) >= MAX_ROUND_STARS)
+  return unitsDone && (!island.needsKungfu || multiplication.exam.passed) ? 1 : 0
+}
+// Practice days remembered for the weekly report (this week and last week).
+const KEPT_PRACTICE_DATES = 14
 
 // Numbers a medal can be measured by. A new kind of medal = one metric here + entries in MEDALS.
 const METRICS = {
-  arithmeticSolved: ({ arithmetic }) => arithmetic.totalSolved || 0,
-  arithmeticBestStreak: ({ arithmetic }) => Math.max(0, ...Object.values(arithmetic.tiers || {}).map((tier) => tier.bestStreak || 0)),
-  arithmeticTiersReached: ({ arithmetic }) =>
-    ARITHMETIC_TIER_KEYS.filter((key) => ((arithmetic.tiers || {})[key] || {}).solved >= ARITHMETIC_TIER_GOAL).length,
-  arithmeticFullScoreExams: ({ arithmetic }) => examBestScores(arithmetic).filter((record) => record.best === FULL_SCORE).length,
-  arithmeticFullScoreTiers: ({ arithmetic }) => tiersWithFullScore(arithmetic),
-  arithmeticHardestFullScore: ({ arithmetic }) =>
-    examBestScores(arithmetic).some((record) => record.levelKey === `level${HARDEST_EXAM_LEVEL}` && record.best === FULL_SCORE) ? 1 : 0,
+  arithmeticSolved: ({ math }) => math.totalSolved || 0,
+  arithmeticBestStreak: ({ math }) => Math.max(0, ...unitsOf(math).map((unit) => unit.bestStreak || 0)),
+  arithmeticTiersReached: ({ math }) =>
+    ADD_SUB_UNIT_IDS.filter((unitId) => ((math.units || {})[unitId] || {}).solved >= ARITHMETIC_TIER_GOAL).length,
+  arithmeticFullScoreExams: ({ math }) => examBestScores(math).filter((record) => record.best === FULL_SCORE).length,
+  arithmeticFullScoreTiers: ({ math }) => addSubUnitsWithFullScore(math),
+  arithmeticHardestFullScore: ({ math }) =>
+    examBestScores(math).some((record) => record.levelKey === `level${HARDEST_EXAM_LEVEL}` && record.best === FULL_SCORE) ? 1 : 0,
   kungfuMasteredRows: ({ multiplication }) => Object.values(multiplication.rows).filter((row) => row.mastered).length,
   kungfuStars: ({ multiplication }) => Object.values(multiplication.rows).reduce((total, row) => total + row.stars, 0),
   kungfuGrandmaster: ({ multiplication }) => (multiplication.exam.passed ? 1 : 0),
-  practiceDayStreak: ({ honors }) => honors.bestDayStreak || 0
+  practiceDayStreak: ({ honors }) => honors.bestDayStreak || 0,
+  ...Object.fromEntries(ISLANDS.map((island) => [islandMetricOf(island), (context) => isIslandMastered(island, context)]))
 }
 
 // Medals, in display order. Adding one is a single entry; ids must never change once released.
@@ -63,13 +88,23 @@ const MEDALS = [
   { id: 'kungfu-all-stars', group: 'multiplication', name: '三星满堂', icon: '⭐', metric: 'kungfuStars', target: MULTIPLICATION_ROWS * MAX_STARS_PER_ROW, praise: '每一重都是三星，完美无缺！' },
   { id: 'kungfu-grandmaster', group: 'multiplication', name: '神功大成', icon: '🐉', metric: 'kungfuGrandmaster', target: 1, praise: '闭关考核通过，神功大成！' },
   { id: 'days-3', group: 'habit', name: '坚持之星', icon: '🌟', metric: 'practiceDayStreak', target: 3, praise: '连续练习 3 天，坚持就是胜利！' },
-  { id: 'days-7', group: 'habit', name: '习惯养成', icon: '🏅', metric: 'practiceDayStreak', target: 7, praise: '连续练习 7 天，好习惯养成啦！' }
+  { id: 'days-7', group: 'habit', name: '习惯养成', icon: '🏅', metric: 'practiceDayStreak', target: 7, praise: '连续练习 7 天，好习惯养成啦！' },
+  ...ISLANDS.map((island) => ({
+    id: `island-${island.id}`,
+    group: 'island',
+    name: `${island.name}岛主`,
+    icon: island.icon,
+    metric: islandMetricOf(island),
+    target: 1,
+    praise: island.needsKungfu ? `${island.name}全部三星、九九神功大成，你是${island.name}的小岛主！` : `${island.name}的单元全部三星，你是${island.name}的小岛主！`
+  }))
 ]
 
 const MEDAL_GROUPS = [
-  { id: 'arithmetic', name: '加减运算' },
+  { id: 'arithmetic', name: '数理乐园' },
   { id: 'multiplication', name: '九九神功' },
-  { id: 'habit', name: '坚持练习' }
+  { id: 'habit', name: '坚持练习' },
+  { id: 'island', name: '岛主奖章' }
 ]
 
 const honorsDocId = (openid) => practiceStatsDocId(openid, HONORS_DOC_KEY)
@@ -82,6 +117,7 @@ const emptyHonors = (openid) => ({
   lastPracticeDate: '',
   dayStreak: 0,
   bestDayStreak: 0,
+  practiceDates: [],
   medals: {}
 })
 
@@ -106,12 +142,9 @@ const ensureHonors = async (openid) => {
 }
 
 const loadMetricContext = async (openid, honors) => {
-  const [arithmetic, multiplication] = await Promise.all([
-    readDocOrNull(practiceStatsDocId(openid, 'arithmetic')),
-    readDocOrNull(practiceStatsDocId(openid, 'multiplication'))
-  ])
+  const [math, multiplication] = await Promise.all([readMathStats(openid), readDocOrNull(practiceStatsDocId(openid, 'multiplication'))])
   return {
-    arithmetic: arithmetic || {},
+    math: math || {},
     multiplication: (multiplication && multiplication.progress) || emptyKungfuProgress(),
     honors
   }
@@ -167,11 +200,19 @@ const applyHonors = async (openid, { flowerEvents = [], practiced = false }, rul
       dayStreak: day.dayStreak,
       bestDayStreak: Math.max(honors.bestDayStreak, day.dayStreak)
     }
+    if (practiced && !next.practiceDates.includes(today)) next.practiceDates = [...next.practiceDates, today].slice(-KEPT_PRACTICE_DATES)
     const context = await loadMetricContext(openid, next)
     const newMedals = MEDALS.filter((medal) => !honors.medals[medal.id] && METRICS[medal.metric](context) >= medal.target)
     newMedals.forEach((medal) => {
       next.medals = { ...next.medals, [medal.id]: now }
     })
+    // Becoming an island's 岛主 also earns flowers (known only once the medals are checked).
+    const islandFlowers = newMedals.filter((medal) => medal.group === 'island').length * (flowerRules.perEvent[FLOWER_REASONS.ISLAND_MASTER] || 0)
+    if (islandFlowers) {
+      gained.push({ reason: FLOWER_REASONS.ISLAND_MASTER, flowers: islandFlowers })
+      next.flowers += islandFlowers
+      next.flowersToday = { date: today, count: next.flowersToday.count + islandFlowers }
+    }
     await ref.update({
       data: {
         flowers: next.flowers,
@@ -179,15 +220,16 @@ const applyHonors = async (openid, { flowerEvents = [], practiced = false }, rul
         lastPracticeDate: next.lastPracticeDate,
         dayStreak: next.dayStreak,
         bestDayStreak: next.bestDayStreak,
+        practiceDates: _.set(next.practiceDates),
         medals: _.set(next.medals),
         updatedAt: db.serverDate()
       }
     })
     return {
-      flowersGained,
+      flowersGained: flowersGained + islandFlowers,
       flowerReasons: gained.map((event) => event.reason),
       totalFlowers: next.flowers,
-      todayFlowers: todayCount,
+      todayFlowers: next.flowersToday.count,
       newMedals: newMedals.map((medal) => toMedalView(medal, context, now))
     }
   })
@@ -211,4 +253,4 @@ const describeHonors = async (openid, now = Date.now()) => {
   }
 }
 
-module.exports = { FLOWER_REASONS, MEDALS, METRICS, applyHonors, describeHonors }
+module.exports = { FLOWER_REASONS, MEDALS, METRICS, applyHonors, describeHonors, emptyHonors, honorsDocId, loadMetricContext, readDocOrNull }

@@ -50,6 +50,12 @@ page {
   --game-color-soft: #FFE6D3;
 }
 
+.game-theme--hanzi {
+  --game-color: #9B7BFF;
+  --game-color-deep: #7A58E0;
+  --game-color-soft: #ECE5FF;
+}
+
 .game-theme--typo {
   --game-color: #FF6B6B;
   --game-color-deep: #D94C4C;

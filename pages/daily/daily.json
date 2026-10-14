@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "今日挑战",
+  "disableScroll": true,
+  "usingComponents": {
+    "kungfu-question": "/components/kungfu-question/kungfu-question",
+    "flower-toast": "/components/flower-toast/flower-toast",
+    "medal-popup": "/components/medal-popup/medal-popup"
+  }
+}

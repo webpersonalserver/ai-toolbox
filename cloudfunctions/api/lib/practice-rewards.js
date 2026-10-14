@@ -1,10 +1,7 @@
 const { ALL_ITEM_TYPES } = require('./items')
 
-const PRACTICE_TIERS = {
-  arithmetic: [10, 20, 100]
-}
-
-const PRACTICE_IDS = ['arithmetic', 'multiplication']
+// math = 数理乐园 (the old 加减运算 'arithmetic' record is converted into it, see lib/math-stats.js).
+const PRACTICE_IDS = ['math', 'multiplication']
 
 const MILESTONE_TYPES = { ROW_RECITED: 'rowRecited', ROW_MASTERED: 'rowMastered', ROW_PERFECT: 'rowPerfect', GRANDMASTER: 'grandmaster' }
 
@@ -12,10 +9,7 @@ const practiceStatsDocId = (openid, practiceId) => `${openid}_${practiceId}`
 
 const isPracticeId = (practiceId) => PRACTICE_IDS.includes(practiceId)
 
-
 const milestoneKeyOf = (milestone) => (milestone.type === MILESTONE_TYPES.GRANDMASTER ? milestone.type : `${milestone.type}:${milestone.row}`)
-
-const isPracticeTier = (practiceId, tier) => (PRACTICE_TIERS[practiceId] || []).includes(tier)
 
 const chestsOf = (source, rewards, count) => Array.from({ length: Math.max(count, 0) }, () => ({ source, rewards }))
 
@@ -62,12 +56,10 @@ const toRewardList = (deltas) =>
 
 module.exports = {
   practiceStatsDocId,
-  PRACTICE_TIERS,
   PRACTICE_IDS,
   MILESTONE_TYPES,
   milestoneKeyOf,
   isPracticeId,
-  isPracticeTier,
   solvedChestsBetween,
   streakChestsBetween,
   capChestsByDailyLimit,

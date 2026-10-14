@@ -1,0 +1,36 @@
+<view class="np np--{{size}}">
+  <view wx:for="{{frames}}" wx:for-item="frame" wx:key="id" class="np__frame">
+    <view wx:for="{{frame.rows}}" wx:for-item="row" wx:for-index="rowIndex" wx:key="rowIndex" class="np__row">
+      <view wx:for="{{row}}" wx:for-item="cell" wx:for-index="cellIndex" wx:key="cellIndex" class="np__cell">
+        <view wx:if="{{cell}}" class="np__dot np__dot--{{cell}}"></view>
+      </view>
+    </view>
+  </view>
+  <view wx:for="{{groups}}" wx:for-item="group" wx:key="id" class="np__sticks">
+    <view wx:for="{{group.bundles}}" wx:key="*this" class="np__bundle np__bundle--{{group.tone}}">
+      <view class="np__band"></view>
+    </view>
+    <view wx:for="{{group.ones}}" wx:key="*this" class="np__stick np__stick--{{group.tone}}"></view>
+  </view>
+  <view wx:for="{{shares}}" wx:for-item="share" wx:key="id" class="np__share">
+    <view wx:for="{{share.dots}}" wx:key="*this" class="np__dot np__dot--a"></view>
+  </view>
+  <view wx:if="{{column}}" class="np__column">
+    <view class="np__column-row np__column-row--marks">
+      <view class="np__column-cell"></view>
+      <view wx:for="{{column.marks}}" wx:key="id" class="np__column-cell">{{item.text}}</view>
+    </view>
+    <view class="np__column-row">
+      <view class="np__column-cell"></view>
+      <view wx:for="{{column.top}}" wx:key="id" class="np__column-cell {{item.focus ? 'np__column-cell--focus' : ''}}">{{item.text}}</view>
+    </view>
+    <view class="np__column-row np__column-row--line">
+      <view class="np__column-cell">{{column.symbol}}</view>
+      <view wx:for="{{column.bottom}}" wx:key="id" class="np__column-cell {{item.focus ? 'np__column-cell--focus' : ''}}">{{item.text}}</view>
+    </view>
+    <view class="np__column-row np__column-row--result">
+      <view class="np__column-cell"></view>
+      <view wx:for="{{column.result}}" wx:key="id" class="np__column-cell {{item.focus ? 'np__column-cell--focus' : ''}}">{{item.text}}</view>
+    </view>
+  </view>
+</view>

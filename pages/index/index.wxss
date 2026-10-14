@@ -71,10 +71,6 @@
   color: var(--color-on-accent);
 }
 
-.hall__practice-icon {
-  background: var(--color-success);
-  box-shadow: 0 6rpx 0 var(--color-success-deep);
-}
 
 .btn.hall__checkin-btn {
   width: 180rpx;
@@ -171,4 +167,22 @@
 .hall__game-action {
   color: var(--game-color-deep);
   font-weight: 700;
+}
+
+/* Room under the last card so the floating video button never covers it. */
+.page.hall--with-fab {
+  padding-bottom: calc(128rpx + var(--space-xl) * 2 + env(safe-area-inset-bottom));
+}
+
+/* 今日挑战: same card shape as the games, warm gold until it is done for the day. */
+.hall__daily {
+  background: var(--color-gold-soft);
+}
+
+.hall__daily--done {
+  background: var(--color-surface);
+}
+
+.hall__daily-icon {
+  background: var(--color-surface);
 }

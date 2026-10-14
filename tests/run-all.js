@@ -2,7 +2,7 @@
 const { spawnSync } = require('child_process')
 const path = require('path')
 
-const SUITES = ['api', 'practice', 'multiplication', 'levels', 'templates', 'boundaries']
+const SUITES = ['api', 'practice', 'math-park', 'multiplication', 'levels', 'templates', 'boundaries', 'daily']
 
 for (const suite of SUITES) {
   const { status, stdout, stderr } = spawnSync(process.execPath, [path.join(__dirname, `${suite}.test.js`)], { encoding: 'utf8' })

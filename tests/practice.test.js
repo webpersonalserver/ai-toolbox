@@ -1,7 +1,10 @@
 const path = require('path')
-const { TIERS, TIER_ORDER, generateQuestion, isCorrect, needsRegrouping } = require(path.join(__dirname, '..', 'utils', 'practice', 'arithmetic'))
+const { UNITS, unitOf, playableUnitIds } = require(path.join(__dirname, '..', 'utils', 'practice', 'catalog'))
+const addSub = require(path.join(__dirname, '..', 'utils', 'practice', 'skills', 'add-sub'))
 
-const SAMPLES_PER_TIER = 6000
+const ADD_SUB_UNITS = playableUnitIds().filter((unitId) => UNITS[unitId].skill === 'addSub').map(unitOf)
+
+const SAMPLES_PER_UNIT = 6000
 
 // Deterministic generator so failures can be reproduced.
 const seededRng = (seed) => {
@@ -20,35 +23,35 @@ const check = (condition, message, detail) => {
   }
 }
 
-TIER_ORDER.forEach((tier) => {
-  const config = TIERS[tier]
-  const rng = seededRng(tier * 7919)
+ADD_SUB_UNITS.forEach((unit, unitIndex) => {
+  const { options } = unit
+  const rng = seededRng((unitIndex + 1) * 7919)
   const counts = { forms: {}, regroup: 0 }
   let previousKey = ''
-  for (let index = 0; index < SAMPLES_PER_TIER; index += 1) {
-    const question = generateQuestion(tier, { rng, previousKey })
+  for (let index = 0; index < SAMPLES_PER_UNIT; index += 1) {
+    const question = addSub.generate(options, { rng, previousKey })
     const { left, right, result, operation, blank, answer } = question
     const numbers = [left, right, result]
-    check(numbers.every((value) => Number.isInteger(value) && value >= 0 && value <= config.max), `${tier}: numbers within range`, question)
-    check(operation === '+' ? left + right === result : left - right === result, `${tier}: equation holds`, question)
-    check(answer === { left, right, result }[blank], `${tier}: answer matches blank`, question)
-    check(String(answer).length <= config.maxInputDigits, `${tier}: answer fits the input box`, question)
-    check(question.key !== previousKey, `${tier}: no immediate repeat`, question)
-    check(isCorrect(question, String(answer)) && !isCorrect(question, String(answer + 1)) && !isCorrect(question, ''), `${tier}: isCorrect`, question)
+    check(numbers.every((value) => Number.isInteger(value) && value >= 0 && value <= options.max), `${unit.id}: numbers within range`, question)
+    check(operation === '+' ? left + right === result : left - right === result, `${unit.id}: equation holds`, question)
+    check(answer === String({ left, right, result }[blank]), `${unit.id}: answer matches blank`, question)
+    check(answer.length <= question.maxDigits, `${unit.id}: answer fits the input box`, question)
+    check(question.key !== previousKey, `${unit.id}: no immediate repeat`, question)
+    check(addSub.check(question, answer) && !addSub.check(question, String(Number(answer) + 1)) && !addSub.check(question, ''), `${unit.id}: check`, question)
     const form = `${operation}${blank}`
     counts.forms[form] = (counts.forms[form] || 0) + 1
-    if (needsRegrouping(operation, left, right)) counts.regroup += 1
+    if (addSub.needsRegrouping(operation, left, right)) counts.regroup += 1
     previousKey = question.key
   }
-  const formShares = Object.values(counts.forms).map((count) => count / SAMPLES_PER_TIER)
-  check(Object.keys(counts.forms).length === 6, `${tier}: all six forms appear`, counts.forms)
-  check(formShares.every((share) => share > 0.12 && share < 0.22), `${tier}: forms roughly balanced`, counts.forms)
-  const regroupShare = counts.regroup / SAMPLES_PER_TIER
+  const formShares = Object.values(counts.forms).map((count) => count / SAMPLES_PER_UNIT)
+  check(Object.keys(counts.forms).length === 6, `${unit.id}: all six forms appear`, counts.forms)
+  check(formShares.every((share) => share > 0.12 && share < 0.22), `${unit.id}: forms roughly balanced`, counts.forms)
+  const regroupShare = counts.regroup / SAMPLES_PER_UNIT
   // Within 10 there is no target ratio: sums reaching 10 (3 + 7) and 10 − 3 count as regrouping and are normal there.
-  if (config.regroupRatio) {
-    check(Math.abs(regroupShare - config.regroupRatio) < 0.08, `${tier}: regrouping share near ${config.regroupRatio}`, regroupShare)
+  if (options.regroupRatio) {
+    check(Math.abs(regroupShare - options.regroupRatio) < 0.08, `${unit.id}: regrouping share near ${options.regroupRatio}`, regroupShare)
   }
-  console.log(`tier ${tier}: ${SAMPLES_PER_TIER} questions, regrouping ${(regroupShare * 100).toFixed(1)}%, forms ${JSON.stringify(counts.forms)}`)
+  console.log(`${unit.id}: ${SAMPLES_PER_UNIT} questions, regrouping ${(regroupShare * 100).toFixed(1)}%, forms ${JSON.stringify(counts.forms)}`)
 })
 
 // Client-side reward preview must agree with the cloud rules (same shape as DEFAULT_RULES.practice).
@@ -89,13 +92,14 @@ const flowerAt = (fromTotal, streak, countsForStreak) => rewardsPreview.expectsF
 expectReward(flowerAt(9, 1, true) && !flowerAt(10, 1, true), 'flower at every 10th answer')
 expectReward(flowerAt(3, 10, true) && !flowerAt(3, 10, false) && !flowerAt(3, 11, true), 'flower when a run reaches streak 10')
 
-const paperTools = require(path.join(__dirname, '..', 'utils', 'practice', 'arithmetic-exam'))
-TIER_ORDER.forEach((tier) => {
-  const paper = paperTools.buildExamPaper(tier, seededRng(tier))
-  expectReward(paper.length === 20 && new Set(paper.map((question) => question.equation)).size === 20, `tier ${tier} paper has 20 different questions`)
-  expectReward(paper.every((question) => question.tokens.filter((token) => token === '').length === 1 && question.answer.length <= TIERS[tier].maxInputDigits), `tier ${tier} paper: one blank, answer fits the keypad`)
+const paperTools = require(path.join(__dirname, '..', 'utils', 'practice', 'exam'))
+ADD_SUB_UNITS.forEach((unit, unitIndex) => {
+  const paper = paperTools.buildExamPaper(unit, seededRng(unitIndex + 10))
+  expectReward(paper.length === 20 && new Set(paper.map((question) => question.equation)).size === 20, `${unit.id} paper has 20 different questions`)
+  expectReward(new Set(paper.map((question) => question.id)).size === 20, `${unit.id} paper: question ids are unique`)
+  expectReward(paper.every((question) => question.tokens.filter((token) => token === '').length === 1 && question.answer.length <= question.maxDigits), `${unit.id} paper: one blank, answer fits the keypad`)
   paperTools.EXAM_LEVELS.forEach(({ level }, index) => {
-    if (index) expectReward(paperTools.TIME_LIMIT_SECONDS[tier][level] < paperTools.TIME_LIMIT_SECONDS[tier][level - 1], `tier ${tier} level ${level} is shorter than the level below`)
+    if (index) expectReward(unit.examSeconds[level] < unit.examSeconds[level - 1], `${unit.id} level ${level} is shorter than the level below`)
   })
 })
 expectReward(paperTools.gradeOf(100).name === '满分小状元' && paperTools.gradeOf(85).name === '良好' && paperTools.gradeOf(55).name === '再练练', 'grades by score')
@@ -118,11 +122,12 @@ expectReward(adOffersOf(adSession({}, { stamina: 0, hint: 0 })).length === 0, 'b
 expectReward(adOffersOf(adSession({}, { stamina: null, hint: 1 }))[0].remainingText === '随时都能看', 'unlimited stays available')
 
 const welfare = require(path.join(__dirname, '..', 'utils', 'welfare'))
-const taskSession = ({ checkedIn = false, ad = false, adRemaining = { stamina: 10, hint: 10 }, items = {} } = {}) => ({
-  today: { checkedIn, adRemaining },
+const taskSession = ({ checkedIn = false, ad = false, adRemaining = { stamina: 10, hint: 10 }, items = {}, dailyChallenge = null } = {}) => ({
+  today: { checkedIn, adRemaining, dailyChallenge },
   items: { staminaPending: 0, recoveredToday: 4, ...items },
   rules: {
     checkinRewards: [{ type: 'stamina', amount: 5 }],
+    daily: { rewards: [{ type: 'stamina', amount: 5 }] },
     staminaRecovery: { intervalMinutes: 30, dailyCap: 15 },
     ad: { enabled: ad, adUnitId: ad ? 'unit' : '', rewards: { stamina: 10, hint: 2 }, dailyLimits: { stamina: 10, hint: 10 } },
     practice: { dailyCaps: { stamina: 15, hint: 3 } }
@@ -135,11 +140,14 @@ const taskGames = [
 const tasksFor = (options, extra = {}) => welfare.buildTaskRows({ session: taskSession(options), games: taskGames, practices: [{ practiceId: 'multiplication', masteredRows: 3 }], practiceEarnedToday: { stamina: 6, hint: 1 }, ...extra })
 const taskByKey = (rows, key) => rows.find((row) => row.key === key)
 let tasks = tasksFor({})
-expectReward(!taskByKey(tasks, 'ad-stamina') && tasks.length === 5, 'videos off: video tasks hidden, 5 tasks shown')
+expectReward(!taskByKey(tasks, 'ad-stamina') && tasks.length === 6, 'videos off: video tasks hidden, 6 tasks shown')
 expectReward(taskByKey(tasks, 'checkin').actionText === '打卡' && taskByKey(tasks, 'recovery').statusText === '恢复中', 'open check-in, recovery running')
 expectReward(taskByKey(tasks, 'practice').progressText.includes('6 / 15') && taskByKey(tasks, 'kungfu').progressText.includes('3 / 9'), 'practice and kungfu progress shown')
 expectReward(taskByKey(tasks, 'levels').progressText.includes('找错字再过 2 关开大宝箱'), 'levels task points at the nearest chest')
-expectReward(welfare.countOpenTasks(tasks) === 4, 'open tasks: check-in, practice, kungfu, levels')
+expectReward(welfare.countOpenTasks(tasks) === 5, 'open tasks: check-in, daily challenge, practice, kungfu, levels')
+expectReward(taskByKey(tasks, 'daily').actionText === '去挑战' && taskByKey(tasks, 'daily').progressText.includes('5 点体力'), 'daily challenge row invites with its reward')
+const doneDaily = taskByKey(tasksFor({ dailyChallenge: { correct: 8, total: 10, seconds: 90 } }), 'daily')
+expectReward(doneDaily.done && doneDaily.progressText === '今天答对 8 / 10 题' && !doneDaily.actionText, 'finished daily challenge greys out with the score')
 tasks = tasksFor({ checkedIn: true, ad: true, adRemaining: { stamina: 0, hint: 4 }, items: { recoveredToday: 15 } }, { practiceEarnedToday: { stamina: 15, hint: 3 } })
 expectReward(taskByKey(tasks, 'checkin').done && taskByKey(tasks, 'recovery').done && taskByKey(tasks, 'practice').done, 'limits reached: rows stay but are done')
 expectReward(taskByKey(tasks, 'ad-stamina').done && taskByKey(tasks, 'ad-stamina').statusText === '今天已看满' && taskByKey(tasks, 'ad-hint').progressText === '今天已看 6 / 10 次', 'video rows show used / limit and grey out when full')

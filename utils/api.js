@@ -71,6 +71,8 @@ const practice = {
   reportExam: (exam) => call('practice.reportExam', exam),
   honors: () => call('practice.honors'),
   syncProgress: (practiceId, progress, practiced) => call('practice.syncProgress', { practiceId, progress, practiced }),
+  mistakes: (practiceId, unitId) => call('practice.mistakes', { practiceId, unitId }),
+  weekly: () => call('practice.weekly'),
   claimChests: (practiceId) => call('practice.claimChests', { practiceId })
 }
 
@@ -83,7 +85,14 @@ const leaderboard = {
 }
 
 const admin = {
-  stats: (gameType) => call('admin.stats', { gameType })
+  stats: (gameType) => call('admin.stats', { gameType }),
+  switches: () => call('admin.switches'),
+  updateSwitches: (switches) => call('admin.updateSwitches', { switches })
 }
 
-module.exports = { ERROR_CODES, ApiError, toastError, account, game, rescue, practice, speech, leaderboard, admin }
+const daily = {
+  today: () => call('daily.today'),
+  submit: (result) => call('daily.submit', result)
+}
+
+module.exports = { ERROR_CODES, ApiError, toastError, account, game, rescue, practice, daily, speech, leaderboard, admin }

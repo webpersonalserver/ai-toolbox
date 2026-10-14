@@ -6,7 +6,10 @@ const FLOWER_PRAISES = {
   dailyFirst: '今天也来练习啦，好孩子！',
   rowRecited: '口诀念完啦，真是好学的孩子！',
   rowMastered: '练成一重，继续加油！',
-  rowPerfect: '零失误，太优秀了！'
+  rowPerfect: '零失误，太优秀了！',
+  islandMaster: '成为小岛主啦，奖励一大把小红花！',
+  dailyChallenge: '今日挑战完成，真棒！',
+  dailyPerfect: '今日挑战全对，太厉害了！'
 }
 const DEFAULT_PRAISE = '认真练习的好孩子！'
 const FLOWER_TOAST_MS = 2200

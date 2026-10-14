@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "控制中心",
+  "usingComponents": {
+    "loading-skeleton": "/components/loading-skeleton/loading-skeleton"
+  }
+}

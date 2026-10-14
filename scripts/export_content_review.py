@@ -1,4 +1,4 @@
-"""Write docs/content-review.md: the level content that needs a human proofread (poetry, xiehouyu, typo, idiom wording).
+"""Write docs/content-review.md: the level content that needs a human proofread (poetry, xiehouyu, typo, idiom wording, hanzi).
 
 Usage: python3 scripts/export_content_review.py
 """
@@ -48,14 +48,15 @@ def poetry_section(levels, supplement):
 
 
 def xiehouyu_section(levels):
-    lines = ["## 二、歇后语", "", "全部人工挑选，答案取自数据源。「原文」列是数据源里带谐音/释义括号的原始写法。", ""]
+    lines = ["## 二、歇后语", "", "全部人工挑选，答案取自数据源。「原文」列是数据源里带谐音/释义括号的原始写法。",
+             "「意思」是自己写的大白话，答题前就显示（`scripts/data/xiehouyu_meanings.json`），请看准不准、孩子懂不懂。", ""]
     by_stage = OrderedDict()
     for level in levels:
         by_stage.setdefault(level["stage"], []).append(level)
     for stage, stage_levels in by_stage.items():
-        lines += [f"### {stage}（{len(stage_levels)} 关）", "", "| 关 | 谜面 | 答案 | 原文 |", "|---|---|---|---|"]
+        lines += [f"### {stage}（{len(stage_levels)} 关）", "", "| 关 | 谜面 | 答案 | 意思 | 原文 |", "|---|---|---|---|---|"]
         for level in stage_levels:
-            lines.append(f"| {level['levelNo']} | {level['riddle']} | {level['answer']} | {level.get('note', '')} |")
+            lines.append(f"| {level['levelNo']} | {level['riddle']} | {level['answer']} | {level.get('meaning', '')} | {level.get('note', '')} |")
         lines.append("")
     return lines
 
@@ -70,6 +71,36 @@ def typo_section(levels):
         lines.append(f"| {level['levelNo']} | {level['stage']} | {level['clue']} | {level['idiom']} | {''.join(level['board'])} |")
     lines.append("")
     return lines
+
+
+HANZI_KIND_NAMES = {"picture": "看图识字", "pinyin": "拼音选字", "radical": "认偏旁", "word": "选字组词"}
+
+
+def hanzi_section(levels):
+    lines = ["## 五、汉字闯关", "",
+             "字池来自教育部 2022 课标常用字表的字表一，按常用程度和笔画选出，不是按课本逐课排列。",
+             "四个选项里只有一个对：组词题的干扰字已排除「填进去也能组成词」的情况。请看：题目孩子看不看得懂、",
+             "看图识字的图是否只对应这一个字、例词是否常用。看图用 `scripts/data/hanzi_pictures.txt`，组词用 `hanzi_words.txt`。", "",
+             "| 关 | 题型 | 题目 | 选项 | 答案 | 例词 |", "|---|---|---|---|---|---|"]
+    for level in levels:
+        lines.append(f"| {level['levelNo']} | {HANZI_KIND_NAMES[level['kind']]} | {level['clue']} | {' '.join(level['board'])} | {level['answer']} | {level.get('word', '')} |")
+    return lines + [""]
+
+
+def pinyin_section():
+    overrides = json.loads((ROOT / "scripts" / "data" / "answer_pinyin_overrides.json").read_text(encoding="utf-8"))
+    by_key = {(level["gameType"], level.get("sourceKey")): level for game in ("poetry", "xiehouyu") for level in read_levels(game)}
+    lines = ["## 六、拼音辅助的人工读音", "",
+             "答案格上方的拼音由脚本按整句自动注音，下面这些多音字自动读错了，已人工改正（`scripts/data/answer_pinyin_overrides.json`）。",
+             "请看读音是否和课本一致；其余关卡的拼音也可以抽查。", "",
+             "| 玩法 | 关 | 句子 | 答案 | 拼音 |", "|---|---|---|---|---|"]
+    names = {"poetry": "诗词", "xiehouyu": "歇后语"}
+    for game in ("poetry", "xiehouyu"):
+        for key, syllables in overrides[game].items():
+            level = by_key[(game, key)]
+            sentence = level.get("verse") or f"{level['riddle']}——{level['answer']}"
+            lines.append(f"| {names[game]} | {level['levelNo']} | {sentence} | {level['answer']} | {syllables} |")
+    return lines + [""]
 
 
 def idiom_section(explanations):
@@ -98,6 +129,8 @@ def main():
     lines += typo_section(read_levels("typo"))
     explanations = json.loads((ROOT / "scripts" / "data" / "idiom_explanations.json").read_text(encoding="utf-8"))
     lines += idiom_section(explanations)
+    lines += hanzi_section(read_levels("hanzi"))
+    lines += pinyin_section()
     OUTPUT.write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(f"wrote {OUTPUT.relative_to(ROOT)}")
 

@@ -41,10 +41,17 @@ const buildHonorsShare = (flowers) => ({
   imageUrl: SHARE_IMAGES.honors
 })
 
-const ARITHMETIC_SHARE = { title: '一起来做加减运算，看谁连对得多！', path: PRACTICE_TAB_PATH, imageUrl: SHARE_IMAGES.arithmetic }
+// 本周小结: the numbers go in the title; the card opens the 趣味 tab, never the child's own report.
+const buildWeeklyShare = ({ practicedDays, solved, stars }) => ({
+  title: `这周练了 ${practicedDays} 天、答对 ${solved} 题${stars ? `、拿到 ${stars} 颗星` : ''}，快来看看我的进步！`,
+  path: PRACTICE_TAB_PATH,
+  imageUrl: SHARE_IMAGES.honors
+})
 
-const buildExamShare = (tierLabel) => ({
-  title: `来挑战${tierLabel}加减法限时考试，看看你能考几分！`,
+const ARITHMETIC_SHARE = { title: '跟着喵算算去数理乐园冒险，看谁连对得多！', path: PRACTICE_TAB_PATH, imageUrl: SHARE_IMAGES.arithmetic }
+
+const buildExamShare = (unitName) => ({
+  title: `来挑战「${unitName}」限时考试，看看你能考几分！`,
   path: PRACTICE_TAB_PATH,
   imageUrl: SHARE_IMAGES.exam
 })
@@ -60,5 +67,6 @@ module.exports = {
   buildHonorsShare,
   ARITHMETIC_SHARE,
   buildExamShare,
+  buildWeeklyShare,
   KUNGFU_SHARE
 }

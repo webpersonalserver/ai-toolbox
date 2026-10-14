@@ -1,0 +1,180 @@
+.np {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10rpx;
+}
+
+.np__frame {
+  padding: 4rpx;
+  border: 3rpx solid var(--color-ink-soft);
+  border-radius: 10rpx;
+  background: var(--color-surface);
+}
+
+.np__row {
+  display: flex;
+}
+
+.np__cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24rpx;
+  height: 24rpx;
+  border: 1rpx dashed var(--color-border);
+}
+
+.np__dot {
+  width: 18rpx;
+  height: 18rpx;
+  border-radius: 50%;
+  animation: np-pop 0.35s cubic-bezier(0.2, 1.8, 0.4, 1) both;
+}
+
+.np__dot--a { background: var(--color-primary); }
+.np__dot--b { background: var(--color-success); }
+.np__dot--x {
+  border: 3rpx dashed var(--color-ink-soft);
+  background: transparent;
+  box-sizing: border-box;
+  opacity: 0.6;
+}
+
+/* Equal shares (division): one rounded plate per share. */
+.np__share {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6rpx;
+  max-width: 120rpx;
+  padding: 10rpx;
+  border: 3rpx solid var(--color-ink-soft);
+  border-radius: 24rpx;
+  background: var(--color-surface);
+}
+
+/* 竖式: digits in fixed columns, the place being worked on is highlighted. */
+.np__column {
+  padding: 8rpx 16rpx;
+  border-radius: 16rpx;
+  background: var(--color-surface);
+  font-weight: 900;
+}
+
+.np__column-row {
+  display: flex;
+}
+
+.np__column-cell {
+  width: 48rpx;
+  height: 56rpx;
+  border-radius: 10rpx;
+  font-size: 40rpx;
+  line-height: 56rpx;
+  text-align: center;
+}
+
+.np__column-row--marks .np__column-cell {
+  height: 32rpx;
+  color: var(--color-primary-deep);
+  font-size: 24rpx;
+  line-height: 32rpx;
+}
+
+.np__column-row--line {
+  border-bottom: 4rpx solid var(--color-ink);
+}
+
+.np__column-row--result .np__column-cell {
+  color: var(--color-success-deep);
+}
+
+.np__column-cell--focus {
+  background: var(--color-gold-soft);
+}
+
+.np__sticks {
+  display: flex;
+  align-items: flex-end;
+  gap: 4rpx;
+}
+
+.np__bundle {
+  position: relative;
+  width: 22rpx;
+  height: 72rpx;
+  border-radius: 6rpx;
+  animation: np-pop 0.35s cubic-bezier(0.2, 1.8, 0.4, 1) both;
+}
+
+.np__band {
+  position: absolute;
+  top: 30rpx;
+  right: -3rpx;
+  left: -3rpx;
+  height: 8rpx;
+  border-radius: 4rpx;
+  background: var(--color-primary-deep);
+}
+
+.np__stick {
+  width: 6rpx;
+  height: 72rpx;
+  border-radius: 3rpx;
+  animation: np-pop 0.35s cubic-bezier(0.2, 1.8, 0.4, 1) both;
+}
+
+.np__bundle--a, .np__stick--a { background: var(--color-gold); }
+.np__bundle--b, .np__stick--b { background: var(--color-success); }
+
+.np--large .np__cell {
+  width: 44rpx;
+  height: 44rpx;
+}
+
+.np--large .np__dot {
+  width: 34rpx;
+  height: 34rpx;
+}
+
+.np--large .np__bundle {
+  width: 32rpx;
+  height: 110rpx;
+}
+
+.np--large .np__band {
+  top: 48rpx;
+}
+
+.np--large .np__share {
+  max-width: 150rpx;
+}
+
+.np--large .np__share .np__dot {
+  width: 26rpx;
+  height: 26rpx;
+}
+
+.np--large .np__column-cell {
+  width: 64rpx;
+  height: 76rpx;
+  font-size: 56rpx;
+  line-height: 76rpx;
+}
+
+.np--large .np__column-row--marks .np__column-cell {
+  height: 36rpx;
+  font-size: 28rpx;
+  line-height: 36rpx;
+}
+
+.np--large .np__stick {
+  width: 9rpx;
+  height: 110rpx;
+}
+
+@keyframes np-pop {
+  0% { transform: scale(0); }
+  100% { transform: scale(1); }
+}

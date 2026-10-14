@@ -8,7 +8,7 @@ const BLANK_MARK = '□'
 const GAME_CHECKS = {
   idiom: {
     answerLength: (length) => length === 4,
-    requiredFields: ['clue', 'explanation', 'pinyin'],
+    requiredFields: ['clue', 'explanation', 'pinyin', 'answerPinyin'],
     clueProblem: (level) => {
       const visible = new Set([...level.answer].filter((char) => level.clue.includes(char)))
       return visible.size > 2 ? `clue reveals ${[...visible].join('')}` : ''
@@ -16,7 +16,7 @@ const GAME_CHECKS = {
   },
   poetry: {
     answerLength: (length) => length >= 2 && length <= 7,
-    requiredFields: ['clue', 'verse', 'poemTitle', 'author', 'stage'],
+    requiredFields: ['clue', 'verse', 'poemTitle', 'author', 'stage', 'answerPinyin'],
     clueProblem: (level) => {
       const blanks = (level.clue.match(new RegExp(BLANK_MARK, 'g')) || []).length
       if (blanks !== level.answer.length) return `clue has ${blanks} blanks for a ${level.answer.length}-char answer`
@@ -25,8 +25,32 @@ const GAME_CHECKS = {
   },
   xiehouyu: {
     answerLength: (length) => length >= 2 && length <= 7,
-    requiredFields: ['clue', 'riddle', 'stage'],
-    clueProblem: (level) => (level.clue.includes(level.answer) ? 'clue contains the answer' : '')
+    requiredFields: ['clue', 'riddle', 'stage', 'meaning', 'answerPinyin'],
+    // The meaning is shown before answering: no two answer characters in a row, at most half of them at all
+    // (same rule as scripts/level_builders/xiehouyu.py).
+    clueProblem: (level) => {
+      if (level.clue.includes(level.answer)) return 'clue contains the answer'
+      const answer = level.answer
+      const pairs = [...answer].slice(0, -1).map((char, index) => answer.slice(index, index + 2)).filter((pair) => level.meaning.includes(pair))
+      if (pairs.length) return `meaning repeats ${pairs.join('、')}`
+      const shared = new Set([...answer].filter((char) => level.meaning.includes(char)))
+      return shared.size * 2 > new Set(answer).size ? `meaning uses too many answer characters (${[...shared].join('')})` : ''
+    }
+  },
+  hanzi: {
+    boardSize: 4,
+    answerLength: (length) => length === 1,
+    requiredFields: ['clue', 'kind', 'prompt', 'char', 'pinyin', 'stage'],
+    clueProblem: (level) => {
+      if (!['picture', 'pinyin', 'radical', 'word'].includes(level.kind)) return `unknown kind ${level.kind}`
+      if (new Set(level.board).size !== level.board.length) return 'board repeats a choice'
+      const answerIndex = level.board.indexOf(level.answer)
+      if (level.eliminationOrder.includes(answerIndex) || level.eliminationOrder.length !== level.board.length - 1) return 'bad eliminationOrder'
+      if (level.kind === 'radical' && (level.clue !== level.char || level.answer !== level.radical)) return 'radical question must ask for the character\'s own radical'
+      if (level.kind !== 'radical' && level.answer !== level.char) return 'answer must be the character being taught'
+      if (level.kind === 'word' && (level.clue.split('□').length !== 2 || level.clue.replace('□', level.answer) !== level.word)) return 'word clue does not rebuild the word'
+      return ''
+    }
   },
   typo: {
     boardSize: 8,
@@ -72,6 +96,8 @@ const checkGame = (gameType, levels) => {
     if (level.board.length !== boardSize) problems.push(`board size ${level.board.length}`)
     if (!boardContainsAnswer(level.board, level.answer)) problems.push('board is missing answer characters')
     checks.requiredFields.filter((fieldName) => !level[fieldName]).forEach((fieldName) => problems.push(`missing ${fieldName}`))
+    // 拼音辅助: exactly one syllable over each answer cell.
+    if (level.answerPinyin && (level.answerPinyin.length !== [...level.answer].length || !level.answerPinyin.every((syllable) => /^[a-zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜü]+$/.test(syllable)))) problems.push(`answerPinyin ${level.answerPinyin}`)
     const clueProblem = checks.clueProblem(level)
     if (clueProblem) problems.push(clueProblem)
     if (level.stage && seenStages[seenStages.length - 1] !== level.stage) {

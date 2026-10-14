@@ -38,6 +38,7 @@ const buildPracticeChestRows = (practices = []) => {
 
 const TASK_ACTIONS = {
   CHECKIN: 'checkin',
+  DAILY: 'daily',
   RECOVERY: 'recovery',
   AD_STAMINA: 'ad-stamina',
   AD_HINT: 'ad-hint',
@@ -91,7 +92,7 @@ const practiceTask = (session, practiceEarnedToday) => {
   return taskRow({
     key: TASK_ACTIONS.PRACTICE,
     iconText: '算',
-    name: '做加减运算攒宝箱',
+    name: '去数理乐园攒宝箱',
     progressText: `今天已攒 体力 ${earned.stamina} / ${caps.stamina}、提示 ${earned.hint} / ${caps.hint}`,
     actionText: done ? '' : '去练习',
     statusText: done ? '今天已攒满' : '',
@@ -131,6 +132,21 @@ const levelsTask = (games) => {
 /**
  * Every way to earn stamina and hints, with today's progress. Rows that hit today's limit stay visible but greyed out.
  */
+// 今日挑战: 10 questions once a day; the row greys out once it is done.
+const dailyTask = (session) => {
+  const result = session.today.dailyChallenge
+  const rewards = (session.rules.daily && session.rules.daily.rewards) || []
+  return taskRow({
+    key: TASK_ACTIONS.DAILY,
+    iconText: '挑',
+    name: '今日挑战',
+    progressText: result ? `今天答对 ${result.correct} / ${result.total} 题` : `10 道题，完成送${describeRewards(rewards)}`,
+    actionText: result ? '' : '去挑战',
+    statusText: result ? '今天已完成' : '',
+    done: Boolean(result)
+  })
+}
+
 const buildTaskRows = ({ session, games, practices, practiceEarnedToday }) =>
   [
     taskRow({
@@ -142,6 +158,7 @@ const buildTaskRows = ({ session, games, practices, practiceEarnedToday }) =>
       statusText: session.today.checkedIn ? '今天已打卡' : '',
       done: session.today.checkedIn
     }),
+    dailyTask(session),
     recoveryTask(session),
     ...adTasks(session),
     practiceTask(session, practiceEarnedToday),

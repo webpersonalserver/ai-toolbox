@@ -1,0 +1,21 @@
+<loading-skeleton wx:if="{{loading}}" rows="2" />
+<view wx:else class="page control">
+  <view class="control__intro">这里的开关对所有玩家生效，改完马上起作用。</view>
+  <view wx:if="{{failed}}" class="card control__failed">读取失败，可能没有管理员权限或网络不好。<text class="control__retry" bindtap="load">重试</text></view>
+  <block wx:if="{{!failed}}">
+    <view wx:for="{{groups}}" wx:for-item="group" wx:key="module" class="control__group">
+      <view class="control__module">{{group.module}}</view>
+      <view wx:for="{{group.switches}}" wx:key="key" class="card control__row">
+        <view class="control__head">
+          <view class="control__name">
+            <text class="control__name-text">{{item.name}}</text>
+            <text class="control__help" data-key="{{item.key}}" catchtap="showDetail">?</text>
+          </view>
+          <switch checked="{{item.on}}" disabled="{{saving === item.key}}" color="#FF8A3D" data-key="{{item.key}}" bindchange="toggle" />
+        </view>
+        <view class="control__line">{{item.controls}}</view>
+        <view class="control__state {{item.on ? 'control__state--on' : ''}}">{{item.stateText}} · {{item.defaultText}}</view>
+      </view>
+    </view>
+  </block>
+</view>

@@ -9,6 +9,7 @@ const leaderboard = require('./handlers/leaderboard')
 const overview = require('./handlers/overview')
 const practice = require('./handlers/practice')
 const speech = require('./handlers/speech')
+const daily = require('./handlers/daily')
 
 const ROUTES = {
   'account.login': account.login,
@@ -34,10 +35,16 @@ const ROUTES = {
   'practice.reportExam': practice.reportExam,
   'practice.syncProgress': practice.syncProgress,
   'practice.honors': practice.honors,
+  'practice.mistakes': practice.mistakes,
+  'practice.weekly': practice.weekly,
+  'daily.today': daily.today,
+  'daily.submit': daily.submit,
   'practice.claimChests': practice.claimChests,
   'speech.clipUrls': speech.clipUrls,
   'leaderboard.list': leaderboard.list,
-  'admin.stats': admin.stats
+  'admin.stats': admin.stats,
+  'admin.switches': admin.switches,
+  'admin.updateSwitches': admin.updateSwitches
 }
 
 const KNOWN_ERROR_CODES = new Set(Object.values(ERROR_CODES))

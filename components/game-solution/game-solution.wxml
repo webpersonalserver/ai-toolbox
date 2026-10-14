@@ -7,7 +7,15 @@
   <block wx:elif="{{gameType === 'xiehouyu'}}">
     <view class="game-solution__riddle">{{solution.riddle}}——</view>
     <view class="game-solution__answer">{{solution.answer}}</view>
+    <view wx:if="{{solution.meaning}}" class="game-solution__note">意思：{{solution.meaning}}</view>
     <view wx:if="{{solution.note}}" class="game-solution__note">原文：{{solution.note}}</view>
+  </block>
+
+  <block wx:elif="{{gameType === 'hanzi'}}">
+    <view class="game-solution__answer">{{solution.char}}</view>
+    <view class="game-solution__pinyin">{{solution.pinyin}}</view>
+    <view wx:if="{{solution.radical}}" class="game-solution__note">偏旁：{{solution.radical}}（{{solution.radicalName}}）</view>
+    <view wx:if="{{solution.word}}" class="game-solution__note">组词：{{solution.word}}</view>
   </block>
 
   <block wx:elif="{{gameType === 'typo'}}">

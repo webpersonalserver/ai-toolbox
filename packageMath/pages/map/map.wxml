@@ -1,0 +1,80 @@
+<view class="sea">
+  <view class="sea__waves"></view>
+
+  <view class="sea__header">
+    <view class="sea__title">🏝 数理乐园</view>
+    <view class="sea__subtitle">沿着金色航线一座一座玩，想先去哪座也可以喵～</view>
+    <view class="sea__guide">
+      <image class="sea__guide-cat" src="{{mascot.images.happy}}" mode="aspectFit" />
+      <view class="sea__bubble">{{bubble}}</view>
+    </view>
+    <view class="sea__actions">
+      <view wx:if="{{recommendation}}" class="sea__go" hover-class="sea__go--pressed" bindtap="openRecommendation">{{recommendation.goText}} ›</view>
+      <view class="sea__weekly" hover-class="sea__go--pressed" bindtap="openWeekly">{{copy.weekly}}</view>
+    </view>
+  </view>
+
+  <view class="sea__map" style="height: {{mapHeight}}rpx">
+  <view wx:for="{{dots}}" wx:key="id" class="sea__dot" style="{{item.style}}"></view>
+
+  <view
+    wx:for="{{islands}}"
+    wx:key="id"
+    class="island island--{{item.art.tone}} island--{{item.side}} {{item.foggy ? 'island--foggy' : ''}}"
+    style="{{item.style}}"
+    hover-class="island--pressed"
+    data-id="{{item.id}}"
+    bindtap="openIsland"
+  >
+    <view class="island__order">{{item.order}}</view>
+    <view class="island__land">
+      <text class="island__art">{{item.art.emoji}}</text>
+      <view class="island__props">
+        <text wx:for="{{item.art.props}}" wx:for-item="prop" wx:key="*this">{{prop}}</text>
+      </view>
+      <text wx:if="{{item.flagged}}" class="island__flag">🚩</text>
+      <view wx:if="{{item.foggy}}" class="island__fog">☁️☁️</view>
+    </view>
+    <view class="island__label">
+      <view class="island__name">{{item.name}}</view>
+      <view class="island__fit">{{item.fitFor}}</view>
+      <view wx:if="{{!item.foggy}}" class="island__stars">⭐ {{item.starsEarned}}/{{item.starsTotal}}</view>
+      <view wx:else class="island__stars island__stars--fog">迷雾中</view>
+    </view>
+    <view wx:if="{{item.isNextStop}}" class="island__boat"><text>⛵</text><image class="island__boat-cat" src="{{mascot.images.normal}}" mode="aspectFit" /></view>
+  </view>
+  </view>
+</view>
+
+<view wx:if="{{sheet}}" class="sheet" bindtap="closeSheet" catchtouchmove="noop">
+  <view class="sheet__panel" catchtap="noop">
+    <view class="sheet__head">
+      <view class="sheet__title">{{sheet.art.emoji}} {{sheet.name}}</view>
+      <view class="sheet__fit">{{sheet.fitFor}}</view>
+    </view>
+    <view class="sheet__intro"><image class="sheet__intro-cat" src="{{mascot.images.normal}}" mode="aspectFit" /><text>{{sheet.intro}}</text></view>
+    <view wx:for="{{sheet.units}}" wx:key="id" class="unit {{item.comingSoon ? 'unit--fog' : ''}}">
+      <view class="unit__main">
+        <view class="unit__name">{{item.name}}</view>
+        <view wx:if="{{item.comingSoon}}" class="unit__meta">{{copy.comingSoon}}</view>
+        <view wx:else class="unit__meta">
+          <text class="unit__stars">{{item.stars >= 1 ? '⭐' : '☆'}}{{item.stars >= 2 ? '⭐' : '☆'}}{{item.stars >= 3 ? '⭐' : '☆'}}</text>
+          <text wx:if="{{item.solved}}"> · 答对 {{item.solved}} 题</text>
+          <text wx:if="{{item.bestExamText}}"> · {{item.bestExamText}}</text>
+        </view>
+        <view wx:if="{{!item.comingSoon && !item.hasOwnPages}}" class="unit__badges">
+          <text class="unit__badge {{item.badges.stars ? 'unit__badge--on' : ''}}">{{copy.badges.stars}}</text>
+          <text class="unit__badge {{item.badges.fullScore ? 'unit__badge--on' : ''}}">{{copy.badges.fullScore}}</text>
+          <text class="unit__badge {{item.badges.cleared ? 'unit__badge--on' : ''}}">{{copy.badges.cleared}}</text>
+        </view>
+      </view>
+      <view wx:if="{{!item.comingSoon}}" class="unit__actions">
+        <view class="unit__go" hover-class="unit__go--pressed" data-unit-id="{{item.id}}" data-target="practice" catchtap="openUnit">{{copy.start}}</view>
+        <view wx:if="{{!item.hasOwnPages}}" class="unit__minor">
+          <text data-unit-id="{{item.id}}" data-target="exam" catchtap="openUnit">⏱ 考试</text>
+          <text data-unit-id="{{item.id}}" data-target="monsters" catchtap="openUnit">🐾 {{item.mistakeCount}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

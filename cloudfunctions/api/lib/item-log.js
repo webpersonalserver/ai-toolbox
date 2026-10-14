@@ -8,7 +8,8 @@ const ITEM_LOG_REASONS = {
   MILESTONE: 'milestone',
   RECOVERY: 'recovery',
   REFUND: 'refund',
-  PRACTICE: 'practice'
+  PRACTICE: 'practice',
+  DAILY_CHALLENGE: 'daily'
 }
 
 const writeItemLogs = async (openid, deltas, reason, extra = {}) => {

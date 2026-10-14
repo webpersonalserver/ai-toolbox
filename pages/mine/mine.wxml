@@ -53,12 +53,16 @@
       <text>游戏规则</text>
       <text class="mine__cell-arrow">›</text>
     </view>
-    <button class="mine__cell mine__cell-button" hover-class="mine__cell--pressed" open-type="share">
+    <button wx:if="{{sharing}}" class="mine__cell mine__cell-button" hover-class="mine__cell--pressed" open-type="share">
       <text>晒一晒我的段位</text>
       <text class="mine__cell-arrow">›</text>
     </button>
     <view wx:if="{{isAdmin}}" class="mine__cell" hover-class="mine__cell--pressed" bindtap="openAdminStats">
       <text>数据统计</text>
+      <text class="mine__cell-arrow">›</text>
+    </view>
+    <view wx:if="{{isAdmin}}" class="mine__cell" hover-class="mine__cell--pressed" bindtap="openAdminControl">
+      <text>控制中心</text>
       <text class="mine__cell-arrow">›</text>
     </view>
   </view>

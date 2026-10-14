@@ -13,8 +13,10 @@ const SLOT_SIZE_BY_LENGTH = [
 const slotSizeClassOf = (answerLength) =>
   SLOT_SIZE_BY_LENGTH.find((rule) => answerLength <= rule.maxLength).sizeClass
 
-const buildSlots = (answerLength, revealed) =>
+// answerPinyin (拼音辅助): one syllable shown over each answer cell; empty when the game has none.
+const buildSlots = (answerLength, revealed, answerPinyin) =>
   Array.from({ length: answerLength }, (_, index) => ({
+    pinyin: answerPinyin[index] || '',
     char: revealed[index] || '',
     boardIndex: -1,
     locked: index < revealed.length
@@ -36,6 +38,7 @@ Component({
     answerLength: { type: Number, value: 4 },
     revealed: { type: Array, value: [] },
     eliminated: { type: Array, value: [] },
+    answerPinyin: { type: Array, value: [] },
     columns: { type: Number, value: 6 },
     disabled: { type: Boolean, value: false },
     checking: { type: Boolean, value: false }
@@ -45,6 +48,7 @@ Component({
     slots: [],
     boardItems: [],
     slotSizeClass: '',
+    hasPinyin: false,
     thinkingLine: '',
     isWrong: false
   },
@@ -53,9 +57,10 @@ Component({
     checking(checking) {
       if (checking) this.setData({ thinkingLine: pickThinkingLine() })
     },
-    'board, answerLength, revealed, eliminated'(board, answerLength, revealed, eliminated) {
+    'board, answerLength, revealed, eliminated, answerPinyin'(board, answerLength, revealed, eliminated, answerPinyin) {
       this.setData({
-        slots: buildSlots(answerLength, revealed),
+        hasPinyin: answerPinyin.length > 0,
+        slots: buildSlots(answerLength, revealed, answerPinyin),
         boardItems: buildBoardItems(board, revealed, eliminated),
         slotSizeClass: slotSizeClassOf(answerLength),
         isWrong: false

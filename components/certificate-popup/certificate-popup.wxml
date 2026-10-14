@@ -16,7 +16,7 @@
     </view>
   </view>
   <view class="certificate__actions">
-    <button class="btn btn--primary certificate__action" open-type="share" data-purpose="certificate">把奖状发给爸爸妈妈</button>
+    <button wx:if="{{sharing}}" class="btn btn--primary certificate__action" open-type="share" data-purpose="certificate">把奖状发给爸爸妈妈</button>
     <button class="btn btn--ghost certificate__action certificate__action--light" bindtap="handleClose">看成绩</button>
   </view>
 </view>

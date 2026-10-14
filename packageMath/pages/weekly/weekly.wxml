@@ -1,0 +1,68 @@
+<view class="page week">
+  <view class="week__hero">
+    <image class="week__cat" src="{{week && week.practicedDays >= 3 ? mascot.images.happy : mascot.images.normal}}" mode="aspectFit" />
+    <view class="week__speech">
+      <view class="week__title">本周小结</view>
+      <view class="week__range">{{week ? week.rangeText : '正在翻小本本…'}}</view>
+    </view>
+  </view>
+
+  <view wx:if="{{failed}}" class="card week__empty">网络不太好，小结没拿到，回去再进来试试～</view>
+
+  <block wx:if="{{week}}">
+    <view class="card week__card">
+      <view class="week__label">这周练了 {{week.practicedDays}} 天</view>
+      <view class="week__days">
+        <view wx:for="{{week.days}}" wx:key="dateKey" class="week__day {{item.isToday ? 'week__day--today' : ''}} {{item.isFuture ? 'week__day--future' : ''}}">
+          <view class="week__day-mark {{item.practiced ? 'week__day-mark--on' : ''}}">{{item.practiced ? '🌟' : ''}}</view>
+          <text class="week__weekday">{{item.weekday}}</text>
+        </view>
+      </view>
+      <view class="week__comment">🐱 {{week.comment}}</view>
+    </view>
+
+    <view class="week__stats">
+      <view class="card week__stat">
+        <view class="week__stat-value">{{week.solved}}</view>
+        <view class="week__stat-label">数理乐园答对题数</view>
+        <view wx:if="{{week.compareText}}" class="week__stat-note">{{week.compareText}}</view>
+      </view>
+      <view class="card week__stat">
+        <view class="week__stat-value">⭐ {{week.stars}}</view>
+        <view class="week__stat-label">新拿到的星星</view>
+      </view>
+      <view class="card week__stat">
+        <view class="week__stat-value">🐾 {{week.caught}}</view>
+        <view class="week__stat-label">抓回的小怪兽</view>
+      </view>
+      <view class="card week__stat">
+        <view class="week__stat-value">🥋 {{week.kungfuText}}</view>
+        <view class="week__stat-label">九九神功已练成</view>
+      </view>
+    </view>
+
+    <view class="card week__card">
+      <view class="week__label">本周新奖章</view>
+      <view wx:if="{{week.medals.length}}" class="week__medals">
+        <view wx:for="{{week.medals}}" wx:key="id" class="week__medal">
+          <text class="week__medal-icon">{{item.icon}}</text>
+          <text class="week__medal-name">{{item.name}}</text>
+        </view>
+      </view>
+      <view wx:else class="week__muted">这周还没有新奖章，继续加油喵～</view>
+    </view>
+
+    <view class="card week__card">
+      <view class="week__label">还在逃的小怪兽</view>
+      <view wx:if="{{week.monsters.length}}">
+        <view wx:for="{{week.monsters}}" wx:key="unitId" class="week__monster">
+          <text>{{item.unitName}} · {{item.count}} 只</text>
+          <text class="week__catch" data-unit-id="{{item.unitId}}" bindtap="catchMonsters">去抓 ›</text>
+        </view>
+      </view>
+      <view wx:else class="week__muted">一只都没有，收容所空空的！</view>
+    </view>
+
+    <button wx:if="{{sharing}}" class="btn btn--primary week__share" open-type="share">分享给爸爸妈妈</button>
+  </block>
+</view>

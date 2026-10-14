@@ -5,6 +5,7 @@ const { DEFAULT_SHARE, buildRankShare } = require('../../utils/share')
 const { describeTitleProgress } = require('../../utils/milestone')
 const { GAME_ORDER, gameConfigOf } = require('../../utils/games')
 const { countUnclaimedWelfare } = require('../../utils/welfare')
+const { isSwitchOn } = require('../../utils/switches')
 
 
 const DEFAULT_AVATAR = '/assets/icons/default-avatar.png'
@@ -14,6 +15,7 @@ const displayAvatarOf = (avatarUrl) => avatarUrl || DEFAULT_AVATAR
 
 Page({
   data: {
+    sharing: true,
     nickname: '',
     avatarUrl: '',
     items: { hint: 0, stamina: 0 },
@@ -31,6 +33,7 @@ Page({
   },
 
   async onShow() {
+    this.setData({ sharing: isSwitchOn('sharing') })
     try {
       const { session, games, practices } = await game.overview()
       setSession(session)
@@ -90,6 +93,10 @@ Page({
 
   openAdminStats() {
     wx.navigateTo({ url: '/pages/admin/stats' })
+  },
+
+  openAdminControl() {
+    wx.navigateTo({ url: '/pages/admin/control' })
   },
 
   // Shown only to admins; anyone can still long-press their name to copy it (needed to be added to admin.openids).

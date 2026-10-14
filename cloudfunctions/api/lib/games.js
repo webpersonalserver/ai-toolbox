@@ -4,7 +4,8 @@ const GAME_TYPES = {
   IDIOM: 'idiom',
   POETRY: 'poetry',
   XIEHOUYU: 'xiehouyu',
-  TYPO: 'typo'
+  TYPO: 'typo',
+  HANZI: 'hanzi'
 }
 
 const HINT_STRATEGIES = {
@@ -16,7 +17,8 @@ const ELIMINATED_PER_HINT = 2
 const ELIMINATE_KEEP_AT_LEAST = 2
 
 const HINT_STRATEGY_BY_GAME = {
-  [GAME_TYPES.TYPO]: HINT_STRATEGIES.ELIMINATE
+  [GAME_TYPES.TYPO]: HINT_STRATEGIES.ELIMINATE,
+  [GAME_TYPES.HANZI]: HINT_STRATEGIES.ELIMINATE
 }
 
 const hintStrategyOf = (gameType) => HINT_STRATEGY_BY_GAME[gameType] || HINT_STRATEGIES.REVEAL
@@ -26,15 +28,40 @@ const ALL_GAME_TYPES = Object.values(GAME_TYPES)
 const SOLUTION_FIELDS_BY_GAME = {
   [GAME_TYPES.IDIOM]: ['pinyin', 'explanation', 'derivation'],
   [GAME_TYPES.POETRY]: ['verse', 'poemTitle', 'author', 'dynasty'],
-  [GAME_TYPES.XIEHOUYU]: ['riddle', 'note'],
-  [GAME_TYPES.TYPO]: ['idiom', 'wrongChar', 'wrongPosition', 'pinyin', 'explanation']
+  [GAME_TYPES.XIEHOUYU]: ['riddle', 'note', 'meaning'],
+  [GAME_TYPES.TYPO]: ['idiom', 'wrongChar', 'wrongPosition', 'pinyin', 'explanation'],
+  [GAME_TYPES.HANZI]: ['char', 'pinyin', 'radical', 'radicalName', 'word']
 }
 
+// answerPinyin (拼音辅助) is not listed here: toPuzzle adds it only while the switch is on (lib/switches.js).
 const PUZZLE_FIELDS_BY_GAME = {
   [GAME_TYPES.IDIOM]: [],
   [GAME_TYPES.POETRY]: ['poemTitle', 'author', 'dynasty'],
-  [GAME_TYPES.XIEHOUYU]: [],
-  [GAME_TYPES.TYPO]: ['wrongPosition', 'clueHint']
+  // meaning: what the saying means, in plain words, shown before answering (it never spells out the answer).
+  [GAME_TYPES.XIEHOUYU]: ['meaning'],
+  [GAME_TYPES.TYPO]: ['wrongPosition', 'clueHint'],
+  // kind: picture / pinyin / radical / word decides how the clue is shown; prompt is the question in words.
+  [GAME_TYPES.HANZI]: ['kind', 'prompt']
+}
+
+// Boards are stored with 24 characters; children are shown 12 (3 rows of 4): every answer character plus the first
+// distractors in stored order, so a level always shows the same board. Answers are checked as text, never by cell.
+const SHOWN_BOARD_SIZE = 12
+
+const shownBoardOf = (level) => {
+  if (level.board.length <= SHOWN_BOARD_SIZE) return level.board
+  const answerLeft = level.answer.split('')
+  let distractorsLeft = SHOWN_BOARD_SIZE - answerLeft.length
+  return level.board.filter((char) => {
+    const answerIndex = answerLeft.indexOf(char)
+    if (answerIndex !== -1) {
+      answerLeft.splice(answerIndex, 1)
+      return true
+    }
+    if (distractorsLeft <= 0) return false
+    distractorsLeft -= 1
+    return true
+  })
 }
 
 const isGameType = (value) => ALL_GAME_TYPES.includes(value)
@@ -59,6 +86,8 @@ module.exports = {
   ALL_GAME_TYPES,
   SOLUTION_FIELDS_BY_GAME,
   PUZZLE_FIELDS_BY_GAME,
+  SHOWN_BOARD_SIZE,
+  shownBoardOf,
   isGameType,
   parseGameType,
   pickFields

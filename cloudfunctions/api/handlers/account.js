@@ -18,6 +18,7 @@ const { ITEM_LOG_REASONS, writeItemLogs } = require('../lib/item-log')
 const { isAdmin } = require('./admin')
 const { issueDoubleOffer, claimDoubleOffer } = require('../lib/double-reward')
 const { recordAdView } = require('../lib/ad-stats')
+const { loadSwitches } = require('../lib/switches')
 
 const NICKNAME_MAX_LENGTH = 20
 const AVATAR_ROOT_DIR = 'avatars'
@@ -93,7 +94,8 @@ const login = async ({ openid }) => {
     },
     items: toItemsView(settleUserItems(user, rules, now), rules, now),
     today: describeTodayStatus(todayRecord, rules),
-    rules: toClientRules(rules)
+    rules: toClientRules(rules),
+    switches: await loadSwitches()
   }
 }
 

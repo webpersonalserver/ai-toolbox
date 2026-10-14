@@ -22,9 +22,10 @@ const levels = readLevels('idiom')
 const poetryLevels = readLevels('poetry')
 const xiehouyuLevels = readLevels('xiehouyu')
 const typoLevels = readLevels('typo')
+const hanziLevels = readLevels('hanzi')
 const S = sdk.testing.store
 S.levels = Object.fromEntries(
-  [levels, poetryLevels, xiehouyuLevels, typoLevels].flatMap((gameLevels) => gameLevels.slice(0, LOADED_LEVEL_COUNT)).map((level) => [level._id, level])
+  [levels, poetryLevels, xiehouyuLevels, typoLevels, hanziLevels].flatMap((gameLevels) => gameLevels.slice(0, LOADED_LEVEL_COUNT)).map((level) => [level._id, level])
 )
 
 let passed = 0
@@ -53,7 +54,7 @@ const startedAttempt = { active: true, wrongCount: 0 }
   r = await call('u1', 'game.getLevel', { gameType: 'idiom', levelNo: 1 }); assert(r.data.puzzle === null && !r.data.attempt.active && r.data.staminaCost === 1, 'puzzle hidden before start', r)
   r = await call('u1', 'game.submit', { gameType: 'idiom', levelNo: 1, answer: 'x' }); assert(r.code === 40010, 'submit needs active attempt', r)
   r = await call('u1', 'game.useHint', { gameType: 'idiom', levelNo: 1 }); assert(r.code === 40010, 'hint needs active attempt', r)
-  r = await call('u1', 'game.startAttempt', { gameType: 'idiom', levelNo: 1 }); assert(r.code === 0 && r.data.items.stamina === 49 && r.data.puzzle.board.length === 24 && !r.data.puzzle.answer && r.data.attempt.attemptsLeft === 3, 'start costs 1 stamina', r)
+  r = await call('u1', 'game.startAttempt', { gameType: 'idiom', levelNo: 1 }); assert(r.code === 0 && r.data.items.stamina === 49 && r.data.puzzle.board.length === 12 && !r.data.puzzle.answer && r.data.attempt.attemptsLeft === 3, 'start costs 1 stamina', r)
   r = await call('u1', 'game.startAttempt', { gameType: 'idiom', levelNo: 1 }); assert(r.data.items === null && S.users.u1.items.stamina === 49, 're-enter active attempt is free', r)
   r = await call('u1', 'game.useHint', { gameType: 'idiom', levelNo: 1 }); assert(r.code === 0 && r.data.items.hint === 9 && r.data.revealed.join('') === levels[0].answer[0], 'hint', r)
   r = await call('u1', 'game.submit', { gameType: 'idiom', levelNo: 1, answer: '一一一一' }); assert(r.data.correct === false && r.data.attempt.attemptsLeft === 2, 'wrong -1 heart', r)
@@ -274,8 +275,37 @@ const startedAttempt = { active: true, wrongCount: 0 }
   r = await call('g1', 'game.getLevel', { gameType: 'idiom', levelNo: 2 }); assert(r.code === 40003, 'progress is separate per game', r)
   r = await call('g1', 'game.startAttempt', { gameType: 'xiehouyu', levelNo: 1 })
   const xiehouyu1 = xiehouyuLevels[0]
-  assert(r.data.puzzle.clue === xiehouyu1.clue && r.data.puzzle.answerLength === xiehouyu1.answer.length, 'xiehouyu puzzle', r.data.puzzle)
+  assert(r.data.puzzle.clue === xiehouyu1.clue && r.data.puzzle.answerLength === xiehouyu1.answer.length && r.data.puzzle.meaning === xiehouyu1.meaning && r.data.puzzle.meaning.length > 0, 'xiehouyu puzzle comes with what it means', r.data.puzzle)
+  assert(!('answerPinyin' in r.data.puzzle), '拼音辅助 is off by default: no pinyin in the puzzle', r.data.puzzle)
+  // 控制中心: only admins read or flip switches; turning 拼音辅助 on adds one syllable per answer cell at once.
+  const savedConfig = S.app_config
+  S.app_config = { ...(savedConfig || {}), game_rules: { ...((savedConfig || {}).game_rules || { _id: 'game_rules' }), admin: { openids: ['g1'] } } }
+  r = await call('g2', 'admin.switches', {}); assert(r.code === 40300, 'non-admins cannot read the switches', r)
+  r = await call('g2', 'admin.updateSwitches', { switches: { pinyinAid: true } }); assert(r.code === 40300, 'non-admins cannot flip a switch', r)
+  r = await call('g1', 'admin.switches', {}); assert(r.code === 0 && r.data.switches.pinyinAid === false, 'admin sees 拼音辅助 off by default', r.data)
+  r = await call('g1', 'admin.updateSwitches', { switches: { pinyinAid: 'yes' } }); assert(r.code === 40000, 'a switch only takes true or false', r)
+  r = await call('g1', 'admin.updateSwitches', { switches: { unknownSwitch: true } }); assert(r.code === 40000, 'unknown switches are refused', r)
+  r = await call('g1', 'admin.updateSwitches', { switches: { pinyinAid: true } }); assert(r.code === 0 && r.data.switches.pinyinAid === true, 'admin turns 拼音辅助 on', r.data)
+  r = await call('g1', 'game.getLevel', { gameType: 'xiehouyu', levelNo: 1 })
+  assert(JSON.stringify(r.data.puzzle.answerPinyin) === JSON.stringify(xiehouyu1.answerPinyin) && r.data.puzzle.answerPinyin.length === xiehouyu1.answer.length, '拼音辅助 on: the puzzle carries one syllable per answer cell', r.data.puzzle)
+  r = await call('g1', 'admin.updateSwitches', { switches: { pinyinAid: false } }); assert(r.data.switches.pinyinAid === false, 'admin turns 拼音辅助 off again', r.data)
+  r = await call('g1', 'game.getLevel', { gameType: 'xiehouyu', levelNo: 1 }); assert(!('answerPinyin' in r.data.puzzle), 'off again: pinyin gone at once', r.data.puzzle)
+  r = await call('g1', 'account.login'); assert(r.data.switches && r.data.switches.sharing === true && r.data.switches.praiseSpeech === false && r.data.switches.typoMarkWrong === true, 'the session carries the switches with their defaults', r.data.switches)
+  r = await call('g1', 'admin.updateSwitches', { switches: { sharing: false } }); assert(r.data.switches.sharing === false, 'admin turns sharing off', r.data)
+  await call('g1', 'game.startAttempt', { gameType: 'poetry', levelNo: 3 })
+  r = await call('g1', 'rescue.create', { gameType: 'poetry', levelNo: 3 }); assert(r.code === 40300, 'sharing off: no new 求助 can be started', r)
+  r = await call('g1', 'admin.updateSwitches', { switches: { sharing: true } }); assert(r.data.switches.sharing === true, 'admin turns sharing back on', r.data)
+  S.app_config = savedConfig
   r = await call('g1', 'game.submit', { gameType: 'xiehouyu', levelNo: 1, answer: xiehouyu1.answer }); assert(r.data.correct && r.data.solution.riddle === xiehouyu1.riddle && 'note' in r.data.solution, 'xiehouyu solution', r.data.solution)
+  // 汉字闯关: four choices, the kind of question decides how the clue is shown, two wrong answers allowed.
+  r = await call('g1', 'game.startAttempt', { gameType: 'hanzi', levelNo: 1 })
+  const hanzi1 = hanziLevels[0]
+  assert(r.code === 0 && r.data.puzzle.board.length === 4 && r.data.puzzle.kind === hanzi1.kind && r.data.puzzle.prompt === hanzi1.prompt && !r.data.puzzle.answer && r.data.attempt.attemptsLeft === 2, 'hanzi puzzle: 4 choices, its kind and prompt, 2 tries', r.data)
+  r = await call('g1', 'game.useHint', { gameType: 'hanzi', levelNo: 1 })
+  assert(r.code === 0 && r.data.eliminated.length === 2 && !r.data.eliminated.includes(hanzi1.board.indexOf(hanzi1.answer)), 'a hint removes two wrong choices', r.data)
+  r = await call('g1', 'game.submit', { gameType: 'hanzi', levelNo: 1, answer: hanzi1.answer })
+  assert(r.data.correct && r.data.solution.char === hanzi1.char && r.data.solution.pinyin === hanzi1.pinyin && 'word' in r.data.solution, 'hanzi solution shows the character, its pinyin and a word', r.data.solution)
+  r = await call('g1', 'game.summary', { gameType: 'hanzi' }); assert(r.code === 0 && r.data.achievement.title.name === '识字娃娃', 'hanzi has its own titles', r.data.achievement && r.data.achievement.title)
   r = await call('g1', 'game.solvedBook', { gameType: 'poetry', page: 1 }); assert(r.data.total === 1 && r.data.entries[0].verse === poetry1.verse, 'poetry book', r.data)
   await call('g1', 'game.startAttempt', { gameType: 'poetry', levelNo: 2 })
   r = await call('g1', 'rescue.create', { gameType: 'poetry', levelNo: 2 }); const poetryRescue = r.data.rescueId
@@ -298,6 +328,22 @@ const startedAttempt = { active: true, wrongCount: 0 }
   const typo1 = typoLevels[0]
   r = await call('t1', 'game.startAttempt', { gameType: 'typo', levelNo: 1 })
   assert(r.code === 0 && r.data.puzzle.clue === typo1.clue && r.data.puzzle.board.length === 8 && r.data.puzzle.answerLength === 1 && r.data.puzzle.wrongPosition === typo1.wrongPosition, 'typo puzzle shows the wrong idiom and 8 candidates', r.data.puzzle)
+  // 标出错字 off (控制中心): the puzzle no longer says where the wrong character is; answers and hints work the same.
+  S.app_config = { ...(S.app_config || {}), switches: { _id: 'switches', typoMarkWrong: false } }
+  let markCheck = await call('t1', 'game.getLevel', { gameType: 'typo', levelNo: 1 })
+  assert(markCheck.code === 0 && !('wrongPosition' in markCheck.data.puzzle) && markCheck.data.puzzle.clue === typo1.clue && markCheck.data.puzzle.board.length === 8, '标出错字 off: the wrong character is not marked', markCheck.data.puzzle)
+  delete S.app_config.switches
+  markCheck = await call('t1', 'game.getLevel', { gameType: 'typo', levelNo: 1 }); assert(markCheck.data.puzzle.wrongPosition === typo1.wrongPosition, '标出错字 on by default', markCheck.data.puzzle)
+  // Children see 12 of the 24 stored characters: every answer character (repeats too) plus the first distractors.
+  const { shownBoardOf } = require(path.join(__dirname, '..', 'cloudfunctions', 'api', 'lib', 'games'))
+  const isInOrder = (shown, board) => { let cursor = 0; return shown.every((char) => { cursor = board.indexOf(char, cursor) + 1; return cursor > 0 }) }
+  const countOf = (list, char) => list.filter((item) => item === char).length
+  const boardLevels = [...levels, ...poetryLevels, ...xiehouyuLevels]
+  const shownBoards = boardLevels.map((level) => ({ level, shown: shownBoardOf(level) }))
+  assert(shownBoards.every(({ shown }) => shown.length === 12), 'every 24-character board is shown as 12', null)
+  assert(shownBoards.every(({ level, shown }) => level.answer.split('').every((char) => countOf(shown, char) >= countOf(level.answer.split(''), char))), 'the shown board keeps every answer character, repeats included', shownBoards.find(({ level, shown }) => !level.answer.split('').every((char) => shown.includes(char))))
+  assert(shownBoards.every(({ level, shown }) => isInOrder(shown, level.board)) && JSON.stringify(shownBoardOf(levels[0])) === JSON.stringify(shownBoardOf(levels[0])), 'the shown board keeps the stored order and is the same every time', null)
+  assert(shownBoardOf(typoLevels[0]).length === 8, 'typo boards (8) are shown as they are', null)
   assert(r.data.maxHints === 3 && r.data.puzzle.eliminated.length === 0 && r.data.puzzle.revealed.length === 0 && r.data.puzzle.answer === undefined, 'typo hints are eliminations, answer hidden', r.data)
   assert(r.data.puzzle.clueHint === typo1.clueHint, 'primary-school typo level carries the explanation hint', r.data.puzzle.clueHint)
   let eliminated = []
@@ -327,7 +373,7 @@ const startedAttempt = { active: true, wrongCount: 0 }
   S.app_config = { game_rules: { _id: 'game_rules', levelByGame: { typo: { maxWrongAttempts: 0 }, chess: { maxHints: 9 } } } }
   S.app_config.game_rules.signupItems = { hint: 6 }
   r = await call('p1', 'account.login')
-  assert(JSON.stringify(r.data.rules.levelByGame) === '{"typo":{"maxWrongAttempts":1}}', 'invalid override falls back to default, unknown game dropped', r.data.rules.levelByGame)
+  assert(JSON.stringify(r.data.rules.levelByGame) === '{"typo":{"maxWrongAttempts":1},"hanzi":{"maxWrongAttempts":2}}', 'invalid override falls back to default, unknown game dropped, unconfigured games keep their default', r.data.rules.levelByGame)
   await call('p2', 'account.login'); assert(S.users.p2.items.hint === 6, 'one bad override does not discard the rest of the config', S.users.p2.items)
   S.app_config = {}
   // overview: one call for hall and mine
@@ -400,7 +446,7 @@ const startedAttempt = { active: true, wrongCount: 0 }
   r = await call('p1', 'practice.claimChests', { practiceId: 'arithmetic' })
   assert(r.code === 0 && r.data.chestCount === chestsAtCap && r.data.items.stamina === staminaBeforePractice + 15 && r.data.items.hint === hintBeforeClaim + 3, 'claim opens all practice chests at once', r.data)
   r = await call('p1', 'practice.claimChests', { practiceId: 'arithmetic' }); assert(r.code === 40016, 'chests claim only once', r)
-  assert(Object.values(S.item_logs).some((log) => log.openid === 'p1' && log.reason === 'practice' && log.practiceId === 'arithmetic'), 'practice rewards logged', null)
+  assert(Object.values(S.item_logs).some((log) => log.openid === 'p1' && log.reason === 'practice' && log.practiceId === 'math'), 'practice rewards logged (数理乐园)', null)
   // multiplication: progress lives in the cloud (forward-only merge); each achievement pays one chest, ever
   const emptyExam = { passed: false, passCount: 0, attempts: 0, bestCorrect: 0, fastestSeconds: 0, passedAt: 0 }
   const syncKungfu = (openid, progress) => call(openid, 'practice.syncProgress', { practiceId: 'multiplication', progress })
@@ -428,7 +474,7 @@ const startedAttempt = { active: true, wrongCount: 0 }
   await call('h1', 'account.login')
   const reportH = (payload) => call('h1', 'practice.report', { practiceId: 'arithmetic', tier: 10, solvedDelta: 0, streak: 0, streakRunId: 'h-run', ...payload })
   r = await call('h1', 'practice.honors')
-  assert(r.code === 0 && r.data.flowers === 0 && r.data.medalCount === 17 && r.data.unlockedCount === 0 && r.data.groups.length === 3, 'honors start empty with 17 medals in 3 groups', r.data)
+  assert(r.code === 0 && r.data.flowers === 0 && r.data.medalCount === 22 && r.data.unlockedCount === 0 && r.data.groups.length === 4, 'honors start empty with 22 medals in 4 groups (岛主 included)', r.data)
   r = await reportH({ solvedDelta: 10, streak: 10 })
   const medalIds = (result) => result.data.honors.newMedals.map((medal) => medal.id).sort().join(',')
   assert(r.data.honors.flowersGained === 3 && r.data.honors.flowerReasons.includes('dailyFirst') && r.data.honors.todayFlowers === 3, '10 solved + streak 10 + first practice today = 3 flowers', r.data.honors)
@@ -571,6 +617,122 @@ const startedAttempt = { active: true, wrongCount: 0 }
   // one date key per request
   const { dailyDocId } = require(path.join(API_ROOT, 'lib', 'daily'))
   assert(dailyDocId('f1', '20261013') === 'f1_20261013', 'daily records can be addressed by an explicit date key', null)
+  // 数理乐园: the old 加减运算 record moves into <openid>_math; units, 小怪兽收容所 (mistake book), old and new parameters
+  await call('m1', 'account.login')
+  S.practice_stats.m1_arithmetic = {
+    _id: 'm1_arithmetic', openid: 'm1', practiceId: 'arithmetic', totalSolved: 57,
+    tiers: { within10: { solved: 30, bestStreak: 12 }, within20: { solved: 27, bestStreak: 9 } },
+    exams: { within20: { level1: { best: 90, bestSeconds: 150, attempts: 2 } } },
+    streakRun: { runId: 'old-run', rewardedStreak: 9 }, pendingChestCount: 2, pendingRewards: { stamina: 4, hint: 0 }, recentReportIds: ['old-report']
+  }
+  const legacyCopy = JSON.stringify(S.practice_stats.m1_arithmetic)
+  r = await call('m1', 'practice.stats', { practiceId: 'math' })
+  assert(r.code === 0 && r.data.units['add-sub-10'].solved === 30 && r.data.units['add-sub-20'].exams[0].best === 90 && r.data.units['add-sub-20'].exams[1].unlocked && r.data.totalSolved === 57 && r.data.pendingChestCount === 2, 'before migrating, the old record is read as 数理乐园 units', r.data)
+  assert(!S.practice_stats.m1_math, 'reading does not create the new record', null)
+  r = await call('m1', 'game.overview')
+  assert(r.data.practices.find((summary) => summary.practiceId === 'math').pendingChestCount === 2, 'welfare bag sees old chests before migration', r.data.practices)
+  r = await call('m1', 'practice.honors')
+  assert(r.data.groups[0].medals.find((medal) => medal.id === 'arith-solved-100').current === 57, 'medal progress counts old answers before migration', null)
+  r = await call('m1', 'practice.report', { practiceId: 'math', unitId: 'add-sub-20', solvedDelta: 3, streak: 3, streakRunId: 'new-run', reportId: 'm1-r1' })
+  const mathDoc = S.practice_stats.m1_math
+  assert(r.code === 0 && mathDoc && mathDoc.units['add-sub-20'].solved === 30 && mathDoc.units['add-sub-10'].bestStreak === 12 && mathDoc.totalSolved === 60 && mathDoc.migratedFrom === 'arithmetic', 'first report migrates the old record and adds to it', mathDoc)
+  assert(JSON.stringify(S.practice_stats.m1_arithmetic) === legacyCopy, 'the old record is kept unchanged', null)
+  r = await call('m1', 'practice.report', { practiceId: 'math', unitId: 'add-sub-20', solvedDelta: 3, streak: 3, streakRunId: 'old', reportId: 'old-report' })
+  assert(r.data.stats.totalSolved === 60, 'report ids remembered before migration still block a resend', r.data.stats)
+  r = await call('m1', 'practice.report', { practiceId: 'arithmetic', tier: 100, solvedDelta: 2, streak: 2, streakRunId: 'legacy-page', reportId: 'm1-r2' })
+  assert(r.code === 0 && S.practice_stats.m1_math.units['add-sub-100'].solved === 2 && r.data.stats.tiers[100].solved === 2, 'old pages (practiceId arithmetic + tier) write into the new record', r.data.stats.tiers)
+  r = await call('m1', 'practice.report', { practiceId: 'math', unitId: 'add-sub-999', solvedDelta: 1, streak: 1, streakRunId: 'x' }); assert(r.code === 40000, 'unknown unit rejected', r)
+  r = await call('m1', 'practice.reportExam', { practiceId: 'math', unitId: 'add-sub-10', level: 1, correct: 20, seconds: 60 })
+  assert(r.code === 0 && S.practice_stats.m1_math.units['add-sub-10'].exams.level1.best === 100 && S.practice_stats.m1_math.units['add-sub-10'].solved === 30, 'exam scores are kept per unit without touching its answers', S.practice_stats.m1_math.units['add-sub-10'])
+  // mistake book
+  const mistakeData = { operation: '+', left: 8, right: 5, result: 13, blank: 'result' }
+  const reportMistakes = (reportId, extra) => call('m1', 'practice.report', { practiceId: 'math', unitId: 'add-sub-20', solvedDelta: 0, streak: 0, streakRunId: 'mistakes', reportId, ...extra })
+  r = await reportMistakes('mk1', { mistakes: [{ key: '8+5:result', data: mistakeData }, { key: '13-6:left', data: { ...mistakeData, operation: '-' } }] })
+  assert(r.code === 0 && r.data.stats.units['add-sub-20'].mistakeCount === 2, 'wrong answers go into the unit mistake book', r.data.stats.units['add-sub-20'])
+  r = await call('m1', 'practice.mistakes', { practiceId: 'math', unitId: 'add-sub-20' })
+  assert(r.code === 0 && r.data.mistakes.length === 2 && r.data.mistakes[0].key === '8+5:result' && r.data.mistakes[0].data.left === 8 && r.data.mistakes[0].correctStreak === 0, 'mistake book can be read back', r.data)
+  r = await reportMistakes('mk2', { reviews: [{ key: '8+5:result', correct: true }] })
+  assert(r.data.caughtMistakes.length === 0 && r.data.stats.units['add-sub-20'].mistakeCount === 2, 'one right answer is not enough', r.data)
+  r = await reportMistakes('mk3', { reviews: [{ key: '8+5:result', correct: false }] })
+  r = await reportMistakes('mk4', { reviews: [{ key: '8+5:result', correct: true }] })
+  assert(r.data.caughtMistakes.length === 0, 'a wrong review starts the count again', r.data)
+  r = await reportMistakes('mk5', { reviews: [{ key: '8+5:result', correct: true }, { key: 'not-there', correct: true }] })
+  assert(r.data.caughtMistakes.join() === '8+5:result' && r.data.stats.units['add-sub-20'].mistakeCount === 1, 'two right in a row catches the monster', r.data)
+  r = await reportMistakes('mk6', { mistakes: Array.from({ length: 50 }, (_, index) => ({ key: `q${index}`, data: { n: index } })) })
+  r = await call('m1', 'practice.mistakes', { practiceId: 'math', unitId: 'add-sub-20' })
+  assert(r.data.mistakes.length === 50 && r.data.mistakes[0].key === 'q0' && r.data.mistakes[49].key === 'q49', 'mistake book keeps the newest 50', r.data.mistakes.length)
+  r = await reportMistakes('mk6b', { discards: ['q0', 'q1'] })
+  assert(r.code === 0 && r.data.caughtMistakes.length === 0 && S.practice_stats.m1_math.units['add-sub-20'].mistakes.length === 48, 'unreadable mistakes are discarded without counting as caught', r.data)
+  r = await reportMistakes('mk6c', { discards: ['bad key'] }); assert(r.code === 40000, 'malformed discard rejected', r)
+  r = await reportMistakes('mk6d', { mistakes: [{ key: 'q0', data: { n: 0 } }, { key: 'q1', data: { n: 1 } }] })
+  r = await reportMistakes('mk7', { mistakes: [{ key: 'bad key with spaces', data: {} }] }); assert(r.code === 40000, 'malformed mistake rejected', r)
+  r = await reportMistakes('mk8', { mistakes: [{ key: 'big', data: { text: 'x'.repeat(400) } }] }); assert(r.code === 40000, 'oversized mistake rejected', r)
+  r = await call('m1', 'practice.mistakes', { practiceId: 'math', unitId: 'nope' }); assert(r.code === 40000, 'mistakes of an unknown unit rejected', r)
+  r = await call('m1', 'practice.report', { practiceId: 'math', unitId: 'division-table', solvedDelta: 3, streak: 3, streakRunId: 'div', reportId: 'div-1', roundStars: 2, mistakes: [{ key: '24/4:result', data: { dividend: 24, divisor: 4, quotient: 6, blank: 'result', kind: 'share', theme: 0 } }] })
+  assert(r.code === 0 && S.practice_stats.m1_math.units['division-table'].solved === 3 && S.practice_stats.m1_math.units['division-table'].mistakes[0].key === '24/4:result', '二期 units (表内除法) are accepted with their own mistakes', r)
+  r = await call('m1', 'practice.reportExam', { practiceId: 'math', unitId: 'compare', level: 1, correct: 20, seconds: 60 })
+  assert(r.code === 0 && r.data.score === 100, '二期 units have exams', r)
+  // 每日挑战: 5 汉字 levels picked by date, paid once a day for finishing, flowers on top, a full score earns more
+  await call('d1', 'account.login')
+  r = await call('d1', 'daily.today', {})
+  const firstToday = r.data
+  assert(r.code === 0 && r.data.hanzi.length === 5 && r.data.mathCount === 5 && r.data.result === null && r.data.hanzi.every((question) => question.board.length === 4 && question.board.includes(question.answer)), 'today: 5 汉字 questions with answers, nothing done yet', r.data)
+  r = await call('d2', 'daily.today', {})
+  assert(JSON.stringify(r.data.hanzi.map((question) => question.id)) === JSON.stringify(firstToday.hanzi.map((question) => question.id)), 'everyone gets the same questions on the same day', r.data.hanzi.map((question) => question.id))
+  r = await call('d1', 'daily.submit', { dateKey: '20000101', correct: 10, seconds: 60 }); assert(r.code === 40000, "yesterday's challenge cannot be handed in today", r)
+  r = await call('d1', 'daily.submit', { dateKey: firstToday.dateKey, correct: 11, seconds: 60 }); assert(r.code === 40000, 'more than 10 correct is refused', r)
+  const dailyStaminaBefore = S.users.d1.items.stamina
+  r = await call('d1', 'daily.submit', { dateKey: firstToday.dateKey, correct: 10, seconds: 75 })
+  assert(r.code === 0 && !r.data.alreadyDone && r.data.items.stamina === dailyStaminaBefore + 5 && r.data.honors.flowerReasons.includes('dailyChallenge') && r.data.honors.flowerReasons.includes('dailyPerfect'), 'finishing pays 5 stamina and flowers, a full score earns extra', r.data)
+  r = await call('d1', 'daily.submit', { dateKey: firstToday.dateKey, correct: 10, seconds: 40 })
+  assert(r.code === 0 && r.data.alreadyDone && r.data.result.seconds === 75 && S.users.d1.items.stamina === dailyStaminaBefore + 5, 'a second hand-in the same day pays nothing and keeps the first result', r.data)
+  r = await call('d1', 'daily.today', {}); assert(r.data.result && r.data.result.correct === 10, 'today shows the finished result', r.data.result)
+  r = await call('d1', 'account.login'); assert(r.data.today.dailyChallenge && r.data.today.dailyChallenge.correct === 10, 'the lobby sees today is done', r.data.today)
+  await call('d2', 'account.login')
+  r = await call('d2', 'daily.submit', { dateKey: firstToday.dateKey, correct: 6, seconds: 120 })
+  assert(r.code === 0 && !r.data.honors.flowerReasons.includes('dailyPerfect'), 'no extra flowers without a full score', r.data.honors)
+  // 三期: last practised day, monsters caught, daily tallies, 岛主 medals, the weekly report
+  const { chinaDateKey } = require(path.join(__dirname, '..', 'cloudfunctions', 'api', 'lib', 'date'))
+  const todayKey = chinaDateKey(Date.now())
+  const weekReport = (reportId, extra) => call('w1', 'practice.report', { practiceId: 'math', solvedDelta: 0, streak: 0, streakRunId: 'week', reportId, ...extra })
+  const splitData = { total: 7, left: 3, right: 4, blank: 'right', theme: 0 }
+  r = await weekReport('w-1', { unitId: 'add-sub-10', solvedDelta: 5, roundStars: 3 })
+  let wDoc = S.practice_stats.w1_math
+  assert(r.code === 0 && wDoc.units['add-sub-10'].lastPracticed === todayKey && wDoc.days[todayKey].solved === 5 && wDoc.days[todayKey].stars === 3, 'a report records the day it was practised and today\'s tally', wDoc.days)
+  assert(r.data.stats.units['add-sub-10'].lastPracticed === todayKey, 'stats show when each unit was last practised', r.data.stats.units['add-sub-10'])
+  r = await weekReport('w-2', { unitId: 'split-10', solvedDelta: 10, roundStars: 3, mistakes: [{ key: 's7:3:right', data: splitData }] })
+  assert(r.code === 0 && r.data.honors.newMedals.some((medal) => medal.id === 'island-counting') && r.data.honors.flowerReasons.includes('islandMaster'), 'three stars on every 数数岛 unit makes the child its 岛主, with flowers', r.data.honors)
+  const flowersAfterIsland = r.data.honors.totalFlowers
+  r = await weekReport('w-3', { unitId: 'split-10', solvedDelta: 1, roundStars: 3 })
+  assert(!r.data.honors.newMedals.length && !r.data.honors.flowerReasons.includes('islandMaster') && r.data.honors.totalFlowers >= flowersAfterIsland, '岛主 is paid once', r.data.honors)
+  await weekReport('w-4', { unitId: 'split-10', reviews: [{ key: 's7:3:right', correct: true }] })
+  r = await weekReport('w-5', { unitId: 'split-10', reviews: [{ key: 's7:3:right', correct: true }] })
+  wDoc = S.practice_stats.w1_math
+  assert(r.data.caughtMistakes.length === 1 && wDoc.units['split-10'].caught === 1 && wDoc.days[todayKey].caught === 1, 'caught monsters are counted per unit and per day', wDoc.units['split-10'])
+  r = await weekReport('w-6', { unitId: 'compare', solvedDelta: 0, roundStars: 3 })
+  assert(S.practice_stats.w1_math.units.compare.lastPracticed === '', 'a report without answers does not count as practising the unit', S.practice_stats.w1_math.units.compare)
+  assert(!r.data.honors.newMedals.some((medal) => medal.id === 'island-make-ten'), 'an island needs every unit at three stars', r.data.honors.newMedals)
+  const dayKeyAgo = (days) => chinaDateKey(Date.now() - days * 24 * 60 * 60 * 1000)
+  S.practice_stats.w1_math.days[dayKeyAgo(7)] = { solved: 9, caught: 0, stars: 0 }
+  r = await call('w1', 'practice.weekly', {})
+  assert(r.code === 0 && r.data.days.length === 7 && r.data.days.filter((day) => day.isToday).length === 1 && r.data.practicedDays === 1, 'the week has 7 days, today practised', r.data.days)
+  assert(r.data.solved === 16 && r.data.lastWeekSolved === 9 && r.data.stars === 9 && r.data.caught === 1, 'weekly totals: answers vs last week, stars, monsters caught', r.data)
+  assert(r.data.medals.some((medal) => medal.id === 'island-counting') && r.data.monsters.length === 0, 'weekly report lists this week\'s medals and the monsters still loose', r.data)
+  Array.from({ length: 20 }, (_, index) => dayKeyAgo(30 + index)).forEach((key) => { S.practice_stats.w1_math.days[key] = { solved: 1, caught: 0, stars: 0 } })
+  await weekReport('w-7', { unitId: 'add-sub-10', solvedDelta: 1 })
+  assert(Object.keys(S.practice_stats.w1_math.days).length === 14 && S.practice_stats.w1_math.days[todayKey].solved === 17, 'only the last 14 days are kept', Object.keys(S.practice_stats.w1_math.days).length)
+  r = await call('w0', 'practice.weekly', {})
+  assert(r.code === 0 && r.data.solved === 0 && r.data.practicedDays === 0 && r.data.medals.length === 0, 'a new player gets an empty week, not an error', r.data)
+  // rounds of 10: the best stars a unit ever scored are kept
+  const roundReport = (reportId, roundStars) => call('m1', 'practice.report', { practiceId: 'math', unitId: 'add-sub-10', solvedDelta: 0, streak: 0, streakRunId: 'rounds', reportId, roundStars })
+  r = await roundReport('st1', 2); assert(r.code === 0 && r.data.stats.units['add-sub-10'].bestStars === 2, 'round stars stored', r.data.stats.units['add-sub-10'])
+  r = await roundReport('st2', 1); assert(r.data.stats.units['add-sub-10'].bestStars === 2, 'a worse round keeps the best stars', null)
+  r = await roundReport('st3', 3); assert(r.data.stats.units['add-sub-10'].bestStars === 3, 'three stars masters the unit', null)
+  r = await roundReport('st4', 4); assert(r.code === 40000, 'more than 3 stars rejected', r)
+  // a brand-new player starts with an empty 数理乐园 record
+  await call('m2', 'account.login')
+  r = await call('m2', 'practice.report', { practiceId: 'math', unitId: 'add-sub-10', solvedDelta: 1, streak: 1, streakRunId: 'n', reportId: 'n1' })
+  assert(r.code === 0 && S.practice_stats.m2_math.units['add-sub-10'].solved === 1 && !S.practice_stats.m2_math.migratedFrom, 'new players get a fresh record', S.practice_stats.m2_math)
   // stamina recovery rules, with fixed clocks: one point per 30 minutes, at most 15 per Beijing day
   const { settleStamina } = require(path.join(API_ROOT, 'lib', 'items'))
   const recovery = { enabled: true, intervalMinutes: 30, dailyCap: 15, pendingCap: 1000 }

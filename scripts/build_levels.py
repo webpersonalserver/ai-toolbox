@@ -3,12 +3,13 @@
 Usage:
     python3 scripts/build_levels.py <game> <target_total_levels> [--data-dir .cache]
 
-Games: idiom | poetry | xiehouyu | typo. Output: database/levels/<game>.json.
+Games: idiom | poetry | xiehouyu | typo | hanzi. Output: database/levels/<game>.json.
 poetry needs OpenCC, so run it with .cache/venv/bin/python.
 
 Source data (downloaded into --data-dir, not committed; dictionary text is only used to look meanings up — shipped explanations come from scripts/data/idiom_explanations.json):
     xinhua/idiom.json, xinhua/xiehouyu.json, xinhua/word.json   https://github.com/pwxcoo/chinese-xinhua (MIT)
     poetry/...                                https://github.com/chinese-poetry/chinese-poetry (MIT)
+    hanzi/table1.tsv, hanzi/ci.json, hanzi/mmah-dictionary.txt   see scripts/level_builders/hanzi.py
 """
 import argparse
 import sys
@@ -16,7 +17,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from level_builders import idiom, poetry, typo, xiehouyu  # noqa: E402
+from level_builders import hanzi, idiom, poetry, typo, xiehouyu  # noqa: E402
 from level_builders.common import ROOT, append_levels, build_char_stats  # noqa: E402
 
 BUILDERS = {
@@ -24,6 +25,7 @@ BUILDERS = {
     "poetry": (poetry, True),
     "xiehouyu": (xiehouyu, True),
     "typo": (typo, True),
+    "hanzi": (hanzi, True),
 }
 
 

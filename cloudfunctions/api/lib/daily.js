@@ -52,7 +52,8 @@ const describeTodayStatus = (todayRecord, rules) => {
   ALL_ITEM_TYPES.forEach((itemType) => {
     adRemaining[itemType] = adRemainingOf(todayRecord, itemType, rules)
   })
-  return { checkedIn: Boolean(todayRecord && todayRecord.checkedIn), adRemaining }
+  // dailyChallenge: today's 每日挑战 result ({ correct, total, seconds }) once finished, else null.
+  return { checkedIn: Boolean(todayRecord && todayRecord.checkedIn), adRemaining, dailyChallenge: (todayRecord && todayRecord.dailyChallenge) || null }
 }
 
 const hasAdLeft = (remaining) => remaining === UNLIMITED || remaining > 0

@@ -1,10 +1,11 @@
 const PRACTICES = [
   {
-    id: 'arithmetic',
-    name: '加减运算',
-    intro: '10 以内到 100 以内，看你能连对多少题',
+    // 'math': 数理乐园 (it took over the old 加减运算 record and chests).
+    id: 'math',
+    name: '数理乐园',
+    intro: '跟着喵算算登岛闯关：分与合、加减、比大小、除法',
     icon: '算',
-    entryUrl: '/pages/practice/arithmetic/tiers',
+    entryUrl: '/packageMath/pages/map/map',
     chestHint: '答对题数和连对数达标就能攒宝箱'
   },
   {

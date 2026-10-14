@@ -6,11 +6,12 @@ const { DEFAULT_SHARE, buildRescueShare } = require('../../../utils/share')
 const { HIDDEN_REWARD_POPUP, openMilestoneChests } = require('../../../utils/milestone')
 const { buildGuideSections } = require('../../../utils/rule-text')
 const { hasSeenGuide, markGuideSeen, rulesGuideKeyOf } = require('../../../utils/onboarding')
-const { gameConfigOf, hintTextsOf, describePoemSource, splitTypoClue } = require('../../../utils/games')
+const { gameConfigOf, hintTextsOf, clueLabelOf, describePoemSource, splitTypoClue } = require('../../../utils/games')
 const { openLeaderboardTab } = require('../../../utils/navigation')
 const { splitClue } = require('../../../utils/clue')
 const { withMinimumDuration } = require('../../../utils/min-duration')
 const { createSoundPlayer } = require('../../../utils/practice/sound')
+const { isSwitchOn } = require('../../../utils/switches')
 
 const PLAY_STAGES = {
   LOADING: 'loading',
@@ -52,6 +53,7 @@ const buildHearts = (attempt) =>
 
 Page({
   data: {
+    sharing: true,
     stage: PLAY_STAGES.LOADING,
     gameType: '',
     game: null,
@@ -70,6 +72,10 @@ Page({
     eliminated: [],
     clueChars: [],
     clueHint: '',
+    meaning: '',
+    answerPinyin: [],
+    hanziKind: '',
+    clueLabel: '',
     clueSegments: [],
     clueHintSegments: [],
     hintsUsed: 0,
@@ -105,6 +111,7 @@ Page({
   },
 
   onShow() {
+    this.setData({ sharing: isSwitchOn('sharing') })
     this.syncItems()
   },
 
@@ -132,6 +139,10 @@ Page({
       eliminated: puzzle.eliminated || [],
       clueChars: splitTypoClue(puzzle.clue, puzzle.wrongPosition),
       clueHint: puzzle.clueHint || '',
+      meaning: puzzle.meaning || '',
+      answerPinyin: puzzle.answerPinyin || [],
+      hanziKind: puzzle.kind || '',
+      clueLabel: clueLabelOf(this.data.game, puzzle),
       clueSegments: splitClue(puzzle.clue),
       clueHintSegments: splitClue(puzzle.clueHint),
       hintsUsed: detail.hintsUsed,

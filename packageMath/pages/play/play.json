@@ -1,0 +1,11 @@
+{
+  "navigationBarTitleText": "数理乐园",
+  "disableScroll": true,
+  "usingComponents": {
+    "practice-cheer": "/components/practice-cheer/practice-cheer",
+    "flower-toast": "/components/flower-toast/flower-toast",
+    "medal-popup": "/components/medal-popup/medal-popup",
+    "number-picture": "/packageMath/components/number-picture/number-picture",
+    "explain-sheet": "/packageMath/components/explain-sheet/explain-sheet"
+  }
+}

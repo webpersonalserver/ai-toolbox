@@ -1,0 +1,427 @@
+page {
+  background: var(--color-success-soft);
+}
+
+.sea {
+  position: relative;
+  min-height: 100vh;
+  padding-bottom: env(safe-area-inset-bottom);
+  overflow: hidden;
+}
+
+.sea__map {
+  position: relative;
+}
+
+/* Soft wave rings scattered over the sea. */
+.sea__waves {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background-image:
+    radial-gradient(circle at 20% 30%, transparent 18rpx, rgba(255, 255, 255, 0.55) 19rpx, rgba(255, 255, 255, 0.55) 23rpx, transparent 24rpx),
+    radial-gradient(circle at 75% 70%, transparent 14rpx, rgba(255, 255, 255, 0.45) 15rpx, rgba(255, 255, 255, 0.45) 18rpx, transparent 19rpx);
+  background-size: 260rpx 260rpx, 340rpx 340rpx;
+}
+
+.sea__header {
+  position: relative;
+  z-index: 2;
+  padding: var(--space-lg) var(--space-lg) var(--space-md);
+}
+
+.sea__subtitle {
+  margin-top: 4rpx;
+  color: var(--color-success-deep);
+  font-size: var(--font-sm);
+  opacity: 0.8;
+}
+
+.sea__title {
+  color: var(--color-success-deep);
+  font-size: 56rpx;
+  font-weight: 900;
+  letter-spacing: 6rpx;
+}
+
+.sea__guide {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+}
+
+.sea__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+}
+
+.sea__go {
+  padding: 12rpx 32rpx;
+  border-radius: 999rpx;
+  background: var(--color-primary);
+  box-shadow: 0 6rpx 0 var(--color-primary-deep);
+  color: var(--color-on-accent);
+  font-size: var(--font-md);
+  font-weight: 900;
+}
+
+.sea__weekly {
+  margin-left: auto;
+  padding: 12rpx 24rpx;
+  border-radius: 999rpx;
+  background: var(--color-surface);
+  box-shadow: 0 6rpx 0 var(--color-border);
+  color: var(--color-primary-deep);
+  font-size: var(--font-sm);
+  font-weight: 800;
+}
+
+.sea__go--pressed {
+  transform: translateY(6rpx);
+  box-shadow: none;
+}
+
+.sea__guide-cat {
+  flex-shrink: 0;
+  width: 96rpx;
+  height: 96rpx;
+  animation: sea-bob 2.4s ease-in-out infinite;
+}
+
+.sea__bubble {
+  position: relative;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: 0 6rpx 0 var(--color-border);
+  color: var(--color-ink);
+  font-size: var(--font-md);
+  font-weight: 800;
+}
+
+.sea__dot {
+  position: absolute;
+  width: 14rpx;
+  height: 14rpx;
+  margin: -7rpx 0 0 -7rpx;
+  border-radius: 50%;
+  background: var(--color-gold);
+  box-shadow: 0 3rpx 0 var(--color-primary-deep);
+}
+
+.island {
+  position: absolute;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 300rpx;
+  transform: translate(-50%, -50%);
+}
+
+.island--pressed .island__land {
+  transform: scale(0.95);
+}
+
+.island__order {
+  position: absolute;
+  top: -10rpx;
+  left: 18rpx;
+  z-index: 2;
+  width: 52rpx;
+  height: 52rpx;
+  border-radius: 50%;
+  background: var(--color-ink);
+  color: var(--color-gold);
+  font-weight: 900;
+  line-height: 52rpx;
+  text-align: center;
+}
+
+.island__land {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 260rpx;
+  height: 200rpx;
+  border-radius: 55% 45% 50% 50% / 60% 55% 45% 40%;
+  background: var(--color-gold-soft);
+  box-shadow: inset 0 -18rpx 0 var(--color-gold), 0 14rpx 0 rgba(39, 160, 134, 0.35);
+  transition: transform 0.1s ease;
+}
+
+.island--primary .island__land {
+  background: var(--color-primary-soft);
+  box-shadow: inset 0 -18rpx 0 var(--color-primary), 0 14rpx 0 rgba(39, 160, 134, 0.35);
+}
+
+.island--success .island__land {
+  background: var(--color-surface);
+  box-shadow: inset 0 -18rpx 0 var(--color-success), 0 14rpx 0 rgba(39, 160, 134, 0.35);
+}
+
+.island--ink .island__land {
+  background: var(--color-surface-muted);
+  box-shadow: inset 0 -18rpx 0 var(--color-ink-soft), 0 14rpx 0 rgba(39, 160, 134, 0.35);
+}
+
+.island__art {
+  font-size: 96rpx;
+  line-height: 1;
+}
+
+.island__props {
+  display: flex;
+  gap: 12rpx;
+  font-size: 36rpx;
+}
+
+.island__flag {
+  position: absolute;
+  top: -30rpx;
+  right: 30rpx;
+  font-size: 56rpx;
+  animation: sea-wave-flag 1.6s ease-in-out infinite;
+}
+
+.island__fog {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: inherit;
+  background: rgba(255, 255, 255, 0.72);
+  font-size: 64rpx;
+}
+
+.island--foggy .island__label {
+  opacity: 0.7;
+}
+
+.island__label {
+  margin-top: var(--space-sm);
+  padding: 8rpx 24rpx;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: 0 6rpx 0 var(--color-border);
+  text-align: center;
+}
+
+.island__name {
+  font-size: var(--font-lg);
+  font-weight: 900;
+}
+
+.island__fit {
+  color: var(--color-ink-soft);
+  font-size: 20rpx;
+}
+
+.island__stars {
+  color: var(--color-primary-deep);
+  font-size: var(--font-sm);
+  font-weight: 800;
+}
+
+.island__stars--fog {
+  color: var(--color-ink-faint);
+}
+
+/* The boat waits on the open-sea side of the island, away from the route and the other islands. */
+.island__boat {
+  position: absolute;
+  top: 70rpx;
+  display: flex;
+  align-items: flex-end;
+  font-size: 48rpx;
+  white-space: nowrap;
+  animation: sea-bob 2s ease-in-out infinite;
+}
+
+.island--left .island__boat {
+  right: -90rpx;
+}
+
+.island--right .island__boat {
+  left: -90rpx;
+}
+
+.sheet {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 30;
+  display: flex;
+  align-items: flex-end;
+  background: var(--color-overlay);
+}
+
+.sheet__panel {
+  width: 100%;
+  max-height: 80vh;
+  padding: var(--space-lg) var(--space-lg) calc(var(--space-lg) + env(safe-area-inset-bottom));
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  background: var(--color-bg);
+  box-sizing: border-box;
+  overflow-y: auto;
+  animation: sheet-up 0.25s ease-out;
+}
+
+.sheet__head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-sm);
+}
+
+.sheet__title {
+  font-size: var(--font-xl);
+  font-weight: 900;
+}
+
+.sheet__fit {
+  color: var(--color-ink-soft);
+  font-size: var(--font-sm);
+}
+
+.island__boat-cat {
+  width: 56rpx;
+  height: 56rpx;
+  margin-left: -16rpx;
+}
+
+.sheet__intro {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin: var(--space-sm) 0 var(--space-md);
+  color: var(--color-ink-soft);
+  font-size: var(--font-sm);
+  line-height: 1.6;
+}
+
+.unit {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: 0 6rpx 0 var(--color-border);
+}
+
+.unit--fog {
+  opacity: 0.55;
+}
+
+.unit__main {
+  flex: 1;
+  min-width: 0;
+}
+
+.unit__name {
+  font-size: var(--font-lg);
+  font-weight: 900;
+}
+
+.unit__meta {
+  color: var(--color-ink-soft);
+  font-size: var(--font-sm);
+}
+
+.unit__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx;
+  margin-top: 8rpx;
+}
+
+/* Not earned yet: a faint outline, so children can see what is still to win. */
+.unit__badge {
+  padding: 2rpx 12rpx;
+  border: 2rpx dashed var(--color-border);
+  border-radius: 999rpx;
+  color: var(--color-ink-soft);
+  font-size: 20rpx;
+  opacity: 0.6;
+}
+
+.unit__badge--on {
+  border-style: solid;
+  border-color: var(--color-gold);
+  background: var(--color-gold-soft);
+  color: var(--color-ink);
+  font-weight: 800;
+  opacity: 1;
+}
+
+.unit__stars {
+  color: var(--color-gold);
+  letter-spacing: 2rpx;
+}
+
+.unit__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10rpx;
+  flex-shrink: 0;
+}
+
+.unit__go {
+  padding: 12rpx 28rpx;
+  border-radius: 999rpx;
+  background: var(--color-success);
+  box-shadow: 0 6rpx 0 var(--color-success-deep);
+  color: var(--color-on-accent);
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.unit__go--pressed {
+  transform: translateY(6rpx);
+  box-shadow: none;
+}
+
+.unit__minor {
+  display: flex;
+  gap: var(--space-md);
+  color: var(--color-primary-deep);
+  font-size: var(--font-sm);
+  font-weight: 800;
+}
+
+@keyframes sea-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10rpx); }
+}
+
+@keyframes sea-wave-flag {
+  0%, 100% { transform: rotate(-6deg); }
+  50% { transform: rotate(6deg); }
+}
+
+@keyframes sheet-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.sheet__intro-cat {
+  flex-shrink: 0;
+  width: 64rpx;
+  height: 64rpx;
+}

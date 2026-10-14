@@ -21,6 +21,20 @@
   font-weight: 700;
 }
 
+/* 汉字闯关: one big clue — a picture, a pinyin, a character, or a word with a blank. */
+.play__hanzi {
+  padding: var(--space-sm) 0;
+  color: var(--game-color-deep);
+  font-weight: 900;
+  line-height: 1.3;
+  text-align: center;
+}
+
+.play__hanzi--picture { font-size: 160rpx; }
+.play__hanzi--pinyin { font-size: 88rpx; letter-spacing: 4rpx; }
+.play__hanzi--radical { font-size: 140rpx; }
+.play__hanzi--word { font-size: 110rpx; letter-spacing: 12rpx; }
+
 .play__typo {
   display: flex;
   justify-content: center;
@@ -42,6 +56,16 @@
   margin-top: var(--space-sm);
   color: var(--color-ink-soft);
   font-size: var(--font-sm);
+}
+
+/* 歇后语: what the saying means, so children can guess the second half from it. */
+.play__meaning {
+  margin-top: var(--space-sm);
+  padding: var(--space-xs) var(--space-md);
+  border-radius: var(--radius-md);
+  background: var(--color-gold-soft);
+  font-size: var(--font-md);
+  font-weight: 700;
 }
 
 .play__clue-source {

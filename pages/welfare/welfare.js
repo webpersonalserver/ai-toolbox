@@ -5,6 +5,7 @@ const { TASK_ACTIONS, countUnclaimedWelfare, buildChestRows, buildPracticeChestR
 const { watchAdForItem } = require('../../utils/ad-reward')
 
 const PRACTICE_TAB_URL = '/pages/practice/index'
+const DAILY_URL = '/pages/daily/daily'
 const LOBBY_TAB_URL = '/pages/index/index'
 const KUNGFU_URL = '/pages/practice/multiplication/index'
 
@@ -101,6 +102,7 @@ Page({
       [TASK_ACTIONS.RECOVERY]: () => this.claimRecovery(),
       [TASK_ACTIONS.AD_STAMINA]: () => this.watchAd('stamina'),
       [TASK_ACTIONS.AD_HINT]: () => this.watchAd('hint'),
+      [TASK_ACTIONS.DAILY]: () => wx.navigateTo({ url: DAILY_URL }),
       [TASK_ACTIONS.PRACTICE]: () => wx.switchTab({ url: PRACTICE_TAB_URL }),
       [TASK_ACTIONS.KUNGFU]: () => wx.navigateTo({ url: KUNGFU_URL }),
       [TASK_ACTIONS.LEVELS]: () => wx.switchTab({ url: LOBBY_TAB_URL })

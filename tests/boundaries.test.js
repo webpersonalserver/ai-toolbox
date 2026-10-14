@@ -4,7 +4,7 @@ const path = require('path')
 // Migration boundary: 云开发-only calls may live only in these adapter files, so moving to 云托管 or our own
 // servers means changing them and nothing else. See README「迁移设计」.
 const ROOT = path.join(__dirname, '..')
-const FRONTEND_DIRS = ['pages', 'components', 'utils']
+const FRONTEND_DIRS = ['pages', 'packageMath', 'components', 'utils']
 const FRONTEND_ADAPTERS = ['app.js', 'utils/api.js', 'utils/upload.js']
 const FRONTEND_PATTERN = /wx\.cloud\b|cloud:\/\//
 const BACKEND_DIRS = ['cloudfunctions/api/handlers', 'cloudfunctions/api/lib']

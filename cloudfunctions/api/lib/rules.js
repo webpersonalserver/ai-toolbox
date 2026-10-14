@@ -57,11 +57,24 @@ const TYPO_BASELINE_TITLES = [
   { name: '字圣', minSolved: 500 }
 ]
 
+const HANZI_BASELINE_TITLES = [
+  { name: '识字娃娃', minSolved: 0 },
+  { name: '小书童', minSolved: 10 },
+  { name: '识字小星', minSolved: 30 },
+  { name: '识字能手', minSolved: 60 },
+  { name: '小小读书郎', minSolved: 100 },
+  { name: '识字小博士', minSolved: 160 },
+  { name: '汉字小达人', minSolved: 240 },
+  { name: '识字小状元', minSolved: 320 },
+  { name: '汉字小字典', minSolved: 400 }
+]
+
 const BASELINE_TITLES_BY_GAME = {
   idiom: IDIOM_BASELINE_TITLES,
   poetry: POETRY_BASELINE_TITLES,
   xiehouyu: XIEHOUYU_BASELINE_TITLES,
-  typo: TYPO_BASELINE_TITLES
+  typo: TYPO_BASELINE_TITLES,
+  hanzi: HANZI_BASELINE_TITLES
 }
 
 const DEFAULT_RULES = {
@@ -70,6 +83,10 @@ const DEFAULT_RULES = {
     { type: 'hint', amount: 3 },
     { type: 'stamina', amount: 5 }
   ],
+  // 每日挑战: paid once a day for finishing (any score); flowers come from honors.flowers.perEvent.
+  daily: {
+    rewards: [{ type: 'stamina', amount: 5 }]
+  },
   ad: {
     enabled: false,
     adUnitId: '',
@@ -83,7 +100,9 @@ const DEFAULT_RULES = {
     maxHints: 3
   },
   levelByGame: {
-    typo: { maxWrongAttempts: 1 }
+    typo: { maxWrongAttempts: 1 },
+    // Four choices: one more try than 找错字's eight, so a single slip does not end a young child's attempt.
+    hanzi: { maxWrongAttempts: 2 }
   },
   staminaRecovery: {
     enabled: true,
@@ -129,7 +148,7 @@ const DEFAULT_RULES = {
     flowers: {
       arithmeticSolvedEvery: 10,
       arithmeticStreaks: [10],
-      perEvent: { arithmeticSolved: 1, arithmeticStreak: 1, dailyFirst: 1, rowRecited: 1, rowMastered: 1, rowPerfect: 1, examPerfect: 3, examGreat: 2, examPassed: 1 }
+      perEvent: { arithmeticSolved: 1, arithmeticStreak: 1, dailyFirst: 1, rowRecited: 1, rowMastered: 1, rowPerfect: 1, examPerfect: 3, examGreat: 2, examPassed: 1, islandMaster: 5, dailyChallenge: 2, dailyPerfect: 1 }
     }
   },
   titles: BASELINE_TITLES_BY_GAME,
@@ -189,6 +208,7 @@ const RULE_VALIDATORS = {
   'signupItems.hint': isNonNegativeInteger,
   'signupItems.stamina': isNonNegativeInteger,
   checkinRewards: isRewardList,
+  'daily.rewards': isRewardList,
   'ad.enabled': isBoolean,
   'ad.adUnitId': isString,
   'ad.rewards.hint': isNonNegativeInteger,
@@ -238,6 +258,9 @@ const RULE_VALIDATORS = {
   'honors.flowers.perEvent.examPerfect': isNonNegativeInteger,
   'honors.flowers.perEvent.examGreat': isNonNegativeInteger,
   'honors.flowers.perEvent.examPassed': isNonNegativeInteger,
+  'honors.flowers.perEvent.islandMaster': isNonNegativeInteger,
+  'honors.flowers.perEvent.dailyChallenge': isNonNegativeInteger,
+  'honors.flowers.perEvent.dailyPerfect': isNonNegativeInteger,
   'admin.openids': isStringList,
   'leaderboard.size': isLeaderboardSize
 }
@@ -349,6 +372,7 @@ const sumRewardsByType = (rewards) =>
 
 const toClientRules = (rules) => ({
   checkinRewards: rules.checkinRewards,
+  daily: { rewards: rules.daily.rewards },
   ad: {
     enabled: rules.ad.enabled,
     adUnitId: rules.ad.adUnitId,

@@ -5,6 +5,25 @@
   margin-bottom: var(--space-sm);
 }
 
+.char-puzzle__cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* 拼音辅助: the syllable sits right above its cell. */
+.char-puzzle__pinyin {
+  margin-bottom: 4rpx;
+  color: var(--color-ink-soft);
+  font-size: 26rpx;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.char-puzzle__slots--small .char-puzzle__pinyin {
+  font-size: 22rpx;
+}
+
 .char-puzzle__slots--wrong {
   animation: char-puzzle-shake 0.4s ease-in-out;
 }

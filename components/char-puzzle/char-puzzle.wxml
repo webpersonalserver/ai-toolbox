@@ -1,12 +1,13 @@
 <view class="char-puzzle">
   <view class="char-puzzle__slots {{slotSizeClass}} {{isWrong ? 'char-puzzle__slots--wrong' : ''}} {{checking ? 'char-puzzle__slots--checking' : ''}}">
-    <view
-      wx:for="{{slots}}"
-      wx:key="index"
-      class="char-puzzle__slot {{item.locked ? 'char-puzzle__slot--locked' : ''}} {{item.char ? 'char-puzzle__slot--filled' : ''}}"
-      data-index="{{index}}"
-      bindtap="handleSlotTap"
-    >{{item.char}}</view>
+    <view wx:for="{{slots}}" wx:key="index" class="char-puzzle__cell">
+      <text wx:if="{{hasPinyin}}" class="char-puzzle__pinyin">{{item.pinyin}}</text>
+      <view
+        class="char-puzzle__slot {{item.locked ? 'char-puzzle__slot--locked' : ''}} {{item.char ? 'char-puzzle__slot--filled' : ''}}"
+        data-index="{{index}}"
+        bindtap="handleSlotTap"
+      >{{item.char}}</view>
+    </view>
   </view>
   <view class="char-puzzle__thinking {{checking ? 'char-puzzle__thinking--visible' : ''}}" aria-live="polite">
     <image class="char-puzzle__thinking-avatar" src="/assets/icons/default-avatar.png" mode="aspectFill" />

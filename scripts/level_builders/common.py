@@ -13,6 +13,8 @@ from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from . import answer_pinyin
+
 ROOT = Path(__file__).resolve().parent.parent.parent
 DATA_DIR = ROOT / "scripts" / "data"
 LEVELS_DIR = ROOT / "database" / "levels"
@@ -111,6 +113,7 @@ def append_levels(game_type, candidates, target_total, level_key_of, level_dedup
             "move them to a later stage/tier (or remove them): " + " ".join(out_of_order)
         )
 
+    pinyin_overrides = answer_pinyin.load_overrides()
     char_pool = {char for level in frozen_levels for char in level["answer"]}
     char_pool |= {char for candidate in new_candidates for char in candidate.answer}
     new_lines = []
@@ -122,6 +125,8 @@ def append_levels(game_type, candidates, target_total, level_key_of, level_dedup
             level["board"] = build_board(candidate.answer, char_pool, random.Random(candidate.key))
         if include_source_key:
             level["sourceKey"] = candidate.key
+        if game_type in answer_pinyin.GAMES:
+            level["answerPinyin"] = answer_pinyin.answer_pinyin(level, pinyin_overrides)
         new_lines.append(json.dumps(level, ensure_ascii=False))
 
     output_file.parent.mkdir(parents=True, exist_ok=True)

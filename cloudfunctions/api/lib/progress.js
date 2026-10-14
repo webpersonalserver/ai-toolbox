@@ -1,6 +1,6 @@
 const { db, _ } = require('./cloud')
 const { ERROR_CODES, BusinessError } = require('./response')
-const { SOLUTION_FIELDS_BY_GAME, PUZZLE_FIELDS_BY_GAME, pickFields } = require('./games')
+const { SOLUTION_FIELDS_BY_GAME, PUZZLE_FIELDS_BY_GAME, pickFields, shownBoardOf } = require('./games')
 
 const progressDocId = (openid, gameType) => `${openid}_${gameType}`
 
@@ -95,13 +95,18 @@ const solveLevelInTransaction = async (transaction, openid, gameType, levelNo) =
   return { alreadySolved: false, solvedCountBefore: solvedCount - 1, solvedCount, wrongCount }
 }
 
-const toPuzzle = (level) => ({
+// switches: from lib/switches.js. 拼音辅助 adds one syllable per answer cell while it is on; with 标出错字 off,
+// 成语找错字 leaves out where the wrong character is, so children have to spot it.
+const hiddenPuzzleFields = (switches) => (switches.typoMarkWrong === false ? ['wrongPosition'] : [])
+
+const toPuzzle = (level, switches = {}) => ({
   levelNo: level.levelNo,
   clue: level.clue,
-  board: level.board,
+  board: shownBoardOf(level),
   answerLength: level.answer.length,
   stage: level.stage || '',
-  ...pickFields(level, PUZZLE_FIELDS_BY_GAME[level.gameType] || [])
+  ...pickFields(level, (PUZZLE_FIELDS_BY_GAME[level.gameType] || []).filter((field) => !hiddenPuzzleFields(switches).includes(field))),
+  ...(switches.pinyinAid && level.answerPinyin ? { answerPinyin: level.answerPinyin } : {})
 })
 
 const toSolution = (level) => ({

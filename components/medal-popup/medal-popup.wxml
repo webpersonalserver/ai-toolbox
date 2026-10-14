@@ -11,8 +11,8 @@
     <view wx:if="{{medal.dateText}}" class="medal-popup__date">{{medal.dateText}}</view>
     <view wx:if="{{medal.remainingText}}" class="medal-popup__remaining">进度 {{medal.current}} / {{medal.target}} · {{medal.remainingText}}</view>
     <view class="medal-popup__actions">
-      <button wx:if="{{medal.unlocked}}" class="btn btn--primary medal-popup__action" open-type="share" data-purpose="medal">分享给爸爸妈妈</button>
-      <button class="btn {{medal.unlocked ? 'btn--ghost' : 'btn--primary'}} medal-popup__action" bindtap="handleClose">{{isNew ? '收下奖章' : '知道了'}}</button>
+      <button wx:if="{{medal.unlocked && sharing}}" class="btn btn--primary medal-popup__action" open-type="share" data-purpose="medal">分享给爸爸妈妈</button>
+      <button class="btn {{medal.unlocked && sharing ? 'btn--ghost' : 'btn--primary'}} medal-popup__action" bindtap="handleClose">{{isNew ? '收下奖章' : '知道了'}}</button>
     </view>
   </view>
 </view>

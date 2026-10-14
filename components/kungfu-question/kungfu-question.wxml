@@ -10,7 +10,7 @@
         </view>
       </view>
     </block>
-    <view wx:else class="kq__equation">
+    <view wx:else class="kq__equation {{compact ? 'kq__equation--compact' : ''}}">
       <block wx:for="{{tokens}}" wx:key="index">
         <view wx:if="{{item.kind === 'blank'}}" class="kq__blank kq__blank--{{state}}">
           <text wx:if="{{input}}">{{input}}</text>
@@ -22,7 +22,7 @@
     <view wx:if="{{state === 'revealed'}}" class="kq__reveal">{{question.revealText}}</view>
   </view>
 
-  <view wx:if="{{question.type === 'verse'}}" class="kq__choices">
+  <view wx:if="{{question.choices}}" class="kq__choices {{question.type === 'verse' ? '' : 'kq__choices--row'}}">
     <view
       wx:for="{{question.choices}}"
       wx:key="*this"

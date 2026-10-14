@@ -4,7 +4,8 @@ const { sumRewardsByType } = require('./rules')
 const { ITEM_TYPES } = require('./items')
 const { ALL_GAME_TYPES } = require('./games')
 const { pendingChestCount, milestoneClaimedCount } = require('./achievement')
-const { PRACTICE_IDS, practiceStatsDocId } = require('./practice-rewards')
+const { practiceStatsDocId } = require('./practice-rewards')
+const { readMathStats } = require('./math-stats')
 const { ERROR_CODES, BusinessError } = require('./response')
 
 const ITEM_NEXT_STEPS = {
@@ -36,7 +37,7 @@ const readDocOrNull = async (collection, docId) => {
 const countWelfareChests = async (openid, rules) => {
   const [progresses, practiceStats] = await Promise.all([
     Promise.all(ALL_GAME_TYPES.map((gameType) => readDocOrNull('progress', `${openid}_${gameType}`))),
-    Promise.all(PRACTICE_IDS.map((practiceId) => readDocOrNull('practice_stats', practiceStatsDocId(openid, practiceId))))
+    Promise.all([readMathStats(openid), readDocOrNull('practice_stats', practiceStatsDocId(openid, 'multiplication'))])
   ])
   const levelChests = progresses
     .filter(Boolean)

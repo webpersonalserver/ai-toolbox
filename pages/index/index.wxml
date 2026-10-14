@@ -1,4 +1,4 @@
-<view class="page hall">
+<view class="page hall {{adOffers.length ? 'hall--with-fab' : ''}}">
   <view class="hall__header">
     <view class="hall__title">解谜达人</view>
     <view class="hall__items">
@@ -19,6 +19,15 @@
     </view>
     <button wx:if="{{!checkedIn}}" class="btn btn--primary hall__checkin-btn" catchtap="handleCheckin">打卡</button>
     <view wx:else class="hall__game-action">打开 ›</view>
+  </view>
+
+  <view class="card hall__game hall__daily {{dailyDone ? 'hall__daily--done' : ''}}" hover-class="hall__game--pressed" bindtap="openDaily">
+    <view class="hall__game-icon hall__daily-icon">📅</view>
+    <view class="hall__game-body">
+      <view class="hall__game-name">今日挑战</view>
+      <view class="hall__game-desc">{{dailyDesc}}</view>
+    </view>
+    <view class="hall__game-action">{{dailyDone ? '看成绩 ›' : '去挑战 ›'}}</view>
   </view>
 
   <view class="hall__section-title">玩法</view>
@@ -55,15 +64,6 @@
       <view class="hall__continue-level">第 {{item.currentLevel}} 关</view>
     </view>
     <view wx:else class="hall__game-action">查看</view>
-  </view>
-
-  <view class="card hall__game hall__practice" hover-class="hall__game--pressed" bindtap="openPracticeTab">
-    <view class="hall__game-icon hall__practice-icon">趣</view>
-    <view class="hall__game-body">
-      <view class="hall__game-name">趣味练习</view>
-      <view class="hall__game-desc">加减运算、九九神功，不限次数，还能攒体力宝箱</view>
-    </view>
-    <view class="hall__game-action">去看看 ›</view>
   </view>
 </view>
 

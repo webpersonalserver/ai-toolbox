@@ -36,7 +36,7 @@ const buildRuleSections = (rules) => {
     const { dailyCaps } = rules.practice
     sections.push({
       title: '趣味练习',
-      text: `体力不够时去「趣味」练一练：加减运算答对题数、连对数达标得宝箱（每天最多 ${describeAmount(ITEM_TYPES.STAMINA, dailyCaps.stamina)}、${describeAmount(ITEM_TYPES.HINT, dailyCaps.hint)}）；九九神功每练成一重也有宝箱`
+      text: `体力不够时去「趣味」练一练：数理乐园答对题数、连对数达标得宝箱（每天最多 ${describeAmount(ITEM_TYPES.STAMINA, dailyCaps.stamina)}、${describeAmount(ITEM_TYPES.HINT, dailyCaps.hint)}）；九九神功每练成一重也有宝箱`
     })
   }
   sections.push({ title: '提示与求助', text: `每关最多提示 ${rules.level.maxHints} 次；卡关可免费求助好友，同一位好友每天最多帮你 ${rules.rescue.dailyLimitPerHelper} 次` })

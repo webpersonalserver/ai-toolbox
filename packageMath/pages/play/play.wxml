@@ -1,0 +1,134 @@
+<!-- One number of the question: the blank (shows what is typed) or a value, with its picture underneath. -->
+<template name="drill-node">
+  <view class="drill__token">
+    <view wx:if="{{token.kind === 'blank'}}" class="drill__blank drill__blank--{{inputState}}">
+      <text wx:if="{{input}}">{{input}}</text>
+      <text wx:else class="drill__blank-mark">?</text>
+    </view>
+    <view wx:else class="drill__value {{token.kind === 'symbol' ? 'drill__value--symbol' : ''}}">{{token.text}}</view>
+    <view wx:if="{{token.picture}}" class="drill__picture">
+      <number-picture picture="{{token.picture}}" />
+    </view>
+  </view>
+</template>
+
+<view class="page drill">
+  <view class="drill__topbar">
+    <view class="drill__streak {{streakBump ? 'drill__streak--bump' : ''}} {{streak >= 5 ? 'drill__streak--hot' : ''}}">
+      <text class="drill__streak-label">连对</text>
+      <text class="drill__streak-value">{{streak}}</text>
+      <text wx:if="{{streak >= hotStreak}}" class="drill__fire">🔥</text>
+    </view>
+    <view class="drill__meta">
+      <view wx:if="{{monsterLoading}}" class="drill__best">正在打开收容所…</view>
+      <view wx:elif="{{mode !== 'endless'}}" class="drill__round">
+        <view wx:for="{{dots}}" wx:key="id" class="drill__round-dot drill__round-dot--{{item.state}}"></view>
+      </view>
+      <view wx:else class="drill__best">无尽挑战 · 最佳 {{bestStreak}}</view>
+    </view>
+    <view class="drill__sound" bindtap="toggleSound">{{soundEnabled ? '🔊' : '🔈'}}</view>
+  </view>
+
+  <view wx:if="{{rewardBar}}" class="drill__reward {{rewardBar.capReached ? 'drill__reward--done' : ''}}">
+    <view class="drill__reward-main">
+      <view class="drill__reward-text">{{rewardBar.solvedText}}</view>
+      <view class="drill__reward-track">
+        <view class="drill__reward-fill" style="width: {{rewardBar.progressPercent}}%"></view>
+      </view>
+      <view class="drill__reward-streak">{{rewardBar.streakText}}</view>
+    </view>
+    <view class="drill__chest {{chestBump ? 'drill__chest--bump' : ''}}" bindtap="openWelfare">
+      <text class="drill__chest-icon">🎁</text>
+      <text class="drill__chest-count">{{chestCount}}</text>
+    </view>
+  </view>
+
+  <view wx:if="{{story}}" class="drill__story">{{story}}</view>
+
+  <view wx:if="{{bond}}" class="card drill__equation drill__bond drill__equation--{{inputState}}">
+    <template is="drill-node" data="{{token: bond.top, input, inputState}}" />
+    <view class="drill__bond-lines">
+      <view class="drill__bond-line drill__bond-line--left"></view>
+      <view class="drill__bond-line drill__bond-line--right"></view>
+    </view>
+    <view class="drill__bond-parts">
+      <template is="drill-node" data="{{token: bond.left, input, inputState}}" />
+      <template is="drill-node" data="{{token: bond.right, input, inputState}}" />
+    </view>
+  </view>
+  <view wx:else class="card drill__equation drill__equation--{{inputState}} {{compact ? 'drill__equation--compact' : ''}}">
+    <block wx:for="{{tokens}}" wx:key="id">
+      <template is="drill-node" data="{{token: item, input, inputState}}" />
+    </block>
+  </view>
+
+  <view class="drill__feedback">{{feedbackLine}}</view>
+  <view class="drill__helpers">
+    <view wx:if="{{canExplain}}" class="drill__explain" hover-class="drill__explain--pressed" bindtap="openExplain">{{labels.explain}}</view>
+  </view>
+
+  <view wx:if="{{choices.length}}" class="drill__choices">
+    <view
+      wx:for="{{choices}}"
+      wx:key="value"
+      class="drill__choice {{locked ? 'drill__key--locked' : ''}}"
+      hover-class="drill__key--pressed"
+      data-choice="{{item.value}}"
+      bindtap="handleChoice"
+    >
+      <text class="drill__choice-sign">{{item.value}}</text>
+      <text class="drill__choice-label">{{item.label}}</text>
+    </view>
+  </view>
+  <view wx:else class="drill__keypad">
+    <view
+      wx:for="{{keypad}}"
+      wx:key="*this"
+      class="drill__key drill__key--{{item}} {{locked ? 'drill__key--locked' : ''}}"
+      hover-class="drill__key--pressed"
+      data-key="{{item}}"
+      bindtap="handleKey"
+    >
+      <text wx:if="{{item === 'delete'}}">⌫</text>
+      <text wx:elif="{{item === 'confirm'}}">确定</text>
+      <text wx:else>{{item}}</text>
+    </view>
+  </view>
+</view>
+
+<view wx:if="{{roundResult}}" class="round" catchtouchmove="noop">
+  <view class="round__card">
+    <view wx:if="{{roundResult.monsters}}" class="round__monsters">🐾</view>
+    <view wx:else class="round__stars">
+      <text wx:for="{{roundResult.slots}}" wx:key="id" class="round__star round__star--{{item.id}} {{item.on ? 'round__star--on' : ''}}">★</text>
+    </view>
+    <view class="round__talk">
+      <image class="round__cat" src="{{roundResult.happy ? mascot.images.happy : mascot.images.normal}}" mode="aspectFit" />
+      <view class="round__line">{{roundResult.line}}</view>
+    </view>
+    <view wx:if="{{roundResult.detail}}" class="round__detail">{{roundResult.detail}}</view>
+    <view wx:if="{{roundResult.hint}}" class="round__hint">{{roundResult.hint}}</view>
+    <block wx:if="{{roundResult.monsters}}">
+      <view wx:if="{{roundResult.canContinue}}" class="btn btn--primary round__action" bindtap="continueMonsters">{{labels.monsterRound}}</view>
+      <view class="btn {{roundResult.canContinue ? 'btn--ghost' : 'btn--primary'}} round__action" bindtap="startRound">去闯关</view>
+    </block>
+    <block wx:else>
+      <view class="btn btn--primary round__action" bindtap="startRound">{{labels.nextRound}}</view>
+      <view class="btn btn--ghost round__action" bindtap="startEndless">{{labels.endless}}</view>
+    </block>
+    <view class="round__back" bindtap="backToMap">回到地图</view>
+  </view>
+</view>
+
+<explain-sheet visible="{{explain.visible}}" steps="{{explain.steps}}" bind:close="closeExplain" />
+
+<practice-cheer
+  visible="{{cheer.visible}}"
+  title="{{cheer.title}}"
+  subtitle="{{cheer.subtitle}}"
+  mascot="{{cheer.mascot}}"
+  big="{{cheer.big}}"
+/>
+
+<flower-toast visible="{{flowerToast.visible}}" count="{{flowerToast.count}}" text="{{flowerToast.text}}" />
+<medal-popup visible="{{medalPopup.visible}}" is-new="{{medalPopup.isNew}}" medal="{{medalPopup.medal}}" bind:close="handleMedalClose" />

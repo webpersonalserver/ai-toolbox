@@ -112,9 +112,11 @@
   width: 100%;
 }
 
+/* Sits on the dark overlay: a see-through outline button, so the white text never lands on the white ghost fill. */
 .certificate__action--light.btn {
+  background: transparent;
   color: var(--color-on-accent);
-  border-color: var(--color-on-accent);
+  box-shadow: inset 0 0 0 4rpx var(--color-on-accent);
 }
 
 @keyframes certificate-fade {

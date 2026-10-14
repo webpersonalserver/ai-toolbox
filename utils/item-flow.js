@@ -62,7 +62,7 @@ const openWelfareChests = async ({ itemType, welfareChests }) => {
 const suggestPractice = async ({ practiceStaminaRoom }) => {
   const agreed = await confirm(
     '体力不足',
-    `去「趣味」做加减运算，答对题目就能攒体力宝箱（今天还能攒 ${practiceStaminaRoom} 点）`,
+    `去「趣味」的数理乐园闯关，答对题目就能攒体力宝箱（今天还能攒 ${practiceStaminaRoom} 点）`,
     '去练习'
   )
   if (agreed) wx.switchTab({ url: PRACTICE_TAB_URL })

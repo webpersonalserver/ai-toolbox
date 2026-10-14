@@ -1,0 +1,12 @@
+{
+  "navigationBarTitleText": "限时考试",
+  "disableScroll": true,
+  "usingComponents": {
+    "kungfu-question": "/components/kungfu-question/kungfu-question",
+    "practice-cheer": "/components/practice-cheer/practice-cheer",
+    "certificate-popup": "/components/certificate-popup/certificate-popup",
+    "flower-toast": "/components/flower-toast/flower-toast",
+    "medal-popup": "/components/medal-popup/medal-popup",
+    "explain-sheet": "/packageMath/components/explain-sheet/explain-sheet"
+  }
+}

@@ -38,6 +38,7 @@ const {
   toPuzzle,
   toSolution
 } = require('../lib/progress')
+const { loadSwitches } = require('../lib/switches')
 
 const BOOK_PAGE_SIZE = 20
 
@@ -62,7 +63,7 @@ const describeHintEffect = (level, hintsUsed) =>
     ? { revealed: [], eliminated: level.eliminationOrder.slice(0, hintsUsed * ELIMINATED_PER_HINT) }
     : { revealed: level.answer.slice(0, hintsUsed).split(''), eliminated: [] }
 
-const toLevelDetail = ({ level, progress, rules, total }) => {
+const toLevelDetail = ({ level, progress, rules, total, switches }) => {
   const { levelNo } = level
   const solved = isLevelSolved(progress, levelNo)
   const attempt = describeAttempt(getAttempt(progress, levelNo), rules)
@@ -76,7 +77,7 @@ const toLevelDetail = ({ level, progress, rules, total }) => {
     hintsUsed,
     maxHints: maxHintsForLevel(level, rules),
     staminaCost: rules.level.staminaCost,
-    puzzle: isPlaying ? { ...toPuzzle(level), ...describeHintEffect(level, hintsUsed) } : null,
+    puzzle: isPlaying ? { ...toPuzzle(level, switches), ...describeHintEffect(level, hintsUsed) } : null,
     solution: solved ? toSolution(level) : null
   }
 }
@@ -202,21 +203,22 @@ const solvedBook = async ({ openid, payload }) => {
 const getLevelDetail = async ({ openid, payload }) => {
   const gameType = parseGameType(payload)
   const levelNo = parseLevelNo(payload)
-  const [rules, progress, level, total] = await Promise.all([
+  const [rules, progress, level, total, switches] = await Promise.all([
     loadRulesForGame(gameType),
     getProgress(openid, gameType),
     getLevel(gameType, levelNo),
-    countLevels(gameType)
+    countLevels(gameType),
+    loadSwitches()
   ])
   assertLevelUnlocked(progress, levelNo)
-  return toLevelDetail({ level, progress, rules, total })
+  return toLevelDetail({ level, progress, rules, total, switches })
 }
 
 const startAttempt = async ({ openid, payload }) => {
   const gameType = parseGameType(payload)
   const now = Date.now()
   const levelNo = parseLevelNo(payload)
-  const [rules, level, total] = await Promise.all([loadRulesForGame(gameType), getLevel(gameType, levelNo), countLevels(gameType)])
+  const [rules, level, total, switches] = await Promise.all([loadRulesForGame(gameType), getLevel(gameType, levelNo), countLevels(gameType), loadSwitches()])
   await getProgress(openid, gameType)
   const staminaDelta = { [ITEM_TYPES.STAMINA]: -rules.level.staminaCost }
 
@@ -239,7 +241,7 @@ const startAttempt = async ({ openid, payload }) => {
     await writeItemLogs(openid, staminaDelta, ITEM_LOG_REASONS.USE, { gameType, levelNo })
   }
   const progress = await getProgress(openid, gameType)
-  return { ...toLevelDetail({ level, progress, rules, total }), items: outcome.items || null }
+  return { ...toLevelDetail({ level, progress, rules, total, switches }), items: outcome.items || null }
 }
 
 const submit = async ({ openid, payload }) => {

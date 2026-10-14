@@ -11,9 +11,13 @@ const { countUnclaimedWelfare, buildTaskRows, countOpenTasks } = require('../../
 const { adOffersOf } = require('../../utils/ad-reward')
 const { HIDDEN_REWARD_POPUP } = require('../../utils/milestone')
 
-const BEGINNER_GAME_TYPE = 'idiom'
+// Most players are in grades 1-2, so a brand-new player is pointed at 汉字闯关.
+const BEGINNER_GAME_TYPE = 'hanzi'
 const WELFARE_URL = '/pages/welfare/welfare'
-const PRACTICE_TAB_URL = '/pages/practice/index'
+const DAILY_URL = '/pages/daily/daily'
+
+const describeDaily = (result) =>
+  result ? `今天已完成：答对 ${result.correct} / ${result.total} 题，明天再来` : '10 道题，汉字和算术轮流来，完成就有奖励'
 
 // Most recently played first; untouched games keep the default order. A brand-new player gets one clear starting point.
 const describeWelfare = (session, unclaimed, openTasks) => {
@@ -52,6 +56,8 @@ Page({
     rewardPopup: HIDDEN_REWARD_POPUP,
     gameCards: GAME_ORDER.map((gameType) => gameConfigOf(gameType)),
     welcomeVisible: false,
+    dailyDone: false,
+    dailyDesc: describeDaily(null),
     profileAvatarUrl: '',
     profileNickname: ''
   },
@@ -69,6 +75,8 @@ Page({
       this.setData({
         loading: false,
         unclaimedWelfare: countUnclaimedWelfare(session, games, practices),
+        dailyDone: Boolean(session.today.dailyChallenge),
+        dailyDesc: describeDaily(session.today.dailyChallenge),
         welfareDesc: describeWelfare(
           session,
           countUnclaimedWelfare(session, games, practices),
@@ -119,8 +127,8 @@ Page({
     wx.navigateTo({ url: WELFARE_URL })
   },
 
-  openPracticeTab() {
-    wx.switchTab({ url: PRACTICE_TAB_URL })
+  openDaily() {
+    wx.navigateTo({ url: DAILY_URL })
   },
 
   offerProfileWelcome(profile) {

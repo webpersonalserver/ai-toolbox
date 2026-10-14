@@ -1,14 +1,24 @@
 const WRONG_SHAKE_MS = 450
-const SYMBOLS = ['×', '+', '−', '=']
+const SYMBOLS = ['×', '÷', '+', '−', '=']
+const WORDS = ['分成', '和', '合成']
+// Long equations (连加连减, 三位数) shrink so they stay on one line.
+const COMPACT_CHARACTERS = 8
+const COMPACT_TOKENS = 5
 const KEYPAD = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'delete', '0', 'confirm']
 
 const tokenKindOf = (token) => {
   if (token === '') return 'blank'
+  if (WORDS.includes(token)) return 'word'
   return SYMBOLS.includes(token) ? 'symbol' : 'number'
 }
 
-// Shows one question (numeric keypad or verse choices) and reports each answer; the page decides what happens next.
-// Used by 九九神功 (default look) and the arithmetic exam (plain look, 3-digit answers).
+const isCompact = (tokens, maxDigits) => {
+  const characters = tokens.reduce((total, token) => total + (token === '' ? maxDigits : token.length), 0)
+  return characters > COMPACT_CHARACTERS || tokens.length > COMPACT_TOKENS
+}
+
+// Shows one question (numeric keypad, or buttons when the question has choices: verses, > < =) and reports each
+// answer; the page decides what happens next. Used by 九九神功 (default look) and the 数理乐园 exam (plain look).
 Component({
   options: {
     styleIsolation: 'apply-shared'
@@ -26,6 +36,7 @@ Component({
   data: {
     keypad: KEYPAD,
     tokens: [],
+    compact: false,
     input: '',
     state: 'idle',
     pickedChoice: ''
@@ -35,7 +46,8 @@ Component({
     question(question) {
       clearTimeout(this.clearTimer)
       const tokens = question && question.tokens ? question.tokens.map((text) => ({ text, kind: tokenKindOf(text) })) : []
-      this.setData({ tokens, input: '', state: 'idle', pickedChoice: '' })
+      const compact = Boolean(question && question.tokens) && isCompact(question.tokens, question.maxDigits || this.data.maxDigits)
+      this.setData({ tokens, compact, input: '', state: 'idle', pickedChoice: '' })
     },
     revealed(revealed) {
       if (!revealed || !this.data.question) return
