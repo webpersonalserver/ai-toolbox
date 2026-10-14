@@ -14,6 +14,7 @@ OUTPUT_DIR = ROOT / "assets" / "sounds"
 SAMPLE_RATE = 22050
 PEAK = 0.6
 CLAP_SEED = 7
+CHEST_SEED = 11
 
 
 def tone(frequency, seconds, decay=6.0):
@@ -96,6 +97,13 @@ def main():
     write("milestone.wav", mix_sequence(fanfare + twinkles, applause(0.4, 1.4, 40, rng)))
     write("gong.wav", mix_sequence([(0.05, 523.3, 0.6), (0.05, 784.0, 0.6)], [(0, gong())]))
     write("wrong.wav", mix_sequence([(0, 392.0, 0.16), (0.12, 330.0, 0.22)]))
+    # Chest opening: the lid pops, coins run up a fast scale, a big chord lands, then sparkles and cheering.
+    chest_rng = random.Random(CHEST_SEED)
+    lid_pop = [(0, clap(chest_rng, 0.12)), (0.02, tone(196.0, 0.25, decay=14.0))]
+    coin_run = [(0.1 + index * 0.045, frequency, 0.18) for index, frequency in enumerate((523.3, 659.3, 784.0, 1046.5, 1318.5, 1568.0, 2093.0))]
+    big_chord = [(0.44, frequency, 1.1) for frequency in (523.3, 659.3, 784.0, 1046.5, 1568.0)]
+    shimmer = [(0.62 + index * 0.07, frequency, 0.22) for index, frequency in enumerate((3136.0, 4186.0, 3520.0, 4699.0, 3136.0, 4186.0, 5274.0))]
+    write("chest.wav", mix_sequence(coin_run + big_chord + shimmer, lid_pop + applause(0.5, 1.3, 46, chest_rng)))
 
 
 if __name__ == "__main__":
