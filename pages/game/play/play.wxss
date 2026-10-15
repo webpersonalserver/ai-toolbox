@@ -122,7 +122,11 @@
 }
 
 .play__guide-link {
-  margin-top: var(--space-lg);
+  /* A text link, but a finger-sized one. */
+  display: inline-flex;
+  align-items: center;
+  min-height: 80rpx;
+  margin-top: var(--space-sm);
   color: var(--color-ink-faint);
   font-size: var(--font-sm);
   text-decoration: underline;

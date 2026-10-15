@@ -106,7 +106,7 @@
       <text wx:for="{{roundResult.slots}}" wx:key="id" class="round__star round__star--{{item.id}} {{item.on ? 'round__star--on' : ''}}">★</text>
     </view>
     <view class="round__talk">
-      <image class="round__cat" src="{{roundResult.happy ? mascot.images.happy : mascot.images.cheer}}" mode="aspectFit" />
+      <image class="round__cat" src="{{roundResult.happy ? mascot.images.happy : mascot.images.cheer}}" data-src="{{roundResult.happy ? mascot.images.happy : mascot.images.cheer}}" binderror="handleImageError" mode="aspectFit" />
       <view class="round__line">{{roundResult.line}}</view>
     </view>
     <view wx:if="{{roundResult.detail}}" class="round__detail">{{roundResult.detail}}</view>

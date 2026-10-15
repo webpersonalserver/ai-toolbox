@@ -10,6 +10,10 @@
         </view>
       </view>
     </block>
+    <block wx:elif="{{question.type === 'hanzi'}}">
+      <view class="kq__verse-label">{{question.prompt}}</view>
+      <view class="kq__hanzi-clue kq__hanzi-clue--{{question.kind}}">{{question.clue}}</view>
+    </block>
     <view wx:else class="kq__equation {{compact ? 'kq__equation--compact' : ''}}">
       <block wx:for="{{tokens}}" wx:key="index">
         <view wx:if="{{item.kind === 'blank'}}" class="kq__blank kq__blank--{{state}}">

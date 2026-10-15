@@ -18,8 +18,8 @@
       <text wx:if="{{allSolved}}">全部闯过啦！新关卡正在路上～</text>
       <text wx:else>已闯过 {{solvedCount}} 关 · {{titleProgressText}}</text>
     </view>
-    <button wx:if="{{pendingChests > 0}}" class="btn btn--primary levels__chest" loading="{{openingChests}}" bindtap="handleOpenChests">
-      有 {{pendingChests}} 个宝箱待打开
+    <button wx:if="{{pendingChests > 0}}" class="btn btn--primary levels__chest" bindtap="handleOpenChests">
+      有 {{pendingChests}} 个宝箱，去「我的宝箱」打开
     </button>
   </view>
 
@@ -63,14 +63,3 @@
   </view>
   </block>
 </view>
-
-<reward-popup
-  visible="{{rewardPopup.visible}}"
-  title="{{rewardPopup.title}}"
-  subtitle="{{rewardPopup.subtitle}}"
-  badge="{{rewardPopup.badge}}"
-  rewards="{{rewardPopup.rewards}}"
-  double-token="{{rewardPopup.doubleToken}}"
-  sound="{{rewardPopup.sound}}"
-  bind:close="closeRewardPopup"
-/>

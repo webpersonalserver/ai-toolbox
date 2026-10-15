@@ -1,11 +1,12 @@
 const { practice } = require('../../../utils/api')
 const { unitOf } = require('../../../utils/practice/catalog')
 const { COPY, MASCOT, mascotView } = require('../../../utils/practice/copy')
-const { imageOf } = require('../../../utils/assets')
+const { imageOf, fallBackFromCloudImage } = require('../../../utils/assets')
 const { buildIslandMap, routeDots } = require('../../../utils/practice/island-map')
 const { readProgress, masteredRowCount } = require('../../../utils/practice/multiplication-records')
 const { waitForPendingReport } = require('../../../utils/practice/pending-report')
 const { DEFAULT_SHARE } = require('../../../utils/share')
+const { openPage } = require('../../../utils/navigation')
 
 const SUBJECT_ID = 'math'
 const WEEKLY_URL = '/packageMath/pages/weekly/weekly'
@@ -52,6 +53,13 @@ Page({
     sailing: false,
     mapHeight: 0,
     sheet: null
+  },
+
+  // A cloud picture that will not load on this phone: draw the islands and 喵算算 from the packaged copies.
+  handleImageError(event) {
+    if (!fallBackFromCloudImage(event)) return
+    this.setData({ mascot: mascotView() })
+    if (this.unitStats) this.render(this.unitStats)
   },
 
   onShow() {
@@ -104,11 +112,11 @@ Page({
   // The boat's suggestion: monsters open 小怪兽藏身洞, everything else starts a round.
   openRecommendation() {
     const { unitId, reason } = this.data.recommendation
-    wx.navigateTo({ url: unitRoutes(unitId)[reason === 'monsters' ? 'monsters' : 'practice'] })
+    openPage(unitRoutes(unitId)[reason === 'monsters' ? 'monsters' : 'practice'])
   },
 
   openWeekly() {
-    wx.navigateTo({ url: WEEKLY_URL })
+    openPage(WEEKLY_URL)
   },
 
   openIsland(event) {
@@ -129,7 +137,7 @@ Page({
       wx.showToast({ title: COPY.comingSoon, icon: 'none' })
       return
     }
-    wx.navigateTo({ url: unitRoutes(unitId)[target] })
+    openPage(unitRoutes(unitId)[target])
   },
 
   onShareAppMessage() {

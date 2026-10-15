@@ -3,6 +3,8 @@ const { readProgress, rowProgressOf, masteredRowCount } = require('../../../util
 const { syncProgress } = require('../../../utils/practice/multiplication-rewards')
 const { HIDDEN_FLOWER_TOAST, HIDDEN_MEDAL_POPUP, createHonorPresenter, medalShareOf } = require('../../../utils/practice/honors')
 const { KUNGFU_SHARE } = require('../../../utils/share')
+const { openPage } = require('../../../utils/navigation')
+const { CHEST_ROOM_URL } = require('../../../utils/milestone')
 
 const CHINESE_ORDINALS = ['一', '二', '三', '四', '五', '六', '七', '八', '九']
 const STAR_SLOTS = [1, 2, 3]
@@ -72,11 +74,11 @@ Page({
       wx.showToast({ title: '先练成上一重才能解锁', icon: 'none' })
       return
     }
-    wx.navigateTo({ url: `/pages/practice/multiplication/study?row=${row}` })
+    openPage(`/pages/practice/multiplication/study?row=${row}`)
   },
 
   openChests() {
-    wx.navigateTo({ url: '/pages/welfare/chests' })
+    openPage(CHEST_ROOM_URL)
   },
 
   handleMedalClose() {
@@ -88,6 +90,6 @@ Page({
   },
 
   openExam() {
-    wx.navigateTo({ url: '/pages/practice/multiplication/exam' })
+    openPage('/pages/practice/multiplication/exam')
   }
 })

@@ -6,6 +6,7 @@ const { describeTitleProgress } = require('../../utils/milestone')
 const { GAME_ORDER, gameConfigOf } = require('../../utils/games')
 const { countUnclaimedWelfare } = require('../../utils/welfare')
 const { isSwitchOn } = require('../../utils/switches')
+const { openPage } = require('../../utils/navigation')
 
 
 const DEFAULT_AVATAR = '/assets/icons/default-avatar.png'
@@ -100,11 +101,11 @@ Page({
   },
 
   openAdminStats() {
-    wx.navigateTo({ url: '/pages/admin/stats' })
+    openPage('/pages/admin/stats')
   },
 
   openAdminControl() {
-    wx.navigateTo({ url: '/pages/admin/control' })
+    openPage('/pages/admin/control')
   },
 
   // Players (children) must not stumble into copying an id they cannot understand, so the long-press only works for
@@ -115,7 +116,7 @@ Page({
   },
 
   openWelfare() {
-    wx.navigateTo({ url: '/pages/welfare/welfare' })
+    openPage('/pages/welfare/welfare')
   },
 
   openRules() {
@@ -131,7 +132,7 @@ Page({
   },
 
   openBook(event) {
-    wx.navigateTo({ url: `/pages/game/book/book?gameType=${event.currentTarget.dataset.gameType}` })
+    openPage(`/pages/game/book/book?gameType=${event.currentTarget.dataset.gameType}`)
   },
 
   onShareAppMessage() {

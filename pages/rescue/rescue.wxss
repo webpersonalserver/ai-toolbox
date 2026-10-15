@@ -103,3 +103,15 @@
   color: var(--color-primary);
   text-decoration: underline wavy;
 }
+
+.rescue__failed {
+  color: var(--color-ink-soft);
+  text-align: center;
+}
+
+.rescue__failed-title {
+  margin-bottom: var(--space-xs);
+  color: var(--color-ink);
+  font-size: var(--font-lg);
+  font-weight: 800;
+}

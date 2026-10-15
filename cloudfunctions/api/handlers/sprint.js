@@ -1,49 +1,48 @@
-const { db, _ } = require('../lib/cloud')
-const { ERROR_CODES, BusinessError, throwIfFailed } = require('../lib/response')
+const { db, _, readDocOrNull } = require('../lib/cloud')
+const { ERROR_CODES, BusinessError } = require('../lib/response')
 const { loadRules } = require('../lib/rules')
 const { ITEM_TYPES, changeItemsInTransaction } = require('../lib/items')
 const { ITEM_LOG_REASONS, writeItemLogs } = require('../lib/item-log')
-const { throwInsufficientItem } = require('../lib/item-next-step')
+const { throwIfSpendFailed } = require('../lib/item-next-step')
 const { loadSwitches } = require('../lib/switches')
-const { chinaDateKey } = require('../lib/date')
-const { SPRINT_ISLANDS, sprintIslandOf, sprintPaper, isRightAnswer } = require('../lib/math-challenge')
+const { weekKeyOf } = require('../lib/date')
+const { isRightAnswer } = require('../lib/math-challenge')
+const { SUBJECTS, isSprintSubject, tracksOf, trackOf } = require('../lib/sprint-tracks')
 
-// 口算竞速: pick an island, answer as many of its questions as you can in 60 seconds.
-// Score = right − wrong (never below 0); ties go to fewer wrong, then to whoever got there first.
-// Each player keeps their best per island and period in sprint_scores: the week (Monday, Beijing) while
-// 排行榜每周清零 is on (控制中心), otherwise one period for all time ('all'). Both are kept, so the switch can go back.
+// 口算竞速 and 识字竞速: pick a track (an island for 口算, a grade for 识字, lib/sprint-tracks.js), answer as many of its
+// questions as you can in 60 seconds. No hints, no friends. Score = right − wrong (never below 0); ties go to fewer
+// wrong, then to whoever got there first. Each player keeps their best per track and period in sprint_scores (the
+// field is still called islandId): the week (Monday, Beijing) while 排行榜每周清零 is on (控制中心), otherwise one
+// period for all time ('all'). Both are kept, so the switch can go back.
 // The run being played sits on the user record (sprintRun); the cloud rebuilds its paper from the seed to judge it.
 const SECONDS = 60
 // Network and the closing animation; anything later than this is not counted.
 const GRACE_SECONDS = 8
+// The phone has the answers (to mark each one at once), so a run is only counted when it looks played by hand:
+// handed in when the clock ran out (a little early for clock drift) unless the whole paper was done, and no faster
+// than one answer per MIN_MS_PER_ANSWER (the quickest tap plus the 150 ms pause between questions).
+const EARLY_TOLERANCE_SECONDS = 3
+const MIN_MS_PER_ANSWER = 300
 const BOARD_SIZE = 50
 const ALL_TIME = 'all'
-const DAY_MS = 24 * 60 * 60 * 1000
-const CHINA_UTC_OFFSET_MS = 8 * 60 * 60 * 1000
 const SCORES = 'sprint_scores'
 
-const weekKeyOf = (now) => {
-  const weekday = (new Date(now + CHINA_UTC_OFFSET_MS).getUTCDay() + 6) % 7
-  return `week${chinaDateKey(now - weekday * DAY_MS)}`
+const parseTrack = (payload) => {
+  const track = trackOf(payload.islandId)
+  if (!track) throw new BusinessError(ERROR_CODES.BAD_REQUEST, '没有这个挑战场')
+  return track
 }
 
-const parseIsland = (payload) => {
-  const island = sprintIslandOf(payload.islandId)
-  if (!island) throw new BusinessError(ERROR_CODES.BAD_REQUEST, '没有这座岛')
-  return island
+// Older phones send no subject: they only know 口算竞速.
+const parseSubject = (payload) => {
+  const subject = (payload && payload.subject) || SUBJECTS.MATH
+  if (!isSprintSubject(subject)) throw new BusinessError(ERROR_CODES.BAD_REQUEST, '没有这个竞速')
+  return subject
 }
 
 const newRunId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`
 
 const scoreDocId = (period, islandId, openid) => `${period}_${islandId}_${openid}`
-
-const readDoc = async (collection, id) => {
-  try {
-    return (await db.collection(collection).doc(id).get()).data
-  } catch (error) {
-    return null
-  }
-}
 
 const isBetter = (candidate, current) =>
   !current || candidate.score > current.score || (candidate.score === current.score && candidate.wrong < current.wrong)
@@ -59,27 +58,38 @@ const rankOf = async (record) => {
   return higher.total + fewerWrong.total + earlier.total + 1
 }
 
-// The islands to choose from, with this player's best this period.
-const islands = async ({ openid }) => {
+const shownPeriodOf = (switches) => (switches.sprintWeeklyReset ? weekKeyOf(Date.now()) : ALL_TIME)
+
+// This player's record on every track of the subject for the period on show (null where not played).
+const myRecordsOf = (openid, subject, period) => Promise.all(tracksOf(subject).map((track) => readDocOrNull(SCORES, scoreDocId(period, track.id, openid))))
+
+// The tracks to choose from (payload.subject, 口算 by default), with this player's best this period.
+const islands = async ({ openid, payload }) => {
+  const subject = parseSubject(payload)
   const switches = await loadSwitches()
-  const period = switches.sprintWeeklyReset ? weekKeyOf(Date.now()) : ALL_TIME
-  const records = await Promise.all(SPRINT_ISLANDS.map((island) => readDoc(SCORES, scoreDocId(period, island.id, openid))))
+  const records = await myRecordsOf(openid, subject, shownPeriodOf(switches))
   return {
+    subject,
     seconds: SECONDS,
     staminaCost: switches.sprintStaminaCost,
     weekly: switches.sprintWeeklyReset,
-    islands: SPRINT_ISLANDS.map((island, index) => ({ id: island.id, name: island.name, best: records[index] ? records[index].score : null }))
+    islands: tracksOf(subject).map((track, index) => ({
+      id: track.id,
+      name: track.name,
+      ...(track.scope ? { scope: track.scope } : {}),
+      best: records[index] ? records[index].score : null
+    }))
   }
 }
 
 // Starts a run: stamina (控制中心 sets how much) and a fresh paper. Answers go along so the phone marks each
 // answer at once; the cloud judges again from the seed when the run is handed in.
 const start = async ({ openid, payload }) => {
-  const island = parseIsland(payload)
+  const track = parseTrack(payload)
   const [rules, switches] = await Promise.all([loadRules(), loadSwitches()])
   const cost = switches.sprintStaminaCost
   const delta = { [ITEM_TYPES.STAMINA]: -cost }
-  const run = { runId: newRunId(), islandId: island.id, startedAt: Date.now() }
+  const run = { runId: newRunId(), islandId: track.id, startedAt: Date.now() }
   const outcome =
     cost > 0
       ? await db.runTransaction(async (transaction) => {
@@ -87,22 +97,15 @@ const start = async ({ openid, payload }) => {
           return change.insufficientType ? { insufficientType: change.insufficientType, insufficientItems: change.items } : { items: change.items }
         })
       : { items: null }
-  throwIfFailed(outcome)
-  if (outcome.insufficientType) await throwInsufficientItem(openid, outcome.insufficientType, rules, outcome.insufficientItems)
+  await throwIfSpendFailed(openid, outcome, rules)
   // A new run replaces any unfinished one (closing the page mid-run just forfeits it).
   await db.collection('users').doc(openid).update({ data: { sprintRun: _.set(run) } })
-  if (cost > 0) await writeItemLogs(openid, delta, ITEM_LOG_REASONS.USE, { sprint: island.id })
+  if (cost > 0) await writeItemLogs(openid, delta, ITEM_LOG_REASONS.USE, { sprint: track.id })
   return {
     runId: run.runId,
     seconds: SECONDS,
-    islandId: island.id,
-    questions: sprintPaper(island.id, run.runId).map((question) => ({
-      index: question.index,
-      tokens: question.tokens,
-      answer: question.answer,
-      maxDigits: question.maxDigits,
-      ...(question.choices ? { choices: question.choices } : {})
-    })),
+    islandId: track.id,
+    questions: track.paper(run.runId).map(track.toRunQuestion),
     items: outcome.items
   }
 }
@@ -120,15 +123,23 @@ const parseAnswers = (payload, paperSize) => {
 
 const finish = async ({ openid, payload }) => {
   const now = Date.now()
-  const user = await readDoc('users', openid)
+  const user = await readDocOrNull('users', openid)
   const run = user && user.sprintRun
   if (!run || run.runId !== payload.runId) throw new BusinessError(ERROR_CODES.BAD_REQUEST, '这次挑战已经结束了，再开一局吧')
+  const track = trackOf(run.islandId)
+  if (!track) throw new BusinessError(ERROR_CODES.BAD_REQUEST, '这次挑战已经结束了，再开一局吧')
+  const paper = track.paper(run.runId)
+  // Checked before the run is closed, so a garbled hand-in can be sent again.
+  const answers = parseAnswers(payload, paper.length)
   await db.collection('users').doc(openid).update({ data: { sprintRun: null } })
-  if (now - run.startedAt > (SECONDS + GRACE_SECONDS) * 1000) {
+  const elapsedMs = now - run.startedAt
+  if (elapsedMs > (SECONDS + GRACE_SECONDS) * 1000) {
     return { counted: false, message: '超过时间了，这次成绩不算' }
   }
-  const paper = sprintPaper(run.islandId, run.runId)
-  const answers = parseAnswers(payload, paper.length)
+  const handedInEarly = answers.length < paper.length && elapsedMs < (SECONDS - EARLY_TOLERANCE_SECONDS) * 1000
+  if (handedInEarly || answers.length * MIN_MS_PER_ANSWER > elapsedMs) {
+    return { counted: false, message: '这局没有按正常速度答完，成绩不算' }
+  }
   const correct = answers.filter((item) => isRightAnswer(paper[item.index], item.answer)).length
   const wrong = answers.length - correct
   const result = { score: Math.max(correct - wrong, 0), correct, wrong }
@@ -138,7 +149,7 @@ const finish = async ({ openid, payload }) => {
   const saved = await Promise.all(
     periods.map(async (period) => {
       const id = scoreDocId(period, run.islandId, openid)
-      const current = await readDoc(SCORES, id)
+      const current = await readDocOrNull(SCORES, id)
       if (!isBetter(result, current)) return { period, record: current, isNewBest: false }
       const record = { openid, period, islandId: run.islandId, ...result, achievedAt: now }
       await db.collection(SCORES).doc(id).set({ data: record })
@@ -150,12 +161,12 @@ const finish = async ({ openid, payload }) => {
 }
 
 const board = async ({ openid, payload }) => {
-  const island = parseIsland(payload)
+  const island = parseTrack(payload)
   const switches = await loadSwitches()
-  const period = switches.sprintWeeklyReset ? weekKeyOf(Date.now()) : ALL_TIME
+  const period = shownPeriodOf(switches)
   const [{ data: top }, mine] = await Promise.all([
     db.collection(SCORES).where({ period, islandId: island.id }).orderBy('score', 'desc').orderBy('wrong', 'asc').orderBy('achievedAt', 'asc').limit(BOARD_SIZE).get(),
-    readDoc(SCORES, scoreDocId(period, island.id, openid))
+    readDocOrNull(SCORES, scoreDocId(period, island.id, openid))
   ])
   const openids = top.map((record) => record.openid)
   const { data: users } = openids.length ? await db.collection('users').where({ _id: _.in(openids) }).limit(openids.length).get() : { data: [] }
@@ -176,4 +187,17 @@ const board = async ({ openid, payload }) => {
   }
 }
 
-module.exports = { islands, start, finish, board, weekKeyOf, SECONDS }
+// For the leaderboard's card of one subject: how many tracks this player tried this period, and the best of them
+// with its rank.
+const myBest = async (openid, subject) => {
+  const switches = await loadSwitches()
+  const records = (await myRecordsOf(openid, subject, shownPeriodOf(switches))).filter(Boolean)
+  const best = records.reduce((top, record) => (isBetter(record, top) ? record : top), null)
+  return {
+    weekly: switches.sprintWeeklyReset,
+    played: records.length,
+    best: best ? { islandId: best.islandId, islandName: trackOf(best.islandId).name, score: best.score, rank: await rankOf(best) } : null
+  }
+}
+
+module.exports = { islands, start, finish, board, myBest, weekKeyOf, SECONDS }

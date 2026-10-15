@@ -1,9 +1,11 @@
 const { practice } = require('../../../utils/api')
 const { unitOf } = require('../../../utils/practice/catalog')
 const { COPY, MASCOT, mascotView } = require('../../../utils/practice/copy')
+const { fallBackFromCloudImage } = require('../../../utils/assets')
 const { waitForPendingReport } = require('../../../utils/practice/pending-report')
 const { buildWeeklyShare, DEFAULT_SHARE } = require('../../../utils/share')
 const { isSwitchOn } = require('../../../utils/switches')
+const { openPage } = require('../../../utils/navigation')
 
 const WEEKDAYS = ['一', '二', '三', '四', '五', '六', '日']
 const KUNGFU_ROWS = 9
@@ -39,9 +41,13 @@ Page({
   data: {
     sharing: true,
     mascot: MASCOT,
-    loading: true,
     failed: false,
     week: null
+  },
+
+  // A cloud picture that will not load on this phone: draw the packaged copies instead (utils/assets.js).
+  handleImageError(event) {
+    if (fallBackFromCloudImage(event)) this.setData({ mascot: mascotView() })
   },
 
   onShow() {
@@ -53,20 +59,20 @@ Page({
     try {
       await waitForPendingReport()
       const week = await practice.weekly()
-      this.setData({ loading: false, failed: false, week: toView(week) })
+      this.setData({ failed: false, week: toView(week) })
     } catch (error) {
       console.error('[weekly] report unavailable', error)
-      this.setData({ loading: false, failed: true })
+      this.setData({ failed: true })
     }
   },
 
   retry() {
-    this.setData({ loading: true, failed: false })
+    this.setData({ failed: false })
     this.load()
   },
 
   catchMonsters(event) {
-    wx.navigateTo({ url: `/packageMath/pages/play/play?unitId=${event.currentTarget.dataset.unitId}&mode=monsters` })
+    openPage(`/packageMath/pages/play/play?unitId=${event.currentTarget.dataset.unitId}&mode=monsters`)
   },
 
   onShareAppMessage() {

@@ -32,10 +32,29 @@ const isFresh = (links) => Boolean(links) && links.expiresAt - LINK_REFRESH_MARG
 // Saved across launches so a warm start shows cloud pictures straight away.
 let cloudLinks = readSavedLinks() || { urls: {}, expiresAt: 0 }
 let pendingLinks = null
+// Set when a cloud link would not load on this phone: packaged pictures only, until the next launch.
+let cloudLinksBroken = false
 
 const imageOf = (packagedPath) => {
-  const cloudUrl = isFresh(cloudLinks) && cloudLinks.urls[CLOUD_PATHS[packagedPath]]
+  const cloudUrl = !cloudLinksBroken && isFresh(cloudLinks) && cloudLinks.urls[CLOUD_PATHS[packagedPath]]
   return cloudUrl || packagedPath
+}
+
+// An <image> showing a cloud link failed to load (seen on phones while the developer tools showed it fine): drop
+// the cloud links and tell the page to draw its pictures again, now from the packaged copies. Returns whether the
+// page should redraw (false when the failed picture was already a packaged one).
+const fallBackFromCloudImage = (event) => {
+  const src = (event && event.currentTarget && event.currentTarget.dataset.src) || ''
+  if (cloudLinksBroken || !/^https?:/.test(src)) return false
+  console.warn('[assets] cloud picture did not load, using packaged pictures until the next launch', src, event.detail)
+  cloudLinksBroken = true
+  cloudLinks = { urls: {}, expiresAt: 0 }
+  try {
+    wx.removeStorageSync(STORAGE_KEY)
+  } catch (error) {
+    console.warn('[assets] could not forget image links', error)
+  }
+  return true
 }
 
 // Maps every value of { key: packagedPath } through imageOf.
@@ -43,7 +62,7 @@ const imagesOf = (packagedPaths) => Object.fromEntries(Object.entries(packagedPa
 
 // Called on launch; a failure just keeps the packaged pictures until the next launch.
 const refreshCloudImages = () => {
-  if (isFresh(cloudLinks) || pendingLinks) return
+  if (cloudLinksBroken || isFresh(cloudLinks) || pendingLinks) return
   pendingLinks = assets
     .imageUrls(Object.values(CLOUD_PATHS))
     .then(({ urls, expiresInSeconds }) => {
@@ -60,4 +79,4 @@ const refreshCloudImages = () => {
     .then(() => (pendingLinks = null))
 }
 
-module.exports = { imageOf, imagesOf, refreshCloudImages }
+module.exports = { imageOf, imagesOf, refreshCloudImages, fallBackFromCloudImage }

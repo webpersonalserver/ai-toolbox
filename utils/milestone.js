@@ -1,39 +1,12 @@
-const { game, toastError } = require('./api')
-const { getSession, setItems } = require('./session')
-
 const HIDDEN_REWARD_POPUP = { visible: false, title: '', subtitle: '', badge: '', rewards: [], doubleToken: '', sound: '' }
 const CHEST_SOUND = 'chest'
 
-const chestPopupOf = (result) => {
-  const bigChests = result.chests.filter((chest) => chest.isBig).length
-  const session = getSession()
-  const multiplier = session ? session.rules.milestone.bigChest.multiplier : 2
-  return {
-    visible: true,
-    title: result.chestCount > 1 ? `打开了 ${result.chestCount} 个宝箱` : '宝箱打开啦',
-    subtitle: result.chestCount > 1 ? '奖励已经合并到一起' : '',
-    badge: bigChests ? `大宝箱 ×${multiplier}` : '',
-    rewards: result.rewards,
-    doubleToken: result.doubleToken || '',
-    sound: CHEST_SOUND
-  }
-}
-
-// Resolves the popup content to show, or null when the claim failed (the error is already toasted).
-const openMilestoneChests = async (gameType) => {
-  try {
-    const result = await game.claimMilestones(gameType)
-    setItems(result.items)
-    return chestPopupOf(result)
-  } catch (error) {
-    toastError(error)
-    return null
-  }
-}
+// Every chest (levels and practice) is opened in 我的宝箱, where each one shows what is inside.
+const CHEST_ROOM_URL = '/pages/welfare/chests'
 
 const describeTitleProgress = (achievement) => {
   const { title, solvedCount } = achievement
   return title.nextName ? `再闯过 ${title.nextMinSolved - solvedCount} 关升级「${title.nextName}」` : '已经是最高称号啦'
 }
 
-module.exports = { HIDDEN_REWARD_POPUP, CHEST_SOUND, openMilestoneChests, describeTitleProgress }
+module.exports = { HIDDEN_REWARD_POPUP, CHEST_SOUND, CHEST_ROOM_URL, describeTitleProgress }

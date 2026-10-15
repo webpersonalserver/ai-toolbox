@@ -116,6 +116,10 @@
 }
 
 .mathlv__hint {
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  min-height: 80rpx;
   padding: 10rpx 28rpx;
   border-radius: 999rpx;
   background: var(--color-surface);

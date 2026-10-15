@@ -17,8 +17,9 @@ const isCompact = (tokens, maxDigits) => {
   return characters > COMPACT_CHARACTERS || tokens.length > COMPACT_TOKENS
 }
 
-// Shows one question (numeric keypad, or buttons when the question has choices: verses, > < =) and reports each
-// answer; the page decides what happens next. Used by 九九神功 (default look) and the 数理乐园 exam (plain look).
+// Shows one question (numeric keypad, or buttons when the question has choices: verses, > < =, 识字 characters) and
+// reports each answer; the page decides what happens next. Used by 九九神功 (default look), the 数理乐园 exam and the
+// 竞速 challenges (plain look). type 'hanzi' is a 汉字闯关 question: its prompt, its clue, four characters to pick from.
 Component({
   options: {
     styleIsolation: 'apply-shared'

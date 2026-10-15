@@ -79,22 +79,20 @@ const startedAttempt = { active: true, wrongCount: 0 }
   S.daily[Object.keys(S.daily).find((id) => id.startsWith('u1_'))].practiceEarned = { stamina: 15, hint: 0 }
   r = await call('u1', 'game.startAttempt', { gameType: 'idiom', levelNo: 2 }); assert(r.data.next === 'waitRecovery', 'practice capped, ad off -> wait recovery', r)
   S.users.u1.staminaAnchorAt = Date.now() - 65 * MIN
-  r = await call('u1', 'account.login'); assert(r.data.items.stamina === 0 && r.data.items.staminaPending === 2 && r.data.items.nextStaminaAt > Date.now(), 'recovered stamina waits as pending (2 after 65min)', r.data.items)
+  r = await call('u1', 'account.login'); assert(r.data.items.stamina === 2 && r.data.items.staminaPending === undefined && r.data.items.nextStaminaAt > Date.now(), 'recovered stamina goes straight in (2 after 65min)', r.data.items)
   S.users.u1.items.stamina = 40
-  S.users.u1.staminaPending = 0
   S.users.u1.staminaAnchorAt = Date.now() - 65 * MIN
-  r = await call('u1', 'account.login'); assert(r.data.items.stamina === 40 && r.data.items.staminaPending === 2, 'recovery no longer stops when holding plenty of stamina', r.data.items)
+  r = await call('u1', 'account.login'); assert(r.data.items.stamina === 42, 'recovery no longer stops when holding plenty of stamina', r.data.items)
   S.users.u1.items.stamina = 0
   S.users.u1.staminaPending = 10
   S.users.u1.staminaAnchorAt = Date.now() - 10 * MIN
   S.users.u1.staminaRecoveredDate = new Date(Date.now() + 8 * 3600000).toISOString().slice(0, 10)
   S.users.u1.staminaRecoveredCount = 15
-  r = await call('u1', 'account.login'); assert(r.data.items.staminaPending === 10 && r.data.items.recoveryLeftToday === 0 && r.data.items.nextStaminaAt === null, "today's 15 recovered: countdown stops until tomorrow", r.data.items)
-  r = await call('u1', 'game.startAttempt', { gameType: 'idiom', levelNo: 2 }); assert(r.code === 40001 && r.data.next === 'claimRecovery' && r.data.pendingStamina === 10, 'no stamina but pending -> suggest claiming', r)
-  r = await call('u1', 'account.claimRecoveredStamina'); assert(r.code === 0 && r.data.claimed === 10 && r.data.items.stamina === 10 && r.data.items.staminaPending === 0, 'claim moves pending into stamina', r.data)
-  r = await call('u1', 'account.claimRecoveredStamina'); assert(r.code === 40016, 'nothing left to claim', r)
+  r = await call('u1', 'account.login'); assert(r.data.items.stamina === 10 && r.data.items.recoveryLeftToday === 0 && r.data.items.nextStaminaAt === null, "points left unclaimed from before are paid in; today's 15 recovered: countdown stops until tomorrow", r.data.items)
   S.users.u1.staminaRecoveredCount = 3
-  r = await call('u1', 'game.startAttempt', { gameType: 'idiom', levelNo: 2 }); assert(r.data.items.stamina === 9 && r.data.items.recoveryLeftToday === 12 && r.data.items.nextStaminaAt > Date.now(), 'below the daily cap the countdown keeps running', r.data.items)
+  r = await call('u1', 'game.startAttempt', { gameType: 'idiom', levelNo: 2 })
+  assert(r.code === 0 && r.data.items.stamina === 9 && S.users.u1.staminaPending === 0 && S.users.u1.items.stamina === 9 && r.data.items.recoveryLeftToday === 12 && r.data.items.nextStaminaAt > Date.now(), 'spending saves the paid-in points; below the daily cap the countdown keeps running', { items: r.data.items, user: S.users.u1 })
+  r = await call('u1', 'account.claimRecoveredStamina'); assert(r.code === 40000, 'there is nothing to claim any more', r)
   S.app_config = { game_rules: { _id: 'game_rules', ad: { enabled: true, adUnitId: 'adunit-test', dailyLimits: { stamina: 1 } }, staminaRecovery: { enabled: false }, level: { staminaCost: 2 } } }
   S.users.u1.items.stamina = 0
   r = await call('u1', 'game.startAttempt', { gameType: 'idiom', levelNo: 3 }); assert(r.code === 40003, 'level 3 locked', r)
@@ -140,35 +138,35 @@ const startedAttempt = { active: true, wrongCount: 0 }
   // achievements
   S.app_config = {}
   await call('u5', 'account.login')
-  r = await call('u5', 'game.summary', { gameType: 'idiom' }); assert(r.data.achievement.title.name === '蒙童' && r.data.achievement.title.nextName === '童生' && r.data.achievement.title.nextMinSolved === 10 && r.data.achievement.milestone.levelsToNextChest === 10, 'initial title + milestone', r)
-  r = await call('u5', 'game.claimMilestones', { gameType: 'idiom' }); assert(r.code === 40012, 'nothing to claim', r)
+  r = await call('u5', 'game.levelList', { gameType: 'idiom' }); assert(r.data.achievement.title.name === '蒙童' && r.data.achievement.title.nextName === '童生' && r.data.achievement.title.nextMinSolved === 10 && r.data.achievement.milestone.levelsToNextChest === 10, 'initial title + milestone', r)
+  r = await call('u5', 'chests.open', { all: true }); assert(r.code === 40016, 'nothing to claim', r)
   S.progress['u5_idiom'].solved = [1,2,3,4,5,6,7,8,9]; S.progress['u5_idiom'].currentLevel = 10
   S.app_config = {}
   await call('u5', 'game.startAttempt', { gameType: 'idiom', levelNo: 10 })
   r = await call('u5', 'game.submit', { gameType: 'idiom', levelNo: 10, answer: levels[9].answer }); assert(r.data.correct && r.data.titleUpgrade === '童生' && r.data.achievement.milestone.pendingChests === 1, 'solve 10th -> title upgrade + chest', r)
   const before = { ...S.users.u5.items }
-  r = await call('u5', 'game.claimMilestones', { gameType: 'idiom' }); assert(r.code === 0 && r.data.chestCount === 1 && r.data.items.hint === before.hint + 1 && r.data.items.stamina === before.stamina + 10 && r.data.chests[0].chestNo === 1, 'first chest: 10 stamina + 1 hint', r.data)
-  r = await call('u5', 'game.claimMilestones', { gameType: 'idiom' }); assert(r.code === 40012, 'chest claimed once', r)
+  r = await call('u5', 'chests.open', { all: true }); assert(r.code === 0 && r.data.chests.length === 1 && r.data.items.hint === before.hint + 1 && r.data.items.stamina === before.stamina + 10 && r.data.chests[0].chestNo === 1, 'first chest: 10 stamina + 1 hint', r.data)
+  r = await call('u5', 'chests.open', { all: true }); assert(r.code === 40016, 'chest claimed once', r)
   S.progress['u5_idiom'].solved = Array.from({ length: 29 }, (_, i) => i + 1)
   r = await call('u5', 'game.levelList', { gameType: 'idiom' }); assert(r.data.achievement.milestone.pendingChests === 1 && r.data.achievement.milestone.levelsToNextChest === 1, 'pending after more solves', r.data.achievement)
   S.progress['u5_idiom'].solved.push(30)
-  r = await call('u5', 'game.claimMilestones', { gameType: 'idiom' }); assert(r.data.chestCount === 2 && r.data.rewards.find((x) => x.type === 'hint').amount === 2 && r.data.rewards.find((x) => x.type === 'stamina').amount === 26, 'chests 2 and 3 summed (12 + 14 stamina)', r.data)
+  r = await call('u5', 'chests.open', { all: true }); assert(r.data.chests.length === 2 && r.data.rewards.find((x) => x.type === 'hint').amount === 2 && r.data.rewards.find((x) => x.type === 'stamina').amount === 26, 'chests 2 and 3 summed (12 + 14 stamina)', r.data)
   r = await call('u5', 'game.solvedBook', { gameType: 'idiom', page: 1 }); assert(r.data.total === 30 && r.data.entries.length === 20 && r.data.entries[0].levelNo === 1 && r.data.entries[0].answer === levels[0].answer && r.data.hasMore, 'book page 1', r.data.total)
   r = await call('u5', 'game.solvedBook', { gameType: 'idiom', page: 2 }); assert(r.data.entries.length === 10 && !r.data.hasMore, 'book page 2', r.data.entries.length)
   const baseline = DEFAULT_RULES.titles.idiom
   S.app_config = { game_rules: { _id: 'game_rules', titles: { idiom: [...baseline, { name: '尚书', minSolved: 1200 }] } } }
   S.progress['u5_idiom'].solved = Array.from({ length: 1000 }, (_, i) => i + 1)
-  r = await call('u5', 'game.summary', { gameType: 'idiom' }); assert(r.data.achievement.title.name === '大学士' && r.data.achievement.title.nextName === '尚书' && r.data.achievement.title.nextMinSolved === 1200, 'appended title accepted', r.data.achievement.title)
+  r = await call('u5', 'game.levelList', { gameType: 'idiom' }); assert(r.data.achievement.title.name === '大学士' && r.data.achievement.title.nextName === '尚书' && r.data.achievement.title.nextMinSolved === 1200, 'appended title accepted', r.data.achievement.title)
   const inserted = [...baseline.slice(0, 3), { name: '插队', minSolved: 40 }, ...baseline.slice(3)]
   S.app_config.game_rules.titles = { idiom: inserted }
   S.progress['u5_idiom'].solved = Array.from({ length: 45 }, (_, i) => i + 1)
-  r = await call('u5', 'game.summary', { gameType: 'idiom' }); assert(r.data.achievement.title.name === '秀才', 'inserted-in-middle title rejected -> baseline', r.data.achievement.title)
+  r = await call('u5', 'game.levelList', { gameType: 'idiom' }); assert(r.data.achievement.title.name === '秀才', 'inserted-in-middle title rejected -> baseline', r.data.achievement.title)
   S.app_config.game_rules.titles = { idiom: baseline.map((t) => (t.name === '举人' ? { ...t, minSolved: 300 } : t)) }
   S.progress['u5_idiom'].solved = Array.from({ length: 160 }, (_, i) => i + 1)
-  r = await call('u5', 'game.summary', { gameType: 'idiom' }); assert(r.data.achievement.title.name === '举人', 'retuned threshold rejected -> baseline', r.data.achievement.title)
+  r = await call('u5', 'game.levelList', { gameType: 'idiom' }); assert(r.data.achievement.title.name === '举人', 'retuned threshold rejected -> baseline', r.data.achievement.title)
   S.app_config.game_rules.titles = { idiom: [...baseline, { name: '尚书', minSolved: 900 }] }
   S.progress['u5_idiom'].solved = Array.from({ length: 1000 }, (_, i) => i + 1)
-  r = await call('u5', 'game.summary', { gameType: 'idiom' }); assert(r.data.achievement.title.name === '大学士' && r.data.achievement.title.nextName === null, 'non-increasing append rejected -> baseline', r.data.achievement.title)
+  r = await call('u5', 'game.levelList', { gameType: 'idiom' }); assert(r.data.achievement.title.name === '大学士' && r.data.achievement.title.nextName === null, 'non-increasing append rejected -> baseline', r.data.achievement.title)
   // P0: rescue hardening
   S.app_config = {}
   r = await call('u6', 'account.login'); const u6AvatarDir = r.data.profile.avatarUploadDir
@@ -182,6 +180,10 @@ const startedAttempt = { active: true, wrongCount: 0 }
   }
   r = await call('u7', 'rescue.answer', { rescueId: rescueU6, answer: levels[0].answer }); assert(r.code === 40014, 'helper locked after 3 wrong answers', r)
   r = await call('u7', 'rescue.view', { rescueId: rescueU6 }); assert(r.data.helperAttemptsLeft === 0, 'view shows helper locked', r.data)
+  await call('u8', 'account.login')
+  const burst = await Promise.all([0, 1, 2, 3, 4].map(() => call('u8', 'rescue.answer', { rescueId: rescueU6, answer: 'xxxx' })))
+  const u8Attempt = Object.values(S.rescue_helper_attempts).find((attempt) => attempt.helperOpenid === 'u8' && attempt.rescueId === rescueU6)
+  assert(u8Attempt.wrongCount === 3 && burst.filter((result) => result.code === 40014).length === 2, 'guesses sent all at once still stop at 3 hearts', { wrongCount: u8Attempt.wrongCount, codes: burst.map((result) => result.code) })
   r = await call('u6', 'account.updateProfile', { nickname: `有${sdk.testing.RISKY_KEYWORD}词`, avatarUrl: '' }); assert(r.code === 40015, 'risky nickname rejected', r)
   r = await call('u6', 'account.updateProfile', { nickname: '小明', avatarUrl: 'cloud://env/avatars/someone-else/a.png' }); assert(r.code === 40000, 'foreign avatar path rejected', r)
   const firstAvatar = `cloud://env.123/${u6AvatarDir}/first.png`
@@ -202,6 +204,11 @@ const startedAttempt = { active: true, wrongCount: 0 }
   S.item_logs.oldLog = { _id: 'oldLog', openid: 'u1', createdAt: new Date(Date.now() - 200 * DAY).toISOString() }
   S.daily.oldDaily = { _id: 'oldDaily', date: '20200101' }
   S.rescue_help_pairs.oldPair = { _id: 'oldPair', date: '20200101' }
+  S.rescues = S.rescues || {}
+  S.rescues.oldOpenRescue = { _id: 'oldOpenRescue', status: 'open' }
+  S.rescues.oldSolvedRescue = { _id: 'oldSolvedRescue', status: 'solved' }
+  S.rescue_helper_attempts.oldOpenAttempt = { _id: 'oldOpenAttempt', rescueId: 'oldOpenRescue', date: '20200101', wrongCount: 3 }
+  S.rescue_helper_attempts.oldSolvedAttempt = { _id: 'oldSolvedAttempt', rescueId: 'oldSolvedRescue', date: '20200101', wrongCount: 1 }
   const recentLogCount = Object.keys(S.item_logs).length - 1
   S.item_logs.spoofProbe = { _id: 'spoofProbe', openid: 'u1', createdAt: new Date(Date.now() - 200 * DAY).toISOString() }
   r = await call('u1', 'account.login', {}); sdk.testing.actAs('u1')
@@ -210,12 +217,13 @@ const startedAttempt = { active: true, wrongCount: 0 }
   sdk.testing.actAs('')
   r = await main({ Type: 'Timer', TriggerName: 'cleanupExpiredRecords' }); assert(r.code === 0 && r.data.item_logs === 1 && r.data.daily === 1 && r.data.rescue_help_pairs === 1, 'cleanup removes expired records', r)
   assert(Object.keys(S.item_logs).length === recentLogCount && !S.daily.oldDaily, 'recent records kept', Object.keys(S.item_logs).length)
+  assert(S.rescue_helper_attempts.oldOpenAttempt && !S.rescue_helper_attempts.oldSolvedAttempt && r.data.rescue_helper_attempts === 1, 'hearts on a rescue still open are kept; closed ones are cleaned', r.data)
   r = await main({ Type: 'Timer', TriggerName: 'nope' }); assert(r.code === 40000, 'unknown timer rejected', r)
   r = await main({ action: 'account.login' }); assert(r.code === 40000, 'call without user identity rejected', r)
   // all-clear, completions, stats, admin
   S.app_config = {}
   const total = LOADED_LEVEL_COUNT
-  await call('c1', 'account.login'); await call('c1', 'game.summary', { gameType: 'idiom' })
+  await call('c1', 'account.login'); await call('c1', 'game.levelList', { gameType: 'idiom' })
   S.progress['c1_idiom'].solved = Array.from({ length: total - 1 }, (_, i) => i + 1)
   S.progress['c1_idiom'].currentLevel = total
   await call('c1', 'game.startAttempt', { gameType: 'idiom', levelNo: total })
@@ -223,7 +231,7 @@ const startedAttempt = { active: true, wrongCount: 0 }
   assert(r.data.correct && r.data.allCleared && r.data.nextLevelNo === null && r.data.totalLevels === total, 'solving the last level reports all cleared', r.data)
   assert(Object.values(S.completions).filter((c) => c.openid === 'c1' && c.totalLevels === total).length === 1, 'completion recorded once', S.completions)
   r = await call('c1', 'game.levelList', { gameType: 'idiom' }); assert(r.data.allCleared && r.data.currentLevel === total, 'level list all cleared', r.data.allCleared)
-  r = await call('c1', 'game.summary', { gameType: 'idiom' }); assert(r.data.allCleared, 'summary all cleared', r.data)
+  r = await call('c1', 'game.levelList', { gameType: 'idiom' }); assert(r.data.allCleared, 'summary all cleared', r.data)
   r = await call('c1', 'admin.stats', { gameType: 'idiom' }); assert(r.code === 40300, 'non-admin cannot read stats', r)
   r = await call('c1', 'account.login'); assert(r.data.isAdmin === false && r.data.openid === 'c1', 'login exposes own openid and admin flag', r.data)
   S.app_config = { game_rules: { _id: 'game_rules', admin: { openids: ['c1'] } } }
@@ -242,7 +250,7 @@ const startedAttempt = { active: true, wrongCount: 0 }
   S.app_config = { game_rules: { _id: 'game_rules', leaderboard: { size: 2 } } }
   Object.values(S.progress).forEach((p) => { p.solvedCount = p.openid === 'c1' ? p.solved.length : 0 })
   S.progress['c1_idiom'].lastSolvedAt = new Date(Date.now() - 10 * MIN).toISOString()
-  for (const id of ['l1', 'l2']) { await call(id, 'account.login'); await call(id, 'game.summary', { gameType: 'idiom' }) }
+  for (const id of ['l1', 'l2']) { await call(id, 'account.login'); await call(id, 'game.levelList', { gameType: 'idiom' }) }
   S.progress['l1_idiom'].solved = Array.from({ length: total }, (_, i) => i + 1); S.progress['l1_idiom'].solvedCount = total; S.progress['l1_idiom'].lastSolvedAt = new Date(Date.now() - 5 * MIN).toISOString()
   S.progress['l2_idiom'].solved = [1]; S.progress['l2_idiom'].solvedCount = 1; S.progress['l2_idiom'].lastSolvedAt = new Date().toISOString()
   S.users.l1.nickname = '榜一'
@@ -254,6 +262,11 @@ const startedAttempt = { active: true, wrongCount: 0 }
   assert(r.data.me.rank === expectedL2Rank && !r.data.me.inTop && r.data.me.solvedCount === 1, 'self rank outside top', r.data.me)
   r = await call('l1', 'leaderboard.list', { gameType: 'idiom' }); assert(r.data.me.inTop && r.data.me.rank === 2 && r.data.entries[1].isMe, 'self inside top marked', r.data.me)
   await call('l3', 'account.login'); r = await call('l3', 'leaderboard.list', { gameType: 'idiom' }); assert(r.data.me.rank === null && r.data.me.solvedCount === 0, 'zero solved not ranked', r.data.me)
+  r = await call('l2', 'leaderboard.summary', {})
+  const l2IdiomCard = r.data.games.find((card) => card.gameType === 'idiom')
+  assert(r.code === 0 && r.data.games.length === ALL_GAME_TYPES.length && l2IdiomCard.myRank === expectedL2Rank && l2IdiomCard.mySolved === 1 && l2IdiomCard.leader.solvedCount === total && !l2IdiomCard.leader.isMe && l2IdiomCard.leader.openid === undefined, 'summary: my rank and the leader per game, no openid', l2IdiomCard)
+  const l2PoetryCard = r.data.games.find((card) => card.gameType === 'poetry')
+  assert(l2PoetryCard.myRank === null && l2PoetryCard.mySolved === 0 && !S.progress.l2_poetry, 'summary: a game never opened has no rank and gets no progress record', l2PoetryCard)
   // multiple games
   S.app_config = {}
   await call('g1', 'account.login')
@@ -262,8 +275,8 @@ const startedAttempt = { active: true, wrongCount: 0 }
   r = await call('g1', 'game.levelList', { gameType: 'poetry' })
   assert(r.code === 0 && r.data.total === LOADED_LEVEL_COUNT && r.data.stages.length >= 1 && r.data.stages[0].name === '幼儿园' && r.data.stages[0].firstLevelNo === 1, 'poetry stages from level data', r.data.stages)
   r = await call('g1', 'game.levelList', { gameType: 'idiom' }); assert(Array.isArray(r.data.stages) && r.data.stages.length === 0, 'idiom has no stages', r.data.stages)
-  r = await call('g1', 'game.summary', { gameType: 'poetry' }); assert(r.data.achievement.title.name === '学童' && r.data.achievement.title.nextName === '诗童', 'poetry has its own titles', r.data.achievement.title)
-  r = await call('g1', 'game.summary', { gameType: 'xiehouyu' }); assert(r.data.achievement.title.name === '听众', 'xiehouyu has its own titles', r.data.achievement.title)
+  r = await call('g1', 'game.levelList', { gameType: 'poetry' }); assert(r.data.achievement.title.name === '学童' && r.data.achievement.title.nextName === '诗童', 'poetry has its own titles', r.data.achievement.title)
+  r = await call('g1', 'game.levelList', { gameType: 'xiehouyu' }); assert(r.data.achievement.title.name === '听众', 'xiehouyu has its own titles', r.data.achievement.title)
   const staminaBeforePoetry = S.users.g1.items.stamina
   r = await call('g1', 'game.startAttempt', { gameType: 'poetry', levelNo: 1 })
   const poetry1 = poetryLevels[0]
@@ -282,7 +295,7 @@ const startedAttempt = { active: true, wrongCount: 0 }
   S.app_config = { ...(savedConfig || {}), game_rules: { ...((savedConfig || {}).game_rules || { _id: 'game_rules' }), admin: { openids: ['g1'] } } }
   r = await call('g2', 'admin.switches', {}); assert(r.code === 40300, 'non-admins cannot read the switches', r)
   r = await call('g2', 'admin.updateSwitches', { switches: { pinyinAid: true } }); assert(r.code === 40300, 'non-admins cannot flip a switch', r)
-  r = await call('g1', 'admin.switches', {}); assert(r.code === 0 && r.data.switches.pinyinAid === false, 'admin sees 拼音辅助 off by default', r.data)
+  r = await call('g1', 'admin.switches', {}); assert(r.code === 0 && r.data.switches.pinyinAid === false && r.data.defaults.sprintStaminaCost === 5 && r.data.ranges.sprintStaminaCost.max === 30, 'admin sees 拼音辅助 off by default, with the defaults and ranges', r.data)
   r = await call('g1', 'admin.updateSwitches', { switches: { pinyinAid: 'yes' } }); assert(r.code === 40000, 'a switch only takes true or false', r)
   r = await call('g1', 'admin.updateSwitches', { switches: { unknownSwitch: true } }); assert(r.code === 40000, 'unknown switches are refused', r)
   r = await call('g1', 'admin.updateSwitches', { switches: { sprintStaminaCost: 31 } }); assert(r.code === 40000, 'a number setting must stay in its range (0–30)', r)
@@ -309,7 +322,7 @@ const startedAttempt = { active: true, wrongCount: 0 }
   assert(r.code === 0 && r.data.eliminated.length === 2 && !r.data.eliminated.includes(hanzi1.board.indexOf(hanzi1.answer)), 'a hint removes two wrong choices', r.data)
   r = await call('g1', 'game.submit', { gameType: 'hanzi', levelNo: 1, answer: hanzi1.answer })
   assert(r.data.correct && r.data.solution.char === hanzi1.char && r.data.solution.pinyin === hanzi1.pinyin && 'word' in r.data.solution, 'hanzi solution shows the character, its pinyin and a word', r.data.solution)
-  r = await call('g1', 'game.summary', { gameType: 'hanzi' }); assert(r.code === 0 && r.data.achievement.title.name === '识字娃娃', 'hanzi has its own titles', r.data.achievement && r.data.achievement.title)
+  r = await call('g1', 'game.levelList', { gameType: 'hanzi' }); assert(r.code === 0 && r.data.achievement.title.name === '识字娃娃', 'hanzi has its own titles', r.data.achievement && r.data.achievement.title)
   r = await call('g1', 'game.solvedBook', { gameType: 'poetry', page: 1 }); assert(r.data.total === 1 && r.data.entries[0].verse === poetry1.verse, 'poetry book', r.data)
   await call('g1', 'game.startAttempt', { gameType: 'poetry', levelNo: 2 })
   r = await call('g1', 'rescue.create', { gameType: 'poetry', levelNo: 2 }); const poetryRescue = r.data.rescueId
@@ -320,11 +333,11 @@ const startedAttempt = { active: true, wrongCount: 0 }
   S.progress['g1_poetry'].lastSolvedAt = new Date(Date.now() - MIN).toISOString()
   r = await call('g1', 'leaderboard.list', { gameType: 'poetry' }); assert(r.data.me.rank === 1 && r.data.me.solvedCount === 2 && r.data.me.titleName === '学童', 'poetry leaderboard is separate', r.data.me)
   S.app_config = { game_rules: { _id: 'game_rules', titles: { poetry: [...DEFAULT_RULES.titles.poetry, { name: '诗神', minSolved: 900 }] } } }
-  r = await call('g1', 'game.summary', { gameType: 'poetry' }); assert(r.data.achievement.title.nextName === '诗童', 'appended poetry title config accepted', r.data.achievement.title)
+  r = await call('g1', 'game.levelList', { gameType: 'poetry' }); assert(r.data.achievement.title.nextName === '诗童', 'appended poetry title config accepted', r.data.achievement.title)
   S.progress['g1_poetry'].solved = Array.from({ length: 500 }, (_, i) => i + 1)
-  r = await call('g1', 'game.summary', { gameType: 'poetry' }); assert(r.data.achievement.title.name === '诗圣' && r.data.achievement.title.nextName === '诗神', 'poetry title extension works', r.data.achievement.title)
+  r = await call('g1', 'game.levelList', { gameType: 'poetry' }); assert(r.data.achievement.title.name === '诗圣' && r.data.achievement.title.nextName === '诗神', 'poetry title extension works', r.data.achievement.title)
   S.app_config = { game_rules: { _id: 'game_rules', titles: [...DEFAULT_RULES.titles.idiom] } }
-  r = await call('g1', 'game.summary', { gameType: 'poetry' }); assert(r.data.achievement.title.name === '诗圣' && r.data.achievement.title.nextName === null, 'legacy array titles config falls back to baselines', r.data.achievement.title)
+  r = await call('g1', 'game.levelList', { gameType: 'poetry' }); assert(r.data.achievement.title.name === '诗圣' && r.data.achievement.title.nextName === null, 'legacy array titles config falls back to baselines', r.data.achievement.title)
   S.app_config = {}
   // typo game: eliminate-style hints
   S.app_config = {}
@@ -366,7 +379,7 @@ const startedAttempt = { active: true, wrongCount: 0 }
   r = await call('t1', 'game.startAttempt', { gameType: 'typo', levelNo: 1 }); assert(r.data.attempt.attemptsLeft === 1 && r.data.puzzle.eliminated.join() === eliminated.join(), 'retry keeps eliminations', r.data)
   r = await call('t1', 'game.submit', { gameType: 'typo', levelNo: 1, answer: typo1.answer })
   assert(r.data.correct && r.data.solution.idiom === typo1.idiom && r.data.solution.wrongChar === typo1.wrongChar && r.data.solution.explanation, 'typo solution shows the corrected idiom', r.data.solution)
-  r = await call('t1', 'game.summary', { gameType: 'typo' }); assert(r.data.achievement.title.name === '书童', 'typo titles', r.data.achievement.title)
+  r = await call('t1', 'game.levelList', { gameType: 'typo' }); assert(r.data.achievement.title.name === '书童', 'typo titles', r.data.achievement.title)
   // No set number of hints per level. By default hints may reveal the whole answer (they are the player's items);
   // with 提示不能直接给出答案 on (控制中心) the last character is left to the player.
   await call('hl', 'account.login')
@@ -435,22 +448,36 @@ const startedAttempt = { active: true, wrongCount: 0 }
   const sprintRun = r.data
   assert(r.code === 0 && S.users.sp1.items.stamina === sprintStamina - 5 && sprintRun.questions.length === 150 && sprintRun.seconds === 60, 'a run costs 5 stamina and brings a paper', { stamina: S.users.sp1.items.stamina, size: sprintRun.questions.length })
   const playRun = (run, rightCount, wrongCount) => run.questions.slice(0, rightCount + wrongCount).map((question, index) => ({ index, answer: index < rightCount ? question.answer : `${question.answer}9` }))
+  // A run counts only when handed in after the 60 seconds (the real page waits for the clock): age it.
+  const playFullMinute = (openid) => { S.users[openid].sprintRun.startedAt -= 60 * 1000 }
   r = await call('sp1', 'sprint.finish', { runId: sprintRun.runId, answers: [{ index: 1, answer: '3' }] }); assert(r.code === 40000, 'answers must start from the first question, in order', r)
+  r = await call('sp1', 'sprint.finish', { runId: sprintRun.runId, answers: sprintRun.questions.slice(0, 40).map((question, index) => ({ index, answer: question.answer })) })
+  assert(r.code === 0 && r.data.counted === false, 'handing in the answers straight away is not counted (a garbled hand-in before it kept the run open)', r.data)
+  r = await call('sp1', 'sprint.start', { islandId: 'make-ten' })
+  S.users.sp1.sprintRun.startedAt -= 10 * 1000
+  r = await call('sp1', 'sprint.finish', { runId: S.users.sp1.sprintRun.runId, answers: sprintRun.questions.slice(0, 150).map((question, index) => ({ index, answer: question.answer })) })
+  assert(r.code === 0 && r.data.counted === false, 'the whole paper in 10 seconds is too fast to count', r.data)
   r = await call('sp1', 'sprint.start', { islandId: 'make-ten' })
   const secondRun = r.data
   r = await call('sp1', 'sprint.finish', { runId: sprintRun.runId, answers: [] }); assert(r.code === 40000, 'an old run cannot be handed in once a new one started', r)
+  playFullMinute('sp1')
   r = await call('sp1', 'sprint.finish', { runId: secondRun.runId, answers: playRun(secondRun, 20, 3) })
   assert(r.code === 0 && r.data.counted && r.data.score === 17 && r.data.correct === 20 && r.data.wrong === 3 && r.data.isNewBest && r.data.rank === 1, 'score is right minus wrong', r.data)
   r = await call('sp1', 'sprint.finish', { runId: secondRun.runId, answers: [] }); assert(r.code === 40000, 'a run is handed in once', r)
   await call('sp2', 'sprint.start', { islandId: 'make-ten' })
   const otherRun = S.users.sp2.sprintRun
   const otherPaper = mathChallenge.sprintPaper('make-ten', otherRun.runId)
+  playFullMinute('sp2')
   r = await call('sp2', 'sprint.finish', { runId: otherRun.runId, answers: otherPaper.slice(0, 18).map((question, index) => ({ index, answer: question.answer })).concat([{ index: 18, answer: 'x' }]) })
   assert(r.data.score === 17 && r.data.wrong === 1 && r.data.rank === 1, 'same score with fewer wrong answers ranks higher', r.data)
+  r = await call('sp1', 'leaderboard.summary', {})
+  assert(r.code === 0 && r.data.sprints.math.weekly && r.data.sprints.math.played === 1 && r.data.sprints.math.best.islandId === 'make-ten' && r.data.sprints.math.best.score === 17 && r.data.sprints.math.best.rank === 2 && r.data.sprints.chinese.played === 0, 'the leaderboard card shows the best island and its rank', r.data.sprints)
+  r = await call('sp3', 'leaderboard.summary', {}); assert(r.code === 0 && r.data.sprints.math.played === 0 && r.data.sprints.math.best === null, 'no sprint played: no best on the card', r.data.sprints)
   r = await call('sp1', 'sprint.board', { islandId: 'make-ten' })
   assert(r.code === 0 && r.data.weekly && r.data.entries.length === 2 && r.data.entries[0].wrong === 1 && r.data.entries[1].isMe && r.data.me.rank === 2 && r.data.me.score === 17, 'the board ranks score, then fewer wrong', r.data)
   await call('sp1', 'sprint.start', { islandId: 'make-ten' })
   const worseRun = S.users.sp1.sprintRun
+  playFullMinute('sp1')
   r = await call('sp1', 'sprint.finish', { runId: worseRun.runId, answers: [{ index: 0, answer: 'x' }] })
   assert(r.data.score === 0 && !r.data.isNewBest && r.data.best === 17, 'a worse run keeps the best; the score never goes below 0', r.data)
   await call('sp1', 'sprint.start', { islandId: 'hundred' })
@@ -461,6 +488,23 @@ const startedAttempt = { active: true, wrongCount: 0 }
   await call('sp1', 'sprint.start', { islandId: 'make-ten' }); assert(S.users.sp1.items.stamina === sprintStamina2 - 2, '控制中心 sets the stamina a run costs', S.users.sp1.items.stamina)
   r = await call('sp1', 'sprint.board', { islandId: 'make-ten' }); assert(r.data.weekly === false && r.data.entries.length === 2, 'weekly reset off: the all-time board (kept all along) is shown', r.data)
   delete S.app_config.switches
+  // 识字竞速: the same rules on the 汉字闯关 questions, one board per grade; no hints, no friends
+  await call('hz1', 'account.login')
+  r = await call('hz1', 'sprint.islands', { subject: 'chinese' })
+  assert(r.code === 0 && r.data.subject === 'chinese' && r.data.islands.map((track) => track.id).join() === 'hanzi-grade1,hanzi-grade2' && r.data.islands[0].scope && r.data.islands.every((track) => track.best === null), '识字竞速 has a track per grade', r.data)
+  r = await call('hz1', 'sprint.islands', { subject: 'english' }); assert(r.code === 40000, 'an unknown subject is refused', r)
+  r = await call('hz1', 'sprint.start', { islandId: 'hanzi-grade1' })
+  const hanziRun = r.data
+  const hanziPool = require(path.join(API_ROOT, 'data', 'hanzi-sprint-pool.json'))
+  const firstGradeChars = new Set(hanziPool['一年级'].map((question) => question[4]))
+  assert(r.code === 0 && hanziRun.questions.length === 150 && hanziRun.questions.every((question) => question.type === 'hanzi' && question.choices.length === 4 && question.choices.includes(question.answer) && question.prompt && question.clue && firstGradeChars.has(question.answer)), 'a 识字 run: 150 four-choice questions of the grade, with answers', hanziRun.questions.slice(0, 2))
+  assert(new Set(hanziRun.questions.map((question) => `${question.prompt}${question.clue}${question.answer}`)).size === 150, 'no question twice in a run', null)
+  playFullMinute('hz1')
+  r = await call('hz1', 'sprint.finish', { runId: hanziRun.runId, answers: hanziRun.questions.slice(0, 30).map((question, index) => ({ index, answer: index < 25 ? question.answer : question.choices.find((choice) => choice !== question.answer) })) })
+  assert(r.code === 0 && r.data.counted && r.data.score === 20 && r.data.correct === 25 && r.data.wrong === 5 && r.data.rank === 1, '识字 score is right minus wrong too', r.data)
+  r = await call('hz1', 'sprint.board', { islandId: 'hanzi-grade1' }); assert(r.code === 0 && r.data.islandName === '一年级识字' && r.data.entries[0].isMe, 'each grade has its own board', r.data)
+  r = await call('hz1', 'sprint.board', { islandId: 'make-ten' }); assert(!r.data.entries.some((entry) => entry.isMe), 'a 识字 score is not on the 口算 boards', r.data)
+  r = await call('hz1', 'leaderboard.summary', {}); assert(r.data.sprints.chinese.best.islandName === '一年级识字' && r.data.sprints.chinese.best.score === 20 && r.data.sprints.math.played === 0, 'the 识字竞速 card has its own best', r.data.sprints)
   // per-game level rules
   S.app_config = {}
   await call('p1', 'account.login')
@@ -501,17 +545,17 @@ const startedAttempt = { active: true, wrongCount: 0 }
   r = await call('n1', 'account.login'); assert(r.data.profile.customized === true && r.data.profile.nickname === '真名字', 'customized flag persists', r.data.profile)
   // tiered chests: big chest every 5th, configurable rules
   S.app_config = {}
-  await call('k1', 'account.login'); await call('k1', 'game.summary', { gameType: 'idiom' })
+  await call('k1', 'account.login'); await call('k1', 'game.levelList', { gameType: 'idiom' })
   S.progress['k1_idiom'].solved = Array.from({ length: 30 }, (_, i) => i + 1)
   S.progress['k1_idiom'].milestoneClaimedSolvedCount = 40
-  r = await call('k1', 'game.summary', { gameType: 'idiom' })
+  r = await call('k1', 'game.levelList', { gameType: 'idiom' })
   assert(r.data.achievement.milestone.nextChestNo === 5 && r.data.achievement.milestone.nextChestIsBig && r.data.achievement.milestone.nextChestRewards[0].amount === 36, 'next chest preview shows the big chest', r.data.achievement.milestone)
   S.progress['k1_idiom'].solved = Array.from({ length: 50 }, (_, i) => i + 1)
-  r = await call('k1', 'game.claimMilestones', { gameType: 'idiom' })
+  r = await call('k1', 'chests.open', { all: true })
   assert(r.data.chests.length === 1 && r.data.chests[0].isBig && r.data.rewards.find((x) => x.type === 'stamina').amount === 36 && r.data.rewards.find((x) => x.type === 'hint').amount === 2, 'fifth chest is doubled', r.data)
   S.app_config = { game_rules: { _id: 'game_rules', milestone: { rewardRules: { stamina: { base: 20, step: '2' } }, bigChest: { multiplier: 3 } } } }
   S.progress['k1_idiom'].solved = Array.from({ length: 60 }, (_, i) => i + 1)
-  r = await call('k1', 'game.claimMilestones', { gameType: 'idiom' })
+  r = await call('k1', 'chests.open', { all: true })
   assert(r.data.chests[0].chestNo === 6 && r.data.rewards.find((x) => x.type === 'stamina').amount === 20, 'override base 20 + default step 2 (string step rejected), capped at 20', r.data)
   S.app_config = {}
   // practice rewards: earned as chests in the welfare bag, claimed by the user; daily caps apply when earning
@@ -524,7 +568,8 @@ const startedAttempt = { active: true, wrongCount: 0 }
   r = await report({ tier: 30 }); assert(r.code === 40000, 'unknown tier rejected', r)
   r = await report({ solvedDelta: -1 }); assert(r.code === 40000, 'negative solved rejected', r)
   r = await report({ solvedDelta: 501 }); assert(r.code === 40000, 'oversized report rejected', r)
-  r = await call('p1', 'practice.claimChests', { practiceId: 'arithmetic' }); assert(r.code === 40016, 'nothing to claim before earning', r)
+  const openedCount = (data) => data.chests.reduce((total, chest) => total + chest.count, 0)
+  r = await call('p1', 'chests.open', { all: true }); assert(r.code === 40016, 'nothing to claim before earning', r)
   const staminaBeforePractice = S.users.p1.items.stamina
   r = await report({ solvedDelta: 19, streak: 9 })
   assert(r.code === 0 && r.data.newChests.length === 0 && r.data.stats.tiers[10].solved === 19 && r.data.stats.tiers[10].bestStreak === 9, '19 solved, streak 9: no chest yet', r.data)
@@ -543,9 +588,9 @@ const startedAttempt = { active: true, wrongCount: 0 }
   r = await report({ solvedDelta: 100, streak: 160, streakRunId: 'run-d' })
   assert(r.data.newChests.length === 0 && r.data.missedByCap && r.data.stats.totalSolved === 123 && r.data.stats.pendingChestCount === chestsAtCap, 'after caps (stamina 15, hint 3): stats still grow, no new chests', r.data)
   const hintBeforeClaim = S.users.p1.items.hint
-  r = await call('p1', 'practice.claimChests', { practiceId: 'arithmetic' })
-  assert(r.code === 0 && r.data.chestCount === chestsAtCap && r.data.items.stamina === staminaBeforePractice + 15 && r.data.items.hint === hintBeforeClaim + 3, 'claim opens all practice chests at once', r.data)
-  r = await call('p1', 'practice.claimChests', { practiceId: 'arithmetic' }); assert(r.code === 40016, 'chests claim only once', r)
+  r = await call('p1', 'chests.open', { all: true })
+  assert(r.code === 0 && openedCount(r.data) === chestsAtCap && r.data.items.stamina === staminaBeforePractice + 15 && r.data.items.hint === hintBeforeClaim + 3, 'claim opens all practice chests at once', r.data)
+  r = await call('p1', 'chests.open', { all: true }); assert(r.code === 40016, 'chests claim only once', r)
   assert(Object.values(S.item_logs).some((log) => log.openid === 'p1' && log.reason === 'practice' && log.practiceId === 'math'), 'practice rewards logged (数理乐园)', null)
   // multiplication: progress lives in the cloud (forward-only merge); each achievement pays one chest, ever
   const emptyExam = { passed: false, passCount: 0, attempts: 0, bestCorrect: 0, fastestSeconds: 0, passedAt: 0 }
@@ -567,8 +612,8 @@ const startedAttempt = { active: true, wrongCount: 0 }
   r = await call('p1', 'game.overview')
   assert(r.data.practices[1].practiceId === 'multiplication' && r.data.practices[1].pendingChestCount === 4, 'multiplication chests listed for the welfare bag', r.data.practices)
   const staminaBeforeKungfu = S.users.p1.items.stamina
-  r = await call('p1', 'practice.claimChests', { practiceId: 'multiplication' })
-  assert(r.code === 0 && r.data.chestCount === 4 && r.data.items.stamina === staminaBeforeKungfu + 20, 'claim multiplication chests: 5 + 5 + 10 stamina', r.data)
+  r = await call('p1', 'chests.open', { all: true })
+  assert(r.code === 0 && openedCount(r.data) === 4 && r.data.items.stamina === staminaBeforeKungfu + 20, 'claim multiplication chests: 5 + 5 + 10 stamina', r.data)
   // honors: flowers for practice events + daily first practice, medals unlock from cloud stats, day streaks
   const chinaKey = (timestamp) => new Date(timestamp + 8 * 3600000).toISOString().slice(0, 10).replace(/-/g, '')
   await call('h1', 'account.login')
@@ -597,6 +642,15 @@ const startedAttempt = { active: true, wrongCount: 0 }
   r = await call('h1', 'practice.honors')
   const lockedMedal = r.data.groups[0].medals.find((medal) => medal.id === 'arith-solved-100')
   assert(r.data.unlockedCount === 4 && r.data.flowers === 8 && !lockedMedal.unlocked && lockedMedal.current === 16 && lockedMedal.target === 100, 'honor wall shows progress towards locked medals', r.data)
+  honorsDoc.lastPracticeDate = chinaKey(Date.now() - 2 * 24 * 3600000); honorsDoc.dayStreak = 5; honorsDoc.streakGraceWeek = ''
+  r = await call('h1', 'practice.honors'); assert(r.data.dayStreak === 5, 'one missed day: the streak still shows', r.data)
+  await call('h1', 'game.levelList', { gameType: 'idiom' })
+  r = await call('h1', 'game.startAttempt', { gameType: 'idiom', levelNo: 1 })
+  r = await call('h1', 'game.submit', { gameType: 'idiom', levelNo: 1, answer: S.levels.idiom_1.answer })
+  assert(r.code === 0 && r.data.correct && S.practice_stats.h1_honors.dayStreak === 6 && S.practice_stats.h1_honors.streakGraceWeek, 'passing a lobby level counts as practising; the missed day is forgiven once a week', S.practice_stats.h1_honors)
+  honorsDoc.lastPracticeDate = chinaKey(Date.now() - 2 * 24 * 3600000)
+  r = await call('h1', 'practice.honors'); assert(r.data.dayStreak === 0, 'a second missed day in the same week breaks the streak', r.data)
+  honorsDoc.lastPracticeDate = chinaKey(Date.now())
   // timed exams: three levels per tier, 80+ opens the next, scores kept, flowers + exam medals
   await call('e1', 'account.login')
   const exam = (payload) => call('e1', 'practice.reportExam', { practiceId: 'arithmetic', tier: 10, level: 1, correct: 20, seconds: 90, ...payload })
@@ -623,6 +677,9 @@ const startedAttempt = { active: true, wrongCount: 0 }
   S.app_config = { game_rules: { _id: 'game_rules', honors: { flowers: { arithmeticStreaks: [10, 5], perEvent: { arithmeticSolved: 3 } } } } }
   r = await reportH({ solvedDelta: 4, streak: 2, streakRunId: 'h-run-3' })
   assert(r.data.honors.flowersGained === 3, 'per-event flowers configurable; invalid streak list falls back', r.data.honors)
+  S.app_config = { game_rules: { _id: 'game_rules', honors: { flowers: { dailyCap: r.data.honors.todayFlowers + 1 } } } }
+  r = await reportH({ solvedDelta: 30, streak: 30, streakRunId: 'h-run-cap' })
+  assert(r.data.honors.flowersGained === 1, 'flowers stop at the daily cap', r.data.honors)
   S.app_config = {}
   S.app_config = { game_rules: { _id: 'game_rules', practice: { solvedRewards: [{ every: 0, rewards: [] }], dailyCaps: { stamina: 1 } } } }
   r = await call('p1', 'practice.stats', { practiceId: 'arithmetic' })
@@ -632,22 +689,22 @@ const startedAttempt = { active: true, wrongCount: 0 }
   await call('d1', 'account.login')
   r = await call('d1', 'account.checkin'); assert(r.code === 0 && r.data.doubleToken === '', 'videos off: no double offer', r.data)
   S.app_config = { game_rules: { _id: 'game_rules', ad: { enabled: true, adUnitId: 'adunit-test' } } }
-  S.users.d1.staminaPending = 6
-  r = await call('d1', 'account.claimRecoveredStamina'); const recoveryToken = r.data.doubleToken
-  assert(r.code === 0 && /^[0-9a-f]{16}$/.test(recoveryToken), 'videos on: claiming recovered stamina offers a double', r.data)
-  const staminaBeforeDouble = S.users.d1.items.stamina
-  r = await call('d1', 'account.claimDoubleReward', { token: recoveryToken })
-  assert(r.code === 0 && r.data.items.stamina === staminaBeforeDouble + 6 && r.data.rewards[0].amount === 6, 'double gives the same 6 stamina again', r.data)
-  r = await call('d1', 'account.claimDoubleReward', { token: recoveryToken }); assert(r.code === 40006, 'a double token works once', r)
+  await call('d3', 'account.login')
+  r = await call('d3', 'account.checkin'); const checkinToken = r.data.doubleToken
+  assert(r.code === 0 && /^[0-9a-f]{16}$/.test(checkinToken), 'videos on: checking in offers a double', r.data)
+  const staminaBeforeDouble = S.users.d3.items.stamina
+  r = await call('d3', 'account.claimDoubleReward', { token: checkinToken })
+  assert(r.code === 0 && r.data.items.stamina === staminaBeforeDouble + 5 && r.data.rewards.some((reward) => reward.type === 'stamina' && reward.amount === 5), 'double gives the check-in rewards again', r.data)
+  r = await call('d3', 'account.claimDoubleReward', { token: checkinToken }); assert(r.code === 40006, 'a double token works once', r)
   r = await call('d1', 'account.claimDoubleReward', { token: 'ffffffffffffffff' }); assert(r.code === 40006, 'unknown token rejected', r)
   r = await call('d1', 'account.claimDoubleReward', { token: '../x' }); assert(r.code === 40000, 'malformed token rejected', r)
   S.progress.d1_idiom = { _id: 'd1_idiom', openid: 'd1', gameType: 'idiom', currentLevel: 11, solved: Array.from({ length: 10 }, (_, i) => i + 1), solvedCount: 10, hintsUsed: {}, attempts: {} }
-  r = await call('d1', 'game.claimMilestones', { gameType: 'idiom' })
+  r = await call('d1', 'chests.open', { all: true })
   assert(r.code === 0 && r.data.doubleToken && r.data.rewards.length === 2, 'opening level chests offers a double', r.data)
   const hintBeforeChestDouble = S.users.d1.items.hint
   r = await call('d1', 'account.claimDoubleReward', { token: r.data.doubleToken }); assert(r.code === 0 && r.data.items.hint === hintBeforeChestDouble + 1, 'chest double adds the chest rewards again', r.data)
   S.app_config = {}
-  // video stats for the admin page, and no double offer for tiny recovery claims
+  // video stats for the admin page
   S.app_config = { game_rules: { _id: 'game_rules', ad: { enabled: true, adUnitId: 'adunit-test' }, admin: { openids: ['v1'] } } }
   await call('v1', 'account.login'); await call('v2', 'account.login')
   const todayAds = () => S.stats_daily[Object.keys(S.stats_daily).filter((id) => id.startsWith('ads_')).sort().pop()]
@@ -655,10 +712,7 @@ const startedAttempt = { active: true, wrongCount: 0 }
   await call('v1', 'account.grantAdReward', { itemType: 'stamina' })
   await call('v1', 'account.grantAdReward', { itemType: 'hint' })
   await call('v2', 'account.grantAdReward', { itemType: 'stamina' })
-  S.users.v2.staminaPending = 3
-  r = await call('v2', 'account.claimRecoveredStamina'); assert(r.code === 0 && r.data.doubleToken === '', 'recovery below 5 points: no double offer', r.data)
-  S.users.v2.staminaPending = 5
-  r = await call('v2', 'account.claimRecoveredStamina'); assert(/^[0-9a-f]{16}$/.test(r.data.doubleToken), 'recovery of 5 points: double offered', r.data)
+  r = await call('v2', 'account.checkin')
   await call('v2', 'account.claimDoubleReward', { token: r.data.doubleToken })
   const adsAfter = todayAds()
   assert(adsAfter.views.stamina === adsBefore.stamina + 2 && adsAfter.views.hint === adsBefore.hint + 1 && adsAfter.views.double === adsBefore.double + 1 && adsAfter.viewers === adsBefore.viewers + 2, 'ad views counted per kind, viewers counted once per person per day', adsAfter)
@@ -715,14 +769,14 @@ const startedAttempt = { active: true, wrongCount: 0 }
   r = await call('f1', 'speech.clipUrls', { clipNames: ['../secret.mp3'] }); assert(r.code === 40000, 'clip names outside the pattern are refused', r)
   r = await call('f1', 'speech.clipUrls', { clipNames: [] }); assert(r.code === 40000, 'an empty clip list is refused', r)
   // chest room: every pending chest listed with its contents; open any one, in any order, or all at once
-  await call('c1', 'account.login'); await call('c1', 'game.summary', { gameType: 'idiom' })
+  await call('c1', 'account.login'); await call('c1', 'game.levelList', { gameType: 'idiom' })
   S.progress['c1_idiom'].solved = Array.from({ length: 30 }, (_, i) => i + 1)
   r = await call('c1', 'chests.list')
   const gameChestIds = r.data.chests.filter((chest) => chest.kind === 'game').map((chest) => chest.chestId)
   assert(r.code === 0 && gameChestIds.join() === 'game:idiom:1,game:idiom:2,game:idiom:3' && r.data.chests[2].levelNo === 30 && r.data.chests[2].rewards.length > 0, 'level chests are listed one by one with their contents', r.data)
   r = await call('c1', 'chests.open', { chestIds: ['game:idiom:2'] })
   assert(r.code === 0 && r.data.chests.length === 1 && r.data.chests[0].chestNo === 2 && S.progress.c1_idiom.milestoneClaimedSolvedCount === 0 && S.progress.c1_idiom.milestoneOpenedChestNos.join() === '2', 'a later chest can be opened first', r.data)
-  r = await call('c1', 'game.summary', { gameType: 'idiom' }); assert(r.data.achievement.milestone.pendingChests === 2, 'the opened chest leaves the pending count', r.data.achievement.milestone)
+  r = await call('c1', 'game.levelList', { gameType: 'idiom' }); assert(r.data.achievement.milestone.pendingChests === 2, 'the opened chest leaves the pending count', r.data.achievement.milestone)
   r = await call('c1', 'chests.open', { chestIds: ['game:idiom:2'] }); assert(r.code === 40016, 'a chest opens only once', r)
   r = await call('c1', 'chests.open', { chestIds: ['game:idiom:1'] })
   assert(r.code === 0 && S.progress.c1_idiom.milestoneClaimedSolvedCount === 20 && S.progress.c1_idiom.milestoneOpenedChestNos.length === 0, 'filling the gap folds opened chests back into the claimed count', S.progress.c1_idiom)
@@ -739,6 +793,11 @@ const startedAttempt = { active: true, wrongCount: 0 }
   assert(r.code === 0 && r.data.chests.length === 3 && S.users.c1.items.stamina > staminaBeforeAll && S.practice_stats.c1_math.pendingChestCount === 0, 'open all opens every game and practice chest', r.data)
   r = await call('c1', 'chests.list'); assert(r.data.chests.length === 0, 'nothing left after opening all', r.data)
   r = await call('c1', 'chests.open', { all: true }); assert(r.code === 40016, 'open all with nothing left is refused', r)
+  await call('cl1', 'account.login')
+  S.practice_stats.cl1_arithmetic = { _id: 'cl1_arithmetic', openid: 'cl1', practiceId: 'arithmetic', tiers: {}, totalSolved: 40, pendingChestCount: 2, pendingRewards: { stamina: 4, hint: 0 } }
+  r = await call('cl1', 'chests.list'); assert(r.data.chests.some((chest) => chest.chestId === 'practice:math:earlier'), 'a legacy 加减运算 record shows its chests', r.data)
+  const legacyStamina = S.users.cl1.items.stamina
+  r = await call('cl1', 'chests.open', { all: true }); assert(r.code === 0 && S.users.cl1.items.stamina === legacyStamina + 4, 'legacy chests open (the record is moved over first)', r)
   r = await call('c1', 'chests.open', { chestIds: ['game:idiom:abc'] }); assert(r.code === 40000, 'malformed chest id refused', r)
   r = await call('c1', 'chests.open', { chestIds: ['practice:math:a:b'] }); assert(r.code === 40000, 'chest id with extra parts refused', r)
   // cloud image links
@@ -804,13 +863,13 @@ const startedAttempt = { active: true, wrongCount: 0 }
   assert(r.code === 0 && S.practice_stats.m1_math.units['division-table'].solved === 3 && S.practice_stats.m1_math.units['division-table'].mistakes[0].key === '24/4:result', '二期 units (表内除法) are accepted with their own mistakes', r)
   r = await call('m1', 'practice.reportExam', { practiceId: 'math', unitId: 'compare', level: 1, correct: 20, seconds: 60 })
   assert(r.code === 0 && r.data.score === 100, '二期 units have exams', r)
-  // 每日挑战: 5 汉字 levels picked by date, paid once a day for finishing, flowers on top, a full score earns more
+  // 每日挑战: 5 汉字 levels picked by date (near the child's level), paid once a day for finishing, flowers on top, a full score earns more
   await call('d1', 'account.login')
   r = await call('d1', 'daily.today', {})
   const firstToday = r.data
   assert(r.code === 0 && r.data.hanzi.length === 5 && r.data.mathCount === 5 && r.data.result === null && r.data.hanzi.every((question) => question.board.length === 4 && question.board.includes(question.answer)), 'today: 5 汉字 questions with answers, nothing done yet', r.data)
   r = await call('d2', 'daily.today', {})
-  assert(JSON.stringify(r.data.hanzi.map((question) => question.id)) === JSON.stringify(firstToday.hanzi.map((question) => question.id)), 'everyone gets the same questions on the same day', r.data.hanzi.map((question) => question.id))
+  assert(JSON.stringify(r.data.hanzi.map((question) => question.id)) === JSON.stringify(firstToday.hanzi.map((question) => question.id)), 'children at about the same level get the same questions that day', r.data.hanzi.map((question) => question.id))
   r = await call('d1', 'daily.submit', { dateKey: '20000101', correct: 10, seconds: 60 }); assert(r.code === 40000, "yesterday's challenge cannot be handed in today", r)
   r = await call('d1', 'daily.submit', { dateKey: firstToday.dateKey, correct: 11, seconds: 60 }); assert(r.code === 40000, 'more than 10 correct is refused', r)
   const dailyStaminaBefore = S.users.d1.items.stamina
@@ -867,22 +926,18 @@ const startedAttempt = { active: true, wrongCount: 0 }
   assert(r.code === 0 && S.practice_stats.m2_math.units['add-sub-10'].solved === 1 && !S.practice_stats.m2_math.migratedFrom, 'new players get a fresh record', S.practice_stats.m2_math)
   // stamina recovery rules, with fixed clocks: one point per 30 minutes, at most 15 per Beijing day
   const { settleStamina } = require(path.join(API_ROOT, 'lib', 'items'))
-  const recovery = { enabled: true, intervalMinutes: 30, dailyCap: 15, pendingCap: 1000 }
+  const recovery = { enabled: true, intervalMinutes: 30, dailyCap: 15 }
   const beijing = (day, hour, minute = 0) => Date.UTC(2026, 9, day, hour - 8, minute)
-  let settled = settleStamina({ pending: 0, anchorAt: beijing(13, 8), recoveredDate: '', recoveredCount: 0 }, recovery, beijing(13, 10, 5))
-  assert(settled.staminaPending === 4 && settled.recoveredCount === 4 && settled.staminaAnchorAt === beijing(13, 10), '2h05m -> 4 points, clock kept at the last tick', settled)
-  settled = settleStamina({ pending: 0, anchorAt: beijing(13, 8), recoveredDate: '', recoveredCount: 0 }, recovery, beijing(13, 23))
-  assert(settled.staminaPending === 15 && settled.recoveredCount === 15, 'a whole day stops at 15', settled)
-  settled = settleStamina({ pending: 15, anchorAt: settled.staminaAnchorAt, recoveredDate: settled.recoveredDate, recoveredCount: 15 }, recovery, beijing(14, 1))
-  assert(settled.staminaPending === 18 && settled.recoveredCount === 3 && settled.recoveredDate === '2026-10-14', 'after midnight the count restarts (23:30 skipped as capped; 00:00, 00:30, 01:00 count)', settled)
-  settled = settleStamina({ pending: 0, anchorAt: beijing(10, 12), recoveredDate: '', recoveredCount: 0 }, recovery, beijing(13, 12))
-  assert(settled.staminaPending === 15 * 3 + 15 && settled.recoveredDate === '2026-10-13', 'three days away: 15 per day (10th afternoon 15, 11th 15, 12th 15, 13th morning 15)', settled)
-  settled = settleStamina({ pending: 0, anchorAt: beijing(10, 12), recoveredDate: '', recoveredCount: 0 }, { ...recovery, pendingCap: 30 }, beijing(13, 12))
-  assert(settled.staminaPending === 30, 'unclaimed recovery stops at the pending cap of 30', settled)
-  settled = settleStamina({ pending: 30, anchorAt: settled.staminaAnchorAt, recoveredDate: settled.recoveredDate, recoveredCount: settled.recoveredCount }, { ...recovery, pendingCap: 30 }, beijing(13, 14))
-  assert(settled.staminaPending === 30 && settled.staminaAnchorAt === beijing(13, 14), 'while pending is full the clock moves on without saving points', settled)
-  settled = settleStamina({ pending: 3, anchorAt: beijing(13, 8), recoveredDate: '', recoveredCount: 0 }, { ...recovery, enabled: false }, beijing(13, 20))
-  assert(settled.staminaPending === 3, 'recovery off keeps pending as is', settled)
+  let settled = settleStamina({ anchorAt: beijing(13, 8), recoveredDate: '', recoveredCount: 0 }, recovery, beijing(13, 10, 5))
+  assert(settled.recovered === 4 && settled.recoveredCount === 4 && settled.staminaAnchorAt === beijing(13, 10), '2h05m -> 4 points, clock kept at the last tick', settled)
+  settled = settleStamina({ anchorAt: beijing(13, 8), recoveredDate: '', recoveredCount: 0 }, recovery, beijing(13, 23))
+  assert(settled.recovered === 15 && settled.recoveredCount === 15, 'a whole day stops at 15', settled)
+  settled = settleStamina({ anchorAt: settled.staminaAnchorAt, recoveredDate: settled.recoveredDate, recoveredCount: 15 }, recovery, beijing(14, 1))
+  assert(settled.recovered === 3 && settled.recoveredCount === 3 && settled.recoveredDate === '2026-10-14', 'after midnight the count restarts (23:30 skipped as capped; 00:00, 00:30, 01:00 count)', settled)
+  settled = settleStamina({ anchorAt: beijing(10, 12), recoveredDate: '', recoveredCount: 0 }, recovery, beijing(13, 12))
+  assert(settled.recovered === 15 * 3 + 15 && settled.recoveredDate === '2026-10-13', 'three days away: 15 per day (10th afternoon 15, 11th 15, 12th 15, 13th morning 15)', settled)
+  settled = settleStamina({ anchorAt: beijing(13, 8), recoveredDate: '', recoveredCount: 0 }, { ...recovery, enabled: false }, beijing(13, 20))
+  assert(settled.recovered === 0, 'recovery off gives nothing', settled)
   console.log('logs:', Object.values(S.item_logs).filter((l) => l.openid === 'u1').map((l) => `${l.reason}:${l.itemType}${l.delta > 0 ? '+' : ''}${l.delta}`).join(' '))
   console.log(`\n${passed} passed, ${failed} failed`)
   process.exitCode = failed ? 1 : 0

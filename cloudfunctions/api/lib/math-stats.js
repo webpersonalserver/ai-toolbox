@@ -1,4 +1,4 @@
-const { db } = require('./cloud')
+const { db, readDocOrNull } = require('./cloud')
 const { ALL_ITEM_TYPES } = require('./items')
 const { practiceStatsDocId } = require('./practice-rewards')
 
@@ -74,14 +74,7 @@ const mathStatsFromLegacy = (openid, legacy) => {
   }
 }
 
-const readDoc = async (docId) => {
-  try {
-    const { data } = await db.collection('practice_stats').doc(docId).get()
-    return data
-  } catch (error) {
-    return null
-  }
-}
+const readDoc = (docId) => readDocOrNull('practice_stats', docId)
 
 // The player's 数理乐园 record: the stored one, or the old record converted on the fly when not migrated yet.
 const readMathStats = async (openid) => {

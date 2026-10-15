@@ -191,6 +191,19 @@
   letter-spacing: 8rpx;
 }
 
+/* 识字: the clue (a picture, pinyin, a character or a word with a gap) big in the middle of the board. */
+.kq__hanzi-clue {
+  font-size: 96rpx;
+  font-weight: 900;
+  letter-spacing: 8rpx;
+  line-height: 1.2;
+}
+
+.kq__hanzi-clue--pinyin {
+  font-size: 80rpx;
+  letter-spacing: 2rpx;
+}
+
 /* Signs for 比大小 sit side by side. */
 .kq__choices--row {
   flex-direction: row;

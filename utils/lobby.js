@@ -3,8 +3,9 @@
 // Each subject is a place to go adventuring (like 趣味's 乐园 and islands): 汉字城堡 = 语文, 数字星球 = 数学,
 // 字母乐园 = 英语. ids stay subject names; the names shown are the playful ones.
 const SUBJECTS = [
-  { id: 'chinese', name: '汉字城堡', icon: '🏰', gameTypes: ['hanzi', 'idiom', 'typo', 'poetry', 'xiehouyu'], beginner: 'hanzi' },
-  // 口算竞速 is not a level game, so it sits in the 数字星球 tab as an extra card (see the lobby page).
+  // hasSprint: the subject's 60-second challenge (识字竞速 / 口算竞速, utils/sprint.js) is not a level game, so it
+  // sits in the tab as an extra card (see the lobby page).
+  { id: 'chinese', name: '汉字城堡', icon: '🏰', gameTypes: ['hanzi', 'idiom', 'typo', 'poetry', 'xiehouyu'], beginner: 'hanzi', hasSprint: true },
   { id: 'math', name: '数字星球', icon: '🪐', gameTypes: ['math'], beginner: 'math', hasSprint: true },
   { id: 'english', name: '字母乐园', icon: '🎠', gameTypes: [], comingSoon: true }
 ]

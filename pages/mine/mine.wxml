@@ -10,7 +10,7 @@
     <view class="mine__items">
       <item-chip item-type="stamina" value="{{items.stamina}}" />
       <item-chip item-type="hint" value="{{items.hint}}" />
-      <stamina-recovery items="{{items}}" bind:claimed="syncSession" />
+      <stamina-recovery items="{{items}}" />
     </view>
   </view>
 

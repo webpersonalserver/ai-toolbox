@@ -42,7 +42,10 @@ const XIEHOUYU_BASELINE_TITLES = [
   { name: '说书人', minSolved: 30 },
   { name: '评书家', minSolved: 50 },
   { name: '名角', minSolved: 75 },
-  { name: '曲艺大师', minSolved: 100 }
+  { name: '曲艺大师', minSolved: 100 },
+  { name: '相声小明星', minSolved: 140 },
+  { name: '歇后语百事通', minSolved: 180 },
+  { name: '语言小魔术师', minSolved: 239 }
 ]
 
 const TYPO_BASELINE_TITLES = [
@@ -66,7 +69,14 @@ const HANZI_BASELINE_TITLES = [
   { name: '识字小博士', minSolved: 160 },
   { name: '汉字小达人', minSolved: 240 },
   { name: '识字小状元', minSolved: 320 },
-  { name: '汉字小字典', minSolved: 400 }
+  { name: '汉字小字典', minSolved: 400 },
+  { name: '汉字小书法家', minSolved: 550 },
+  { name: '识字小学者', minSolved: 700 },
+  { name: '汉字大侦探', minSolved: 850 },
+  { name: '汉字小宗师', minSolved: 1000 },
+  { name: '识字大将军', minSolved: 1200 },
+  { name: '汉字小神童', minSolved: 1400 },
+  { name: '汉字状元郎', minSolved: 1600 }
 ]
 
 const MATH_BASELINE_TITLES = [
@@ -78,7 +88,12 @@ const MATH_BASELINE_TITLES = [
   { name: '数学小状元', minSolved: 160 },
   { name: '口算大王', minSolved: 240 },
   { name: '数学小天才', minSolved: 360 },
-  { name: '口算宗师', minSolved: 500 }
+  { name: '口算宗师', minSolved: 500 },
+  { name: '口算小神童', minSolved: 600 },
+  { name: '闪电计算王', minSolved: 700 },
+  { name: '数字魔法师', minSolved: 800 },
+  { name: '口算大将军', minSolved: 900 },
+  { name: '口算状元郎', minSolved: 999 }
 ]
 
 const BASELINE_TITLES_BY_GAME = {
@@ -104,8 +119,7 @@ const DEFAULT_RULES = {
     enabled: false,
     adUnitId: '',
     rewards: { hint: 2, stamina: 10 },
-    dailyLimits: { hint: 10, stamina: 10 },
-    recoveryDoubleMinAmount: 5
+    dailyLimits: { hint: 10, stamina: 10 }
   },
   level: {
     staminaCost: 1,
@@ -119,8 +133,7 @@ const DEFAULT_RULES = {
   staminaRecovery: {
     enabled: true,
     intervalMinutes: 30,
-    dailyCap: 15,
-    pendingCap: 30
+    dailyCap: 15
   },
   rescue: {
     dailyLimitPerHelper: 2,
@@ -160,7 +173,9 @@ const DEFAULT_RULES = {
     flowers: {
       arithmeticSolvedEvery: 10,
       arithmeticStreaks: [10],
-      perEvent: { arithmeticSolved: 1, arithmeticStreak: 1, dailyFirst: 1, rowRecited: 1, rowMastered: 1, rowPerfect: 1, examPerfect: 3, examGreat: 2, examPassed: 1, islandMaster: 5, dailyChallenge: 2, dailyPerfect: 1 }
+      perEvent: { arithmeticSolved: 1, arithmeticStreak: 1, dailyFirst: 1, rowRecited: 1, rowMastered: 1, rowPerfect: 1, examPerfect: 3, examGreat: 2, examPassed: 1, islandMaster: 5, dailyChallenge: 2, dailyPerfect: 1 },
+      // Flowers a child can earn in one Beijing day; the phone reports some events, so this keeps them meaningful.
+      dailyCap: 40
     }
   },
   titles: BASELINE_TITLES_BY_GAME,
@@ -227,13 +242,11 @@ const RULE_VALIDATORS = {
   'ad.rewards.stamina': isNonNegativeInteger,
   'ad.dailyLimits.hint': isOptionalLimit,
   'ad.dailyLimits.stamina': isOptionalLimit,
-  'ad.recoveryDoubleMinAmount': isPositiveInteger,
   'level.staminaCost': isNonNegativeInteger,
   'level.maxWrongAttempts': isPositiveInteger,
   'staminaRecovery.enabled': isBoolean,
   'staminaRecovery.intervalMinutes': isPositiveInteger,
   'staminaRecovery.dailyCap': isNonNegativeInteger,
-  'staminaRecovery.pendingCap': isNonNegativeInteger,
   'rescue.dailyLimitPerHelper': isNonNegativeInteger,
   'rescue.maxWrongAnswersPerHelper': isPositiveInteger,
   'milestone.everyLevels': isPositiveInteger,
@@ -259,6 +272,7 @@ const RULE_VALIDATORS = {
   'practice.multiplication.rowPerfect': isRewardList,
   'practice.multiplication.grandmaster': isRewardList,
   'honors.flowers.arithmeticSolvedEvery': isPositiveInteger,
+  'honors.flowers.dailyCap': isPositiveInteger,
   'honors.flowers.arithmeticStreaks': isIncreasingPositiveList,
   'honors.flowers.perEvent.arithmeticSolved': isNonNegativeInteger,
   'honors.flowers.perEvent.arithmeticStreak': isNonNegativeInteger,
@@ -342,13 +356,18 @@ const isAppendOnlyExtension = (titles, baseline) => {
   return names.size === titles.length && thresholdsIncrease
 }
 
+// A configured list that is just the start of the baseline (an older copy, from before titles were added in code)
+// means nothing was customised: the baseline is used without a complaint.
+const isBaselinePrefix = (titles, baseline) =>
+  Array.isArray(titles) && titles.length <= baseline.length && titles.every((title, index) => isSameTitle(title, baseline[index]))
+
 const resolveTitles = (titlesByGame) => {
   const configured = isPlainObject(titlesByGame) ? titlesByGame : {}
   return Object.fromEntries(
     Object.entries(BASELINE_TITLES_BY_GAME).map(([gameType, baseline]) => {
       const titles = configured[gameType]
       if (isAppendOnlyExtension(titles, baseline)) return [gameType, titles]
-      if (titles !== baseline) {
+      if (titles !== baseline && !isBaselinePrefix(titles, baseline)) {
         console.error(`[rules] titles.${gameType} rejected: keep the baseline unchanged and only append higher tiers`, titles)
       }
       return [gameType, baseline]

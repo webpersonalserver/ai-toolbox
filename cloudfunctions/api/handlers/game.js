@@ -6,8 +6,7 @@ const { RESCUE_STATUS, closeOpenRescue, ensureRescuedLevelSolved } = require('..
 const { isAllCleared, recordCompletionIfCleared, healProgress } = require('../lib/completion')
 const { ITEM_TYPES, changeItemsInTransaction } = require('../lib/items')
 const { ITEM_LOG_REASONS, writeItemLogs } = require('../lib/item-log')
-const { throwInsufficientItem } = require('../lib/item-next-step')
-const { issueDoubleOffer } = require('../lib/double-reward')
+const { throwIfSpendFailed } = require('../lib/item-next-step')
 const {
   parseGameType,
   hintStrategyOf,
@@ -38,6 +37,7 @@ const {
   toSolution
 } = require('../lib/progress')
 const { loadSwitches } = require('../lib/switches')
+const { applyHonorsSafely } = require('../lib/honors')
 
 const BOOK_PAGE_SIZE = 20
 
@@ -126,19 +126,6 @@ const levelList = async ({ openid, payload }) => {
   }
 }
 
-const summary = async ({ openid, payload }) => {
-  const gameType = parseGameType(payload)
-  const [rules, total, progress] = await Promise.all([loadRulesForGame(gameType), countLevels(gameType), getProgress(openid, gameType)])
-  return {
-    total,
-    allCleared: isAllCleared(progress.solved.length, total),
-    lastSolvedAt: progress.lastSolvedAt ? new Date(progress.lastSolvedAt).getTime() : 0,
-    achievement: describeAchievement(progress, rules)
-  }
-}
-
-const rewardListOf = (deltas) => Object.keys(deltas).map((type) => ({ type, amount: deltas[type] }))
-
 // Opens the given chests of one game (every pending one when chestNos is null) and pays their rewards.
 // Chests already opened (another tap, another device) are skipped; nothing left to open is an error.
 const openGameChests = async (openid, gameType, chestNos) => {
@@ -179,20 +166,6 @@ const pendingGameChests = async (openid, gameType) => {
     isBig: isBigChest(chestNo, rules),
     rewards: chestRewards(chestNo, rules)
   }))
-}
-
-// Opens every pending chest of the game at once (the 开宝箱 button on the level list).
-const claimMilestones = async ({ openid, payload }) => {
-  const gameType = parseGameType(payload)
-  const { chests, deltas, items, rules } = await openGameChests(openid, gameType, null)
-  const rewards = rewardListOf(deltas)
-  return {
-    chestCount: chests.length,
-    chests,
-    rewards,
-    items,
-    doubleToken: await issueDoubleOffer(openid, rewards, `milestone:${gameType}`, rules)
-  }
 }
 
 const solvedBook = async ({ openid, payload }) => {
@@ -253,10 +226,7 @@ const startAttempt = async ({ openid, payload }) => {
     await progressRef.update({ data: { [`attempts.${levelNo}`]: _.set({ active: true, wrongCount: 0 }) } })
     return { charged: true, items: change.items }
   })
-  throwIfFailed(outcome)
-  if (outcome.insufficientType) {
-    await throwInsufficientItem(openid, outcome.insufficientType, rules, outcome.insufficientItems)
-  }
+  await throwIfSpendFailed(openid, outcome, rules)
   if (outcome.charged) {
     await writeItemLogs(openid, staminaDelta, ITEM_LOG_REASONS.USE, { gameType, levelNo })
   }
@@ -300,9 +270,11 @@ const submit = async ({ openid, payload }) => {
   await closeOpenRescue(openid, gameType, levelNo)
   const titleBefore = describeTitle(outcome.solvedCountBefore, rules, gameType)
   const titleAfter = describeTitle(outcome.solvedCountAfter, rules, gameType)
+  // A level passed counts as practising today (day streak, the first-of-the-day flower).
   const [allCleared, progress] = await Promise.all([
     recordCompletionIfCleared(openid, gameType, outcome.solvedCountAfter, total),
-    getProgress(openid, gameType)
+    getProgress(openid, gameType),
+    applyHonorsSafely(openid, { practiced: true }, rules)
   ])
   return {
     correct: true,
@@ -341,10 +313,7 @@ const useHint = async ({ openid, payload }) => {
     await progressRef.update({ data: { [`hintsUsed.${levelNo}`]: _.inc(1) } })
     return { hintsUsed: hintsUsed + 1, items: change.items }
   })
-  throwIfFailed(outcome)
-  if (outcome.insufficientType) {
-    await throwInsufficientItem(openid, outcome.insufficientType, rules, outcome.insufficientItems)
-  }
+  await throwIfSpendFailed(openid, outcome, rules)
   await writeItemLogs(openid, hintDelta, ITEM_LOG_REASONS.USE, { gameType, levelNo })
   return {
     items: outcome.items,
@@ -375,8 +344,6 @@ module.exports = {
   takeUnseenRescueNotices,
   summarizeGame,
   levelList,
-  summary,
-  claimMilestones,
   openGameChests,
   pendingGameChests,
   solvedBook,

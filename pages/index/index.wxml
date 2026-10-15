@@ -6,8 +6,6 @@
       <item-chip item-type="hint" value="{{items.hint}}" />
     </view>
   </view>
-  <view class="hall__recovery"><stamina-recovery items="{{items}}" bind:claimed="syncSession" /></view>
-
   <view class="card hall__welfare {{unclaimedWelfare ? 'hall__welfare--has' : ''}}" hover-class="hall__game--pressed" bindtap="openWelfare">
     <view class="hall__welfare-icon">🎁</view>
     <view class="hall__welfare-body">
@@ -17,10 +15,10 @@
       </view>
       <view class="hall__welfare-desc">{{welfareDesc}}</view>
     </view>
-    <button wx:if="{{!checkedIn}}" class="btn btn--primary hall__checkin-btn" catchtap="handleCheckin">打卡</button>
-    <view wx:else class="hall__game-action">打开 ›</view>
+    <view class="hall__game-action">{{checkedIn ? '打开 ›' : '去打卡 ›'}}</view>
   </view>
 
+  <view class="hall__section-title">为你推荐</view>
   <view class="card hall__game hall__daily {{dailyDone ? 'hall__daily--done' : ''}}" hover-class="hall__game--pressed" bindtap="openDaily">
     <view class="hall__game-icon hall__daily-icon">📅</view>
     <view class="hall__game-body">
@@ -30,8 +28,7 @@
     <view class="hall__game-action">{{dailyDone ? '看成绩 ›' : '去挑战 ›'}}</view>
   </view>
 
-  <view wx:if="{{recommendations.length}}" class="hall__section-title">为你推荐</view>
-  <view class="hall__picks">
+  <view wx:if="{{recommendations.length}}" class="hall__picks">
     <view
       wx:for="{{recommendations}}"
       wx:key="subjectId"
@@ -97,11 +94,11 @@
     <view wx:else class="hall__game-action">查看</view>
   </view>
 
-  <view wx:if="{{showSprint}}" class="card hall__game hall__sprint" hover-class="hall__game--pressed" bindtap="openSprint">
+  <view wx:if="{{showSprint}}" class="card hall__game hall__sprint game-theme--{{sprintCard.themeGame}}" hover-class="hall__game--pressed" bindtap="openSprint">
     <view class="hall__game-icon hall__sprint-icon">⏱</view>
     <view class="hall__game-body">
-      <view class="hall__game-name">口算竞速</view>
-      <view class="hall__game-desc">选一座数理岛，60 秒比比谁答得多，每周排行</view>
+      <view class="hall__game-name">{{sprintCard.name}}</view>
+      <view class="hall__game-desc">{{sprintCard.intro}}</view>
     </view>
     <view class="hall__game-action">去挑战 ›</view>
   </view>

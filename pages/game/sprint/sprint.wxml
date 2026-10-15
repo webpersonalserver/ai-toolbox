@@ -1,6 +1,6 @@
 <view class="page sprint">
   <view class="sprint__topbar">
-    <view class="sprint__title">⏱ 口算竞速</view>
+    <view class="sprint__title">⏱ {{subjectName}}</view>
     <view class="sprint__items">
       <item-chip item-type="stamina" value="{{items.stamina}}" />
     </view>
@@ -10,7 +10,7 @@
   <view wx:elif="{{stage === 'failed'}}" class="card sprint__center" bindtap="load">📶 没连上网络，点我再试一次</view>
 
   <block wx:elif="{{stage === 'choose'}}">
-    <view class="sprint__rule">选一座岛，{{seconds}} 秒能答多少答多少。得分 = 答对 − 答错，同分时答错少的排前面。</view>
+    <view class="sprint__rule">{{chooseText}}，{{seconds}} 秒能答多少答多少，没有提示，全靠自己。得分 = 答对 − 答错，同分时答错少的排前面。</view>
     <view class="sprint__islands">
       <view
         wx:for="{{islands}}"
@@ -72,6 +72,6 @@
       <view wx:else class="sprint__line">{{result.message}}</view>
     </view>
     <button class="btn btn--primary sprint__start" loading="{{busy}}" bindtap="again">再来一次<image class="sprint__cost-icon" src="/assets/icons/stamina.png" mode="aspectFit" />-{{staminaCost}}</button>
-    <button class="btn btn--ghost sprint__start" bindtap="backToIslands">看排行 / 换岛屿</button>
+    <button class="btn btn--ghost sprint__start" bindtap="backToIslands">看排行 / 换{{trackWord}}</button>
   </view>
 </view>

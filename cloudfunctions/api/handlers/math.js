@@ -4,10 +4,11 @@ const { loadRulesForGame } = require('../lib/rules')
 const { recordCompletionIfCleared } = require('../lib/completion')
 const { ITEM_TYPES, changeItemsInTransaction } = require('../lib/items')
 const { ITEM_LOG_REASONS, writeItemLogs } = require('../lib/item-log')
-const { throwInsufficientItem } = require('../lib/item-next-step')
+const { throwIfSpendFailed } = require('../lib/item-next-step')
 const { describeTitle, describeAchievement } = require('../lib/achievement')
 const { progressDocId, getProgress, assertLevelUnlocked, findUnplayableReason, describeAttempt, isLevelSolved, solveLevelInTransaction } = require('../lib/progress')
 const { loadSwitches } = require('../lib/switches')
+const { applyHonorsSafely } = require('../lib/honors')
 const { MATH_GAME_TYPE, TOTAL_LEVELS, QUESTIONS_PER_LEVEL, stageOfLevel, levelQuestions, publicQuestionOf, isRightAnswer } = require('../lib/math-challenge')
 
 // 口算闯关: a lobby game like the others (stamina to start, wrong answers per attempt, hints, chests every 10 levels,
@@ -70,8 +71,7 @@ const start = async ({ openid, payload }) => {
     await progressRef.update({ data: { [`attempts.${levelNo}`]: _.set({ active: true, wrongCount: 0, index: 0 }) } })
     return { charged: true, items: change.items }
   })
-  throwIfFailed(outcome)
-  if (outcome.insufficientType) await throwInsufficientItem(openid, outcome.insufficientType, rules, outcome.insufficientItems)
+  await throwIfSpendFailed(openid, outcome, rules)
   if (outcome.charged) await writeItemLogs(openid, staminaDelta, ITEM_LOG_REASONS.USE, { gameType: MATH_GAME_TYPE, levelNo })
   const progress = await getProgress(openid, MATH_GAME_TYPE)
   return { ...toLevelView({ levelNo, progress, rules }), items: outcome.items || null }
@@ -118,7 +118,8 @@ const answer = async ({ openid, payload }) => {
   const titleAfter = describeTitle(outcome.solvedCountAfter, rules, MATH_GAME_TYPE)
   const [allCleared, progress] = await Promise.all([
     recordCompletionIfCleared(openid, MATH_GAME_TYPE, outcome.solvedCountAfter, TOTAL_LEVELS),
-    getProgress(openid, MATH_GAME_TYPE)
+    getProgress(openid, MATH_GAME_TYPE),
+    applyHonorsSafely(openid, { practiced: true }, rules)
   ])
   return {
     ...base,
@@ -156,8 +157,7 @@ const hint = async ({ openid, payload }) => {
     })
     return { index: attempt.index, items: change.items }
   })
-  throwIfFailed(outcome)
-  if (outcome.insufficientType) await throwInsufficientItem(openid, outcome.insufficientType, rules, outcome.insufficientItems)
+  await throwIfSpendFailed(openid, outcome, rules)
   if (!outcome.alreadyShown) await writeItemLogs(openid, hintDelta, ITEM_LOG_REASONS.USE, { gameType: MATH_GAME_TYPE, levelNo })
   return { index: outcome.index, answer: levelQuestions(levelNo)[outcome.index].answer, items: outcome.items || null }
 }

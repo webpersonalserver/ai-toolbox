@@ -187,13 +187,6 @@ page {
   box-shadow: 0 4rpx 0 var(--color-border);
 }
 
-.inline-icon {
-  width: 28rpx;
-  height: 28rpx;
-  margin-right: 6rpx;
-  vertical-align: -4rpx;
-}
-
 /* A character hidden from the clue, drawn as a coloured token so it does not read as a blank. */
 .clue-mask {
   display: inline-block;

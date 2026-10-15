@@ -1,5 +1,4 @@
-const { account, toastError } = require('../../utils/api')
-const { getSession, setItems } = require('../../utils/session')
+const { getSession } = require('../../utils/session')
 
 const SECOND_MS = 1000
 const MINUTE_MS = 60 * SECOND_MS
@@ -11,29 +10,26 @@ const formatCountdown = (remainingMs) => {
   return `${pad(Math.floor(totalSeconds / 60))}:${pad(totalSeconds % 60)}`
 }
 
+// When the next free stamina point arrives. Recovered points go straight into stamina (the cloud settles them on
+// every call), so there is nothing to claim; between calls the countdown is projected here so it keeps moving.
 Component({
   options: {
     styleIsolation: 'apply-shared'
   },
 
   properties: {
-    items: { type: Object, value: null },
-    showClaim: { type: Boolean, value: true }
+    items: { type: Object, value: null }
   },
 
   data: {
-    pending: 0,
     countdownText: '',
-    isFull: false,
-    pendingFull: false,
-    claiming: false
+    isFull: false
   },
 
   observers: {
     items(items) {
       if (!items) return
-      this.projection = { pending: items.staminaPending || 0, nextAt: items.nextStaminaAt, leftToday: items.recoveryLeftToday || 0 }
-      this.setData({ pendingFull: Boolean(items.pendingFull) })
+      this.projection = { nextAt: items.nextStaminaAt, leftToday: items.recoveryLeftToday || 0 }
       this.refresh()
     }
   },
@@ -72,36 +68,18 @@ Component({
       return session ? session.rules.staminaRecovery.intervalMinutes * MINUTE_MS : 0
     },
 
-    // The server only adds points when asked; between calls we project them locally so the countdown keeps moving.
     refresh() {
       const projection = this.projection
       if (!projection) return
       const intervalMs = this.intervalMs()
       while (projection.nextAt && intervalMs && projection.nextAt <= Date.now()) {
-        projection.pending += 1
         projection.leftToday -= 1
         projection.nextAt = projection.leftToday > 0 ? projection.nextAt + intervalMs : null
       }
       this.setData({
-        pending: projection.pending,
         isFull: !projection.nextAt,
         countdownText: projection.nextAt ? formatCountdown(projection.nextAt - Date.now()) : ''
       })
-    },
-
-    async handleClaim() {
-      if (this.data.claiming || !this.data.pending) return
-      this.setData({ claiming: true })
-      try {
-        const result = await account.claimRecoveredStamina()
-        setItems(result.items)
-        wx.showToast({ title: `领取了 ${result.claimed} 点体力`, icon: 'none' })
-        this.triggerEvent('claimed', result.items)
-      } catch (error) {
-        toastError(error)
-      } finally {
-        this.setData({ claiming: false })
-      }
     }
   }
 })

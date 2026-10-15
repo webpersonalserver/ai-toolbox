@@ -1,8 +1,10 @@
 const { SUBJECTS } = require('../../utils/practice/catalog')
 const { COPY, MASCOT, mascotView, pick } = require('../../utils/practice/copy')
+const { fallBackFromCloudImage } = require('../../utils/assets')
 const { DEFAULT_SHARE } = require('../../utils/share')
 const { practice } = require('../../utils/api')
 const { waitForPendingReport } = require('../../utils/practice/pending-report')
+const { openPage } = require('../../utils/navigation')
 
 const HONORS_URL = '/pages/practice/honors'
 const WEEKLY_URL = '/packageMath/pages/weekly/weekly'
@@ -19,6 +21,11 @@ Page({
     weeklyLabel: COPY.weekly
   },
 
+  // A cloud picture that will not load on this phone: draw the packaged copies instead (utils/assets.js).
+  handleImageError(event) {
+    if (fallBackFromCloudImage(event)) this.setData({ mascot: mascotView() })
+  },
+
   async onShow() {
     this.setData({ greeting: pick(COPY.parkGreetings), mascot: mascotView() })
     try {
@@ -30,11 +37,11 @@ Page({
   },
 
   openHonors() {
-    wx.navigateTo({ url: HONORS_URL })
+    openPage(HONORS_URL)
   },
 
   openWeekly() {
-    wx.navigateTo({ url: WEEKLY_URL })
+    openPage(WEEKLY_URL)
   },
 
   openSubject(event) {
@@ -43,7 +50,7 @@ Page({
       wx.showToast({ title: COPY.comingSoon, icon: 'none' })
       return
     }
-    wx.navigateTo({ url: subject.entryUrl })
+    openPage(subject.entryUrl)
   },
 
   onShareAppMessage() {

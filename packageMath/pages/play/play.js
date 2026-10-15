@@ -1,6 +1,7 @@
 const { unitOf } = require('../../../utils/practice/catalog')
 const { skillOf } = require('../../../utils/practice/skills/index')
 const { COPY, MASCOT, mascotView, pick } = require('../../../utils/practice/copy')
+const { fallBackFromCloudImage } = require('../../../utils/assets')
 const { ROUND_SIZE, starsOfRound, nextStarHint } = require('../../../utils/practice/round')
 const { bestStreakOf, saveBestStreak, isSoundEnabled, setSoundEnabled } = require('../../../utils/practice/records')
 const { saveUnitReports, takeUnitReports } = require('../../../utils/practice/unit-reports')
@@ -10,9 +11,10 @@ const { trackReport } = require('../../../utils/practice/pending-report')
 const { createSoundPlayer } = require('../../../utils/practice/sound')
 const { HIDDEN_FLOWER_TOAST, HIDDEN_MEDAL_POPUP, createHonorPresenter, medalShareOf } = require('../../../utils/practice/honors')
 const { ARITHMETIC_SHARE } = require('../../../utils/share')
+const { openPage } = require('../../../utils/navigation')
+const { CHEST_ROOM_URL } = require('../../../utils/milestone')
 
 const SUBJECT_ID = 'math'
-const CHESTS_URL = '/pages/welfare/chests'
 const MAP_URL = '/packageMath/pages/map/map'
 const MODES = { ROUND: 'round', ENDLESS: 'endless', MONSTERS: 'monsters' }
 
@@ -70,7 +72,6 @@ const roundDots = (results, size = ROUND_SIZE) =>
 
 Page({
   data: {
-    unitName: '',
     mode: MODES.ROUND,
     maxDigits: 2,
     tokens: [],
@@ -104,6 +105,11 @@ Page({
     keypad: ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'delete', '0', 'confirm']
   },
 
+  // A cloud picture that will not load on this phone: draw the packaged copies instead (utils/assets.js).
+  handleImageError(event) {
+    if (fallBackFromCloudImage(event)) this.setData({ mascot: mascotView() })
+  },
+
   onLoad(query) {
     this.setData({ mascot: mascotView() })
     this.unit = unitOf(query.unitId)
@@ -128,7 +134,7 @@ Page({
     this.reportQueue = Promise.resolve()
     this.rewardState = null
     wx.setNavigationBarTitle({ title: this.unit.name })
-    this.setData({ unitName: this.unit.name, bestStreak: this.bestAtStart, soundEnabled: isSoundEnabled() })
+    this.setData({ bestStreak: this.bestAtStart, soundEnabled: isSoundEnabled() })
     if (query.mode === MODES.MONSTERS) {
       wx.setNavigationBarTitle({ title: `${this.unit.name} · 抓小怪兽` })
       this.startMonsters()
@@ -177,8 +183,8 @@ Page({
       monsters = playable.slice(0, ROUND_SIZE)
     } catch (error) {
       console.error('[math] mistakes unavailable', error)
-      this.setData({ monsterLoading: false })
-      wx.showToast({ title: '网络不太好，藏身洞没打开', icon: 'none' })
+      // A result card instead of an empty question: try again, play the unit, or go back to the map.
+      this.setData({ monsterLoading: false, roundResult: this.monsterResultOf({ loadFailed: true }) })
       return
     }
     this.setData({ monsterLoading: false })
@@ -229,9 +235,10 @@ Page({
     this.setData({ roundResult: this.monsterResultOf({ saved, caught, remaining: Math.max(this.monsterTotal - caught, 0) }) })
   },
 
-  monsterResultOf({ empty = false, saved = true, caught = 0, remaining = 0 }) {
+  monsterResultOf({ empty = false, loadFailed = false, saved = true, caught = 0, remaining = 0 }) {
     const base = { monsters: true, stars: 0, slots: [], hint: '', canContinue: false }
     if (empty) return { ...base, happy: true, line: COPY.monsterHouseEmpty, detail: '' }
+    if (loadFailed) return { ...base, happy: false, line: '网络不太好，小怪兽的藏身洞没打开喵～', detail: '', canContinue: true }
     const detail = `这轮第一次就答对 ${this.firstTryCorrect} / ${this.roundSize} 题`
     if (!saved) return { ...base, happy: false, line: '网络不太好，抓到的小怪兽稍后再登记喵～', detail }
     if (!remaining) return { ...base, happy: true, line: COPY.monsterAllCaught, detail }
@@ -415,7 +422,7 @@ Page({
   },
 
   openChests() {
-    wx.navigateTo({ url: CHESTS_URL })
+    openPage(CHEST_ROOM_URL)
   },
 
   later(callback, delayMs) {

@@ -1,4 +1,4 @@
-const { db } = require('../lib/cloud')
+const { db, readDocOrNull } = require('../lib/cloud')
 const { ERROR_CODES, BusinessError, throwIfFailed } = require('../lib/response')
 const { loadRules, sumRewardsByType } = require('../lib/rules')
 const { dailyDocId, ensureTodayRecord } = require('../lib/daily')
@@ -9,30 +9,33 @@ const { FLOWER_REASONS, applyHonors } = require('../lib/honors')
 const { countLevels } = require('../lib/level-count')
 const { shownBoardOf } = require('../lib/games')
 const { seededRandom } = require('../lib/seeded-random')
+const { progressDocId } = require('../lib/progress')
 
-// 每日挑战: the same 10 questions for everyone on a Beijing day — 5 汉字闯关 levels picked here, and 5 sums the page
-// makes from the same date (utils/daily.js). Finishing pays once a day, whatever the score.
+// 每日挑战: 10 questions a Beijing day — 5 汉字闯关 levels picked here (the same for children at about the same
+// level), and 5 sums the page makes from the date (utils/daily.js). Finishing pays once a day, whatever the score.
 const HANZI_GAME_TYPE = 'hanzi'
 const HANZI_QUESTIONS = 5
 const MATH_QUESTIONS = 5
 const TOTAL_QUESTIONS = HANZI_QUESTIONS + MATH_QUESTIONS
 const MAX_SECONDS = 3600
 
-const pickLevelNos = (dateKey, total) => {
+// 汉字 levels come from around where this child is in 汉字闯关 (a little ahead, never the far end of 二年级 for a
+// beginner): levels 1 … current + DAILY_AHEAD_LEVELS, at least the first DAILY_MIN_RANGE.
+const DAILY_AHEAD_LEVELS = 50
+const DAILY_MIN_RANGE = 100
+
+const pickRangeOf = (currentLevel, total) => Math.min(total, Math.max(DAILY_MIN_RANGE, currentLevel + DAILY_AHEAD_LEVELS))
+
+const pickLevelNos = (dateKey, range) => {
   const random = seededRandom(`daily:${dateKey}`)
   const picked = new Set()
-  while (picked.size < Math.min(HANZI_QUESTIONS, total)) picked.add(1 + Math.floor(random() * total))
+  while (picked.size < Math.min(HANZI_QUESTIONS, range)) picked.add(1 + Math.floor(random() * range))
   return [...picked]
 }
 
-const readLevel = async (levelNo) => {
-  try {
-    const { data } = await db.collection('levels').doc(`${HANZI_GAME_TYPE}_${levelNo}`).get()
-    return data
-  } catch (error) {
-    return null
-  }
-}
+const readCurrentLevel = async (openid) => ((await readDocOrNull('progress', progressDocId(openid, HANZI_GAME_TYPE))) || {}).currentLevel || 1
+
+const readLevel = (levelNo) => readDocOrNull('levels', `${HANZI_GAME_TYPE}_${levelNo}`)
 
 // Answers go along: the page marks each answer right away, and these levels can be played in the lobby anyway.
 const toQuestion = (level) => ({
@@ -49,11 +52,11 @@ const toQuestion = (level) => ({
 
 const today = async ({ openid }) => {
   const dateKey = todayInChina()
-  const total = await countLevels(HANZI_GAME_TYPE)
+  const [total, currentLevel] = await Promise.all([countLevels(HANZI_GAME_TYPE), readCurrentLevel(openid)])
   if (!total) throw new BusinessError(ERROR_CODES.BAD_REQUEST, '今日挑战还在准备中，等一会儿再来吧')
   const [levels, todayRecord] = await Promise.all([
-    Promise.all(pickLevelNos(dateKey, total).map(readLevel)),
-    db.collection('daily').doc(dailyDocId(openid, dateKey)).get().then(({ data }) => data, () => null)
+    Promise.all(pickLevelNos(dateKey, pickRangeOf(currentLevel, total)).map(readLevel)),
+    readDocOrNull('daily', dailyDocId(openid, dateKey))
   ])
   return {
     dateKey,

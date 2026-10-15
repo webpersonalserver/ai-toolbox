@@ -7,7 +7,7 @@
   </view>
 
   <view class="practice__hero">
-    <image class="practice__mascot" src="{{mascot.images.happy}}" mode="aspectFit" />
+    <image class="practice__mascot" src="{{mascot.images.happy}}" data-src="{{mascot.images.happy}}" binderror="handleImageError" mode="aspectFit" />
     <view class="practice__speech">
       <view class="practice__speech-name">{{mascot.name}}</view>
       <view class="practice__speech-text">{{greeting}}</view>

@@ -16,13 +16,6 @@
   gap: var(--space-sm);
 }
 
-.hall__recovery {
-  margin: calc(var(--space-md) * -1) 0 var(--space-md);
-  color: var(--color-ink-faint);
-  font-size: var(--font-sm);
-  text-align: right;
-}
-
 /* Spacing rhythm: cards in a group sit var(--space-md) apart; a section title adds var(--space-lg) above itself,
    so groups are var(--space-md) + var(--space-lg) apart, and a title sits var(--space-md) above its cards. */
 .hall__welfare {
@@ -66,10 +59,6 @@
 .hall__welfare-desc {
   color: var(--color-ink-soft);
   font-size: var(--font-sm);
-}
-
-.btn.hall__checkin-btn {
-  width: 180rpx;
 }
 
 .hall__section-title {
@@ -187,9 +176,9 @@
   background: var(--color-surface);
 }
 
-/* 口算竞速: a challenge, so it stands out from the game list with the 口算 green. */
+/* 口算竞速 / 识字竞速: a challenge, so it stands out from the game list in its subject's colour. */
 .hall__sprint {
-  background: #E6F6DC;
+  background: var(--game-color-soft);
 }
 
 .hall__sprint-icon {

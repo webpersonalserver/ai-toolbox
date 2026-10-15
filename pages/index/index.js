@@ -1,6 +1,5 @@
 const { game, toastError } = require('../../utils/api')
 const { getSession, setSession } = require('../../utils/session')
-const { checkinToday } = require('../../utils/checkin')
 const { describeRewards } = require('../../utils/items')
 const { DEFAULT_SHARE } = require('../../utils/share')
 const { showRescueNotices } = require('../../utils/rescue-notice')
@@ -11,6 +10,8 @@ const { countUnclaimedWelfare, buildTaskRows, countOpenTasks } = require('../../
 const { adOffersOf } = require('../../utils/ad-reward')
 const { HIDDEN_REWARD_POPUP, CHEST_SOUND } = require('../../utils/milestone')
 const { SUBJECTS, recommendationsOf, initialSubjectOf, cardsOfSubject } = require('../../utils/lobby')
+const { sprintSubjectOf, sprintUrlOf } = require('../../utils/sprint')
+const { openPage } = require('../../utils/navigation')
 
 const WELFARE_URL = '/pages/welfare/welfare'
 const DAILY_URL = '/pages/daily/daily'
@@ -59,10 +60,8 @@ const toGameCard = (summary) => ({
 
 Page({
   data: {
-    loading: true,
     items: { hint: 0, stamina: 0 },
     checkedIn: false,
-    checkinRewardText: '',
     unclaimedWelfare: 0,
     welfareDesc: '',
     adOffers: [],
@@ -73,6 +72,7 @@ Page({
     subjectId: 'chinese',
     subjectCards: [],
     showSprint: false,
+    sprintCard: null,
     comingSoon: false,
     welcomeVisible: false,
     dailyDone: false,
@@ -92,7 +92,6 @@ Page({
       this.syncSession()
       const summaryByGame = Object.fromEntries(games.map((summary) => [summary.gameType, summary]))
       this.setData({
-        loading: false,
         unclaimedWelfare: countUnclaimedWelfare(session, games, practices),
         dailyDone: Boolean(session.today.dailyChallenge),
         dailyDesc: describeDaily(session.today.dailyChallenge),
@@ -106,9 +105,8 @@ Page({
       this.setData({ recommendations: recommendationsOf(this.data.gameCards) })
       this.showSubject(this.subjectChosen ? this.data.subjectId : initialSubjectOf(this.data.gameCards, readSavedSubject()))
       showRescueNotices(rescueNotices.map((notice) => ({ ...notice, gameName: gameConfigOf(notice.gameType).name })))
-      this.offerProfileWelcome(session.profile)
+      this.offerProfileWelcome(session.profile, this.data.gameCards)
     } catch (error) {
-      this.setData({ loading: false })
       toastError(error)
     }
   },
@@ -119,17 +117,7 @@ Page({
     this.setData({
       adOffers: adOffersOf(session),
       items: session.items,
-      checkedIn: session.today.checkedIn,
-      checkinRewardText: describeRewards(session.rules.checkinRewards)
-    })
-  },
-
-  async handleCheckin() {
-    const result = await checkinToday({ quiet: true })
-    if (!result) return
-    this.refresh()
-    this.setData({
-      rewardPopup: { visible: true, title: '打卡成功', subtitle: '明天记得再来哦', badge: '', rewards: result.rewards, doubleToken: result.doubleToken || '', sound: CHEST_SOUND }
+      checkedIn: session.today.checkedIn
     })
   },
 
@@ -145,19 +133,21 @@ Page({
   },
 
   openWelfare() {
-    wx.navigateTo({ url: WELFARE_URL })
+    openPage(WELFARE_URL)
   },
 
   openSprint() {
-    wx.navigateTo({ url: '/pages/game/sprint/sprint' })
+    openPage(sprintUrlOf(this.data.subjectId))
   },
 
   openDaily() {
-    wx.navigateTo({ url: DAILY_URL })
+    openPage(DAILY_URL)
   },
 
-  offerProfileWelcome(profile) {
+  // Asked after the first level is passed, not on the very first screen: a new child should start playing first.
+  offerProfileWelcome(profile, gameCards) {
     if (profile.customized || hasSeenGuide(GUIDE_KEYS.PROFILE_WELCOME)) return
+    if (!gameCards.some((card) => card.solvedCount > 0)) return
     this.setData({ welcomeVisible: true, profileAvatarUrl: profile.avatarUrl, profileNickname: profile.nickname })
   },
 
@@ -179,6 +169,7 @@ Page({
       subjectTabs: subjectTabs(subjectId),
       subjectCards: cardsOfSubject(subjectId, this.data.gameCards),
       showSprint: Boolean(subject.hasSprint),
+      sprintCard: subject.hasSprint ? sprintSubjectOf(subjectId) : null,
       comingSoon: Boolean(subject.comingSoon)
     })
   },
@@ -192,16 +183,16 @@ Page({
 
   openRecommendation(event) {
     const { gameType, levelNo } = event.currentTarget.dataset
-    wx.navigateTo({ url: playUrlOf(gameType, levelNo) })
+    openPage(playUrlOf(gameType, levelNo))
   },
 
   continueGame(event) {
     const { gameType, levelNo } = event.currentTarget.dataset
-    wx.navigateTo({ url: playUrlOf(gameType, levelNo) })
+    openPage(playUrlOf(gameType, levelNo))
   },
 
   openGame(event) {
-    wx.navigateTo({ url: `/pages/game/levels/levels?gameType=${event.currentTarget.dataset.gameType}` })
+    openPage(`/pages/game/levels/levels?gameType=${event.currentTarget.dataset.gameType}`)
   },
 
   onShareAppMessage() {

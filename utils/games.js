@@ -21,7 +21,7 @@ const GAME_CONFIGS = {
     name: '口算闯关',
     shortName: '口算',
     icon: '算',
-    intro: '沿着数理乐园的路线一关关往上闯，比比谁闯得远',
+    intro: '数理乐园同款题目，在这里一关关闯、比谁闯得远；想慢慢练就去「趣味」',
     clueLabel: '口算闯关',
     bookName: '',
     bookUnit: '',

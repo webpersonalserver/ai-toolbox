@@ -1,5 +1,5 @@
 {
-  "navigationBarTitleText": "口算竞速",
+  "navigationBarTitleText": "竞速挑战",
   "disableScroll": true,
   "usingComponents": {
     "item-chip": "/components/item-chip/item-chip",

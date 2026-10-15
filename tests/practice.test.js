@@ -124,7 +124,7 @@ expectReward(adOffersOf(adSession({}, { stamina: null, hint: 1 }))[0].remainingT
 const welfare = require(path.join(__dirname, '..', 'utils', 'welfare'))
 const taskSession = ({ checkedIn = false, ad = false, adRemaining = { stamina: 10, hint: 10 }, items = {}, dailyChallenge = null } = {}) => ({
   today: { checkedIn, adRemaining, dailyChallenge },
-  items: { staminaPending: 0, recoveredToday: 4, ...items },
+  items: { recoveredToday: 4, ...items },
   rules: {
     checkinRewards: [{ type: 'stamina', amount: 5 }],
     daily: { rewards: [{ type: 'stamina', amount: 5 }] },
@@ -151,7 +151,7 @@ expectReward(doneDaily.done && doneDaily.progressText === '今天答对 8 / 10 �
 tasks = tasksFor({ checkedIn: true, ad: true, adRemaining: { stamina: 0, hint: 4 }, items: { recoveredToday: 15 } }, { practiceEarnedToday: { stamina: 15, hint: 3 } })
 expectReward(taskByKey(tasks, 'checkin').done && taskByKey(tasks, 'recovery').done && taskByKey(tasks, 'practice').done, 'limits reached: rows stay but are done')
 expectReward(taskByKey(tasks, 'ad-stamina').done && taskByKey(tasks, 'ad-stamina').statusText === '今天已看满' && taskByKey(tasks, 'ad-hint').progressText === '今天已看 6 / 10 次', 'video rows show used / limit and grey out when full')
-expectReward(taskByKey(tasksFor({ items: { staminaPending: 7 } }), 'recovery').actionText === '领取 +7', 'pending recovery becomes a claim button')
+expectReward(!taskByKey(tasksFor({}), 'recovery').actionText, 'recovery has nothing to claim: it comes in by itself')
 
 console.log(failed ? `${failed} checks failed` : 'all practice checks passed')
 process.exitCode = failed ? 1 : 0

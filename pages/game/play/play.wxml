@@ -35,7 +35,7 @@
     <button class="btn btn--primary play__start" loading="{{busy}}" bindtap="handleStart">
       {{attempt.failed ? '再来一次' : '开始挑战'}}<image class="play__cost-icon" src="/assets/icons/stamina.png" mode="aspectFit" />-{{staminaCost}}
     </button>
-    <view class="play__recovery"><stamina-recovery items="{{items}}" bind:claimed="syncItems" /></view>
+    <view class="play__recovery"><stamina-recovery items="{{items}}" /></view>
     <button wx:if="{{attempt.failed && sharing}}" class="btn btn--ghost play__start" bindtap="handleRescue">求助好友（免费）</button>
     <view class="play__guide-link" bindtap="openGuide">玩法说明</view>
   </view>
@@ -92,7 +92,7 @@
     <view wx:if="{{titleUpgrade}}" class="play__reward play__reward--title">称号升级啦！你现在是「{{titleUpgrade}}」</view>
     <view wx:if="{{milestone && milestone.pendingChests > 0}}" class="play__reward">
       <view>解锁了 {{milestone.pendingChests}} 个宝箱</view>
-      <button class="btn btn--primary play__reward-btn" loading="{{busy}}" bindtap="handleOpenChests">开宝箱</button>
+      <button class="btn btn--primary play__reward-btn" bindtap="handleOpenChests">去「我的宝箱」打开</button>
     </view>
     <view wx:elif="{{milestone}}" class="play__reward-hint">
       再闯过 {{milestone.levelsToNextChest}} 关开{{milestone.nextChestIsBig ? '大' : ''}}宝箱：{{nextChestText}}
@@ -131,15 +131,4 @@
   mascot="{{cheer.mascot}}"
   big="{{cheer.big}}"
   flying-star="{{false}}"
-/>
-
-<reward-popup
-  visible="{{rewardPopup.visible}}"
-  title="{{rewardPopup.title}}"
-  subtitle="{{rewardPopup.subtitle}}"
-  badge="{{rewardPopup.badge}}"
-  rewards="{{rewardPopup.rewards}}"
-  double-token="{{rewardPopup.doubleToken}}"
-  sound="{{rewardPopup.sound}}"
-  bind:close="closeRewardPopup"
 />

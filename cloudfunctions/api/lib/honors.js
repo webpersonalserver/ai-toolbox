@@ -1,9 +1,8 @@
-const { db, _ } = require('./cloud')
-const { chinaDateKey } = require('./date')
+const { db, _, readDocOrNull } = require('./cloud')
+const { DAY_MS, chinaDateKey, weekKeyOf } = require('./date')
 const { practiceStatsDocId } = require('./practice-rewards')
 const { MATH_UNITS, readMathStats } = require('./math-stats')
 
-const DAY_MS = 24 * 60 * 60 * 1000
 const HONORS_DOC_KEY = 'honors'
 const MULTIPLICATION_ROWS = 9
 const MAX_STARS_PER_ROW = 3
@@ -117,23 +116,18 @@ const emptyHonors = (openid) => ({
   lastPracticeDate: '',
   dayStreak: 0,
   bestDayStreak: 0,
+  // The week whose one forgiven missed day is used up (see nextDayStreak).
+  streakGraceWeek: '',
   practiceDates: [],
   medals: {}
 })
 
 const emptyKungfuProgress = () => ({ rows: {}, exam: { passed: false } })
 
-const readDocOrNull = async (docId) => {
-  try {
-    const { data } = await db.collection('practice_stats').doc(docId).get()
-    return data
-  } catch (error) {
-    return null
-  }
-}
+const readStatsDoc = (docId) => readDocOrNull('practice_stats', docId)
 
 const ensureHonors = async (openid) => {
-  if (await readDocOrNull(honorsDocId(openid))) return
+  if (await readStatsDoc(honorsDocId(openid))) return
   try {
     await db.collection('practice_stats').add({ data: { _id: honorsDocId(openid), ...emptyHonors(openid), createdAt: db.serverDate() } })
   } catch (duplicateError) {
@@ -142,7 +136,7 @@ const ensureHonors = async (openid) => {
 }
 
 const loadMetricContext = async (openid, honors) => {
-  const [math, multiplication] = await Promise.all([readMathStats(openid), readDocOrNull(practiceStatsDocId(openid, 'multiplication'))])
+  const [math, multiplication] = await Promise.all([readMathStats(openid), readStatsDoc(practiceStatsDocId(openid, 'multiplication'))])
   return {
     math: math || {},
     multiplication: (multiplication && multiplication.progress) || emptyKungfuProgress(),
@@ -165,12 +159,17 @@ const toMedalView = (medal, context, unlockedAt) => {
   }
 }
 
-// Practising on consecutive Beijing days grows the streak; missing a day starts again from 1.
+const missedOneDay = (honors, now) => honors.lastPracticeDate === chinaDateKey(now - 2 * DAY_MS) && honors.streakGraceWeek !== weekKeyOf(now)
+
+// Practising (any level passed, any practice) on consecutive Beijing days grows the streak. One missed day a week
+// is forgiven, so a single busy day does not wipe out a long streak; missing more starts again from 1.
 const nextDayStreak = (honors, now) => {
   const today = chinaDateKey(now)
-  if (honors.lastPracticeDate === today) return { isFirstToday: false, lastPracticeDate: today, dayStreak: honors.dayStreak }
-  const continued = honors.lastPracticeDate === chinaDateKey(now - DAY_MS)
-  return { isFirstToday: true, lastPracticeDate: today, dayStreak: continued ? honors.dayStreak + 1 : 1 }
+  const same = { lastPracticeDate: today, streakGraceWeek: honors.streakGraceWeek }
+  if (honors.lastPracticeDate === today) return { ...same, isFirstToday: false, dayStreak: honors.dayStreak }
+  if (honors.lastPracticeDate === chinaDateKey(now - DAY_MS)) return { ...same, isFirstToday: true, dayStreak: honors.dayStreak + 1 }
+  if (missedOneDay(honors, now)) return { isFirstToday: true, lastPracticeDate: today, dayStreak: honors.dayStreak + 1, streakGraceWeek: weekKeyOf(now) }
+  return { ...same, isFirstToday: true, dayStreak: 1 }
 }
 
 /**
@@ -184,20 +183,26 @@ const applyHonors = async (openid, { flowerEvents = [], practiced = false }, rul
     const ref = transaction.collection('practice_stats').doc(honorsDocId(openid))
     const honors = { ...emptyHonors(openid), ...(await ref.get()).data }
     const flowerRules = rules.honors.flowers
-    const day = practiced ? nextDayStreak(honors, now) : { isFirstToday: false, lastPracticeDate: honors.lastPracticeDate, dayStreak: honors.dayStreak }
+    const day = practiced
+      ? nextDayStreak(honors, now)
+      : { isFirstToday: false, lastPracticeDate: honors.lastPracticeDate, dayStreak: honors.dayStreak, streakGraceWeek: honors.streakGraceWeek }
     const events = day.isFirstToday ? [...flowerEvents, { reason: FLOWER_REASONS.DAILY_FIRST, count: 1 }] : flowerEvents
     const gained = events
       .map((event) => ({ reason: event.reason, flowers: event.count * (flowerRules.perEvent[event.reason] || 0) }))
       .filter((event) => event.flowers > 0)
-    const flowersGained = gained.reduce((total, event) => total + event.flowers, 0)
     const today = chinaDateKey(now)
-    const todayCount = (honors.flowersToday.date === today ? honors.flowersToday.count : 0) + flowersGained
+    const earnedToday = honors.flowersToday.date === today ? honors.flowersToday.count : 0
+    // Flowers stop at the daily cap; whatever is past it is simply not given.
+    const capped = (flowers, alreadyToday) => Math.max(Math.min(flowers, (flowerRules.dailyCap || Infinity) - alreadyToday), 0)
+    const flowersGained = capped(gained.reduce((total, event) => total + event.flowers, 0), earnedToday)
+    const todayCount = earnedToday + flowersGained
     const next = {
       ...honors,
       flowers: honors.flowers + flowersGained,
       flowersToday: { date: today, count: todayCount },
       lastPracticeDate: day.lastPracticeDate,
       dayStreak: day.dayStreak,
+      streakGraceWeek: day.streakGraceWeek,
       bestDayStreak: Math.max(honors.bestDayStreak, day.dayStreak)
     }
     if (practiced && !next.practiceDates.includes(today)) next.practiceDates = [...next.practiceDates, today].slice(-KEPT_PRACTICE_DATES)
@@ -207,7 +212,7 @@ const applyHonors = async (openid, { flowerEvents = [], practiced = false }, rul
       next.medals = { ...next.medals, [medal.id]: now }
     })
     // Becoming an island's 岛主 also earns flowers (known only once the medals are checked).
-    const islandFlowers = newMedals.filter((medal) => medal.group === 'island').length * (flowerRules.perEvent[FLOWER_REASONS.ISLAND_MASTER] || 0)
+    const islandFlowers = capped(newMedals.filter((medal) => medal.group === 'island').length * (flowerRules.perEvent[FLOWER_REASONS.ISLAND_MASTER] || 0), todayCount)
     if (islandFlowers) {
       gained.push({ reason: FLOWER_REASONS.ISLAND_MASTER, flowers: islandFlowers })
       next.flowers += islandFlowers
@@ -219,6 +224,7 @@ const applyHonors = async (openid, { flowerEvents = [], practiced = false }, rul
         flowersToday: _.set(next.flowersToday),
         lastPracticeDate: next.lastPracticeDate,
         dayStreak: next.dayStreak,
+        streakGraceWeek: next.streakGraceWeek,
         bestDayStreak: next.bestDayStreak,
         practiceDates: _.set(next.practiceDates),
         medals: _.set(next.medals),
@@ -236,11 +242,23 @@ const applyHonors = async (openid, { flowerEvents = [], practiced = false }, rul
   return outcome
 }
 
+// Honors are a bonus on top of what triggered them (answers counted, a level passed): a failure here is logged,
+// never passed on, so the caller's result stands and nothing gets resent.
+const applyHonorsSafely = async (openid, options, rules) => {
+  try {
+    return await applyHonors(openid, options, rules)
+  } catch (error) {
+    console.error('[honors] not applied, the rest already counted', error)
+    return null
+  }
+}
+
 const describeHonors = async (openid, now = Date.now()) => {
-  const honors = { ...emptyHonors(openid), ...((await readDocOrNull(honorsDocId(openid))) || {}) }
+  const honors = { ...emptyHonors(openid), ...((await readStatsDoc(honorsDocId(openid))) || {}) }
   const context = await loadMetricContext(openid, honors)
   const today = chinaDateKey(now)
-  const practicedRecently = honors.lastPracticeDate === today || honors.lastPracticeDate === chinaDateKey(now - DAY_MS)
+  // A streak still counts while practising today would carry it on (including this week's forgiven day).
+  const practicedRecently = honors.lastPracticeDate === today || honors.lastPracticeDate === chinaDateKey(now - DAY_MS) || missedOneDay(honors, now)
   const medals = MEDALS.map((medal) => toMedalView(medal, context, honors.medals[medal.id]))
   return {
     flowers: honors.flowers,
@@ -253,4 +271,4 @@ const describeHonors = async (openid, now = Date.now()) => {
   }
 }
 
-module.exports = { FLOWER_REASONS, MEDALS, METRICS, applyHonors, describeHonors, emptyHonors, honorsDocId, loadMetricContext, readDocOrNull }
+module.exports = { FLOWER_REASONS, MEDALS, METRICS, applyHonors, applyHonorsSafely, describeHonors, emptyHonors, honorsDocId, loadMetricContext }

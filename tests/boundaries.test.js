@@ -44,5 +44,24 @@ practiceCopy.FILES.forEach((file) => {
   }
 })
 
+// 识字竞速's pool is built from the 汉字闯关 levels; an edited level must reach the cloud's copy too.
+const hanziSprint = require(path.join(ROOT, 'scripts', 'build_hanzi_sprint.js'))
+if (!fs.existsSync(hanziSprint.TARGET) || fs.readFileSync(hanziSprint.TARGET, 'utf8') !== hanziSprint.buildPool()) {
+  failed += 1
+  console.log('FAIL the 识字竞速 pool is out of date: run node scripts/build_hanzi_sprint.js')
+}
+
+// The pages' list of 竞速 tracks (utils/sprint.js) must match the cloud's (lib/sprint-tracks.js).
+const sprintTracks = require(path.join(ROOT, 'cloudfunctions', 'api', 'lib', 'sprint-tracks.js'))
+const { SPRINT_SUBJECTS } = require(path.join(ROOT, 'utils', 'sprint.js'))
+Object.values(SPRINT_SUBJECTS).forEach((subject) => {
+  const cloudTracks = sprintTracks.tracksOf(subject.id).map((track) => `${track.id}:${track.name}`).join()
+  const pageTracks = subject.tracks.map((track) => `${track.id}:${track.name}`).join()
+  if (cloudTracks !== pageTracks) {
+    failed += 1
+    console.log(`FAIL ${subject.name} tracks differ: pages ${pageTracks} / cloud ${cloudTracks}`)
+  }
+})
+
 console.log(failed ? `${failed} boundary checks failed` : 'all migration boundaries hold')
 process.exitCode = failed ? 1 : 0

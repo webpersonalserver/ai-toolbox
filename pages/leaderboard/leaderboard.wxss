@@ -1,188 +1,103 @@
-/* Subject tabs (汉字城堡 / 数字星球 / 字母乐园) on top, the subject's boards as chips below — the same split as the lobby. */
-.lb-subjects {
-  display: flex;
-  gap: 8rpx;
-  margin: var(--space-md) var(--space-lg) 0;
-  padding: 6rpx;
-  border-radius: var(--radius-md);
-  background: var(--color-surface-muted);
-}
-
-.lb-subjects__tab {
-  flex: 1;
-  padding: var(--space-sm) 0;
-  border-radius: var(--radius-sm);
-  color: var(--color-ink-soft);
-  font-size: var(--font-md);
-  font-weight: 800;
-  text-align: center;
-}
-
-.lb-subjects__tab--active {
-  background: var(--color-surface);
-  box-shadow: 0 4rpx 0 var(--color-border);
-  color: var(--color-primary-deep);
-}
-
-/* Boards wrap onto a second row rather than scrolling, so every board can be seen at once. */
-.lb-boards {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-sm);
-  margin-top: var(--space-md);
-  padding: 0 var(--space-lg);
-}
-
-.lb-boards--islands {
-  margin-top: var(--space-sm);
-}
-
-.lb-boards__chip {
-  display: flex;
-  align-items: center;
-  height: 60rpx;
-  padding: 0 24rpx;
-  box-sizing: border-box;
-  border-radius: 999rpx;
-  background: var(--color-surface);
-  box-shadow: 0 4rpx 0 var(--color-border);
-  color: var(--color-ink-soft);
-  font-size: var(--font-sm);
-  font-weight: 800;
-}
-
-.lb-boards__chip--small {
-  height: 48rpx;
-  padding: 0 20rpx;
-  font-size: 22rpx;
-}
-
-.lb-boards__chip--active {
-  background: var(--color-primary);
-  box-shadow: 0 4rpx 0 var(--color-primary-deep);
-  color: var(--color-on-accent);
-}
-
-.leaderboard {
-  padding-bottom: 200rpx;
-}
-
-.leaderboard__summary {
+/* Cards two to a row under each subject title; the spacing follows the lobby (cards var(--space-md) apart). */
+.lb-home__notice {
   margin-bottom: var(--space-md);
-  color: var(--color-ink-soft);
-  font-size: var(--font-sm);
-}
-
-.leaderboard__empty {
-  color: var(--color-ink-soft);
-  text-align: center;
-}
-
-.leaderboard__empty-title {
-  margin-bottom: var(--space-xs);
-  color: var(--color-ink);
-  font-size: var(--font-lg);
-  font-weight: 800;
-}
-
-.leaderboard__open-seats {
-  margin-top: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
   background: var(--color-gold-soft);
   color: var(--color-primary-deep);
+  font-size: var(--font-sm);
   font-weight: 800;
   text-align: center;
 }
 
-.leaderboard__row {
+.lb-home__section + .lb-home__section {
+  margin-top: var(--space-lg);
+}
+
+.lb-home__title {
+  margin-bottom: var(--space-md);
+  font-size: var(--font-lg);
+  font-weight: 900;
+}
+
+.lb-home__soon {
+  color: var(--color-ink-soft);
+  font-size: var(--font-sm);
+  text-align: center;
+}
+
+.lb-home__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+}
+
+.lb-card {
+  box-sizing: border-box;
+  width: calc((100% - var(--space-md)) / 2);
+  min-width: 0;
+}
+
+.lb-card__head {
   display: flex;
   align-items: center;
-  margin-bottom: var(--space-sm);
-  padding: var(--space-md);
-  border-radius: var(--radius-md);
-  background: var(--color-surface);
+  gap: var(--space-xs);
 }
 
-.leaderboard__row--me {
-  background: var(--color-primary-soft);
-}
-
-.leaderboard__rank {
-  width: 64rpx;
-  color: var(--color-ink-soft);
-  font-size: var(--font-lg);
-  font-weight: 800;
-  text-align: center;
-}
-
-.leaderboard__rank--podium {
-  color: var(--color-gold);
-}
-
-.leaderboard__avatar {
+.lb-card__icon {
   display: flex;
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  width: 80rpx;
-  height: 80rpx;
-  margin: 0 var(--space-md) 0 var(--space-sm);
-  border-radius: 50%;
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: var(--radius-sm);
+  background: var(--color-primary-soft);
+  color: var(--color-primary-deep);
+  font-size: var(--font-sm);
+  font-weight: 900;
 }
 
-.leaderboard__avatar--empty {
-  background: var(--color-surface-muted);
-  color: var(--color-ink-faint);
-  font-weight: 700;
-}
-
-.leaderboard__body {
-  flex: 1;
-  min-width: 0;
-}
-
-.leaderboard__name {
+.lb-card__name {
   overflow: hidden;
-  font-weight: 700;
+  font-size: var(--font-md);
+  font-weight: 900;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.leaderboard__me-tag {
-  margin-left: var(--space-xs);
+.lb-card__tag {
+  flex-shrink: 0;
+  margin-left: auto;
   padding: 0 var(--space-xs);
   border-radius: var(--radius-sm);
-  background: var(--color-primary);
-  color: var(--color-on-accent);
+  background: var(--color-gold-soft);
+  color: var(--color-primary-deep);
   font-size: 20rpx;
-}
-
-.leaderboard__title {
-  color: var(--color-ink-soft);
-  font-size: var(--font-sm);
-}
-
-.leaderboard__score {
-  color: var(--color-primary);
-  font-size: var(--font-lg);
   font-weight: 800;
 }
 
-.leaderboard__unit {
+.lb-card__rank {
+  margin-top: var(--space-sm);
+  color: var(--color-primary);
+  font-size: var(--font-md);
+  font-weight: 900;
+}
+
+.lb-card__rank--podium {
+  color: var(--color-gold);
+}
+
+.lb-card__rank--loading {
   color: var(--color-ink-faint);
-  font-size: var(--font-sm);
-  font-weight: 400;
+  font-weight: 700;
 }
 
-.leaderboard__mine {
-  position: fixed;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  padding: var(--space-sm) var(--space-lg);
-  background: var(--color-bg);
-  box-shadow: 0 -6rpx 24rpx var(--color-shadow);
-}
-
-.leaderboard__mine .leaderboard__row {
-  margin-bottom: 0;
+.lb-card__detail {
+  overflow: hidden;
+  margin-top: 4rpx;
+  color: var(--color-ink-soft);
+  font-size: 22rpx;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

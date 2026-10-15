@@ -7,6 +7,7 @@
     "pages/game/sprint/sprint",
     "pages/game/book/book",
     "pages/leaderboard/leaderboard",
+    "pages/leaderboard/board",
     "pages/admin/stats",
     "pages/admin/control",
     "pages/rescue/rescue",

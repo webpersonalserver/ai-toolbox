@@ -1,0 +1,155 @@
+/* 口算竞速 only: the island dropdown above the list. */
+.lb-filter {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin: var(--space-md) var(--space-lg) 0;
+}
+
+.lb-filter__picker {
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  min-height: 80rpx;
+  padding: 8rpx 24rpx;
+  border: 3rpx solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-primary-deep);
+  font-size: var(--font-sm);
+  font-weight: 900;
+}
+
+.lb-filter__arrow {
+  margin-left: 8rpx;
+  font-size: 22rpx;
+}
+
+.lb-filter__hint {
+  color: var(--color-ink-faint);
+  font-size: 22rpx;
+}
+
+.leaderboard {
+  padding-bottom: calc(200rpx + env(safe-area-inset-bottom));
+}
+
+.leaderboard__summary {
+  margin-bottom: var(--space-md);
+  color: var(--color-ink-soft);
+  font-size: var(--font-sm);
+}
+
+.leaderboard__empty {
+  color: var(--color-ink-soft);
+  text-align: center;
+}
+
+.leaderboard__empty-title {
+  margin-bottom: var(--space-xs);
+  color: var(--color-ink);
+  font-size: var(--font-lg);
+  font-weight: 800;
+}
+
+.leaderboard__open-seats {
+  margin-top: var(--space-md);
+  background: var(--color-gold-soft);
+  color: var(--color-primary-deep);
+  font-weight: 800;
+  text-align: center;
+}
+
+.leaderboard__row {
+  display: flex;
+  align-items: center;
+  margin-bottom: var(--space-sm);
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.leaderboard__row--me {
+  background: var(--color-primary-soft);
+}
+
+.leaderboard__rank {
+  width: 64rpx;
+  color: var(--color-ink-soft);
+  font-size: var(--font-lg);
+  font-weight: 800;
+  text-align: center;
+}
+
+.leaderboard__rank--podium {
+  color: var(--color-gold);
+}
+
+.leaderboard__avatar {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 80rpx;
+  height: 80rpx;
+  margin: 0 var(--space-md) 0 var(--space-sm);
+  border-radius: 50%;
+}
+
+.leaderboard__avatar--empty {
+  background: var(--color-surface-muted);
+  color: var(--color-ink-faint);
+  font-weight: 700;
+}
+
+.leaderboard__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.leaderboard__name {
+  overflow: hidden;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.leaderboard__me-tag {
+  margin-left: var(--space-xs);
+  padding: 0 var(--space-xs);
+  border-radius: var(--radius-sm);
+  background: var(--color-primary);
+  color: var(--color-on-accent);
+  font-size: 20rpx;
+}
+
+.leaderboard__title {
+  color: var(--color-ink-soft);
+  font-size: var(--font-sm);
+}
+
+.leaderboard__score {
+  color: var(--color-primary);
+  font-size: var(--font-lg);
+  font-weight: 800;
+}
+
+.leaderboard__unit {
+  color: var(--color-ink-faint);
+  font-size: var(--font-sm);
+  font-weight: 400;
+}
+
+.leaderboard__mine {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  padding: var(--space-sm) var(--space-lg) calc(var(--space-sm) + env(safe-area-inset-bottom));
+  background: var(--color-bg);
+  box-shadow: 0 -6rpx 24rpx var(--color-shadow);
+}
+
+.leaderboard__mine .leaderboard__row {
+  margin-bottom: 0;
+}

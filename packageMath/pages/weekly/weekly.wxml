@@ -1,6 +1,6 @@
 <view class="page week">
   <view class="week__hero">
-    <image class="week__cat" src="{{week && week.practicedDays >= 3 ? mascot.images.happy : mascot.images.cheer}}" mode="aspectFit" />
+    <image class="week__cat" src="{{week && week.practicedDays >= 3 ? mascot.images.happy : mascot.images.cheer}}" data-src="{{week && week.practicedDays >= 3 ? mascot.images.happy : mascot.images.cheer}}" binderror="handleImageError" mode="aspectFit" />
     <view class="week__speech">
       <view class="week__title">本周小结</view>
       <view class="week__range">{{week ? week.rangeText : '正在翻小本本…'}}</view>

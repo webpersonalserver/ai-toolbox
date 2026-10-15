@@ -3,13 +3,14 @@ const { getSession, setItems } = require('../../../utils/session')
 const { runWithItem } = require('../../../utils/item-flow')
 const { createSoundPlayer } = require('../../../utils/practice/sound')
 const { describeTitleProgress } = require('../../../utils/milestone')
+const { backToLevels } = require('../../../utils/navigation')
 
 // 口算闯关: one level = 10 questions, judged one by one in the cloud. Stamina to start, a few chances per attempt,
 // a hint shows the current answer. Same rules as the other lobby games, so they share the levels list and leaderboard.
 const STAGES = { LOADING: 'loading', READY: 'ready', PLAYING: 'playing', SOLVED: 'solved', FAILED_LOAD: 'failedLoad' }
 const RIGHT_PAUSE_MS = 450
 const HIDDEN_CHEER = { visible: false, title: '', subtitle: '', mascot: '', big: false }
-const LEVELS_URL = '/pages/game/levels/levels?gameType=math'
+const MATH_GAME_TYPE = 'math'
 
 const heartsOf = (attempt) => Array.from({ length: attempt.maxWrongAttempts }, (_, index) => index < attempt.attemptsLeft)
 
@@ -193,6 +194,6 @@ Page({
   },
 
   backToLevels() {
-    wx.navigateBack({ fail: () => wx.redirectTo({ url: LEVELS_URL }) })
+    backToLevels(MATH_GAME_TYPE)
   }
 })

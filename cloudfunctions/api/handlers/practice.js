@@ -1,12 +1,11 @@
-const { db, _ } = require('../lib/cloud')
+const { db, _, readDocOrNull } = require('../lib/cloud')
 const { ERROR_CODES, BusinessError, throwIfFailed } = require('../lib/response')
 const { loadRules, sumRewardsByType } = require('../lib/rules')
 const { dailyDocId, getTodayRecord, ensureTodayRecord } = require('../lib/daily')
 const { ALL_ITEM_TYPES, changeItemsInTransaction } = require('../lib/items')
 const { ITEM_LOG_REASONS, writeItemLogs } = require('../lib/item-log')
-const { FLOWER_REASONS, MEDALS, applyHonors, describeHonors, emptyHonors, honorsDocId, readDocOrNull } = require('../lib/honors')
-const { chinaDateKey } = require('../lib/date')
-const { issueDoubleOffer } = require('../lib/double-reward')
+const { FLOWER_REASONS, MEDALS, applyHonorsSafely, describeHonors, emptyHonors, honorsDocId } = require('../lib/honors')
+const { DAY_MS, chinaDateKey, mondayOf } = require('../lib/date')
 const { emptyProgress, parseClientProgress, mergeProgress, milestonesOf, toClientProgress } = require('../lib/multiplication-progress')
 const {
   MATH_SUBJECT,
@@ -194,16 +193,6 @@ const stats = async ({ openid, payload }) => {
 }
 
 const countCrossings = (every, from, to) => Math.floor(to / every) - Math.floor(from / every)
-
-// Honors are a bonus on top of the report: if they fail, the answers are already counted and must not be resent.
-const applyHonorsSafely = async (openid, options, rules) => {
-  try {
-    return await applyHonors(openid, options, rules)
-  } catch (error) {
-    console.error('[practice] honors failed, answers already counted', error)
-    return null
-  }
-}
 
 /**
  * Counts answered questions. Each report carries a reportId and the cloud remembers the last few, so a report
@@ -396,7 +385,8 @@ const mistakes = async ({ openid, payload }) => {
 // Chests already opened are skipped; nothing left to open is an error.
 const openPracticeChests = async (openid, practiceId, chestIds) => {
   const now = Date.now()
-  const rules = await loadRules()
+  // Old 加减运算 players have chests only in their legacy record until it is moved over; move it first.
+  const [rules] = await Promise.all([loadRules(), ensureStats(openid, practiceId)])
   const outcome = await db.runTransaction(async (transaction) => {
     const statsRef = transaction.collection('practice_stats').doc(statsDocId(openid, practiceId))
     let storedStats
@@ -436,14 +426,6 @@ const pendingChestsOfPractice = async (openid, practiceId) => {
 }
 
 // Opens every pending chest of the practice at once.
-const claimChests = async ({ openid, payload }) => {
-  const practiceId = parsePracticeId(payload)
-  const { chestCount, deltas, items, rules } = await openPracticeChests(openid, practiceId, null)
-  const rewards = toRewardList(deltas)
-  const doubleToken = await issueDoubleOffer(openid, rewards, `practice:${practiceId}`, rules)
-  return { chestCount, rewards, items, doubleToken }
-}
-
 const summarizePractices = (openid) =>
   Promise.all(
     PRACTICE_IDS.map(async (practiceId) => {
@@ -459,14 +441,11 @@ const summarizePractices = (openid) =>
     })
   )
 
-const DAY_MS = 24 * 60 * 60 * 1000
 const WEEK_DAYS = 7
-const CHINA_UTC_OFFSET_MS = 8 * 60 * 60 * 1000
 
 // Date keys of this week (Monday … Sunday, Beijing time) and of last week.
 const weekKeysOf = (now) => {
-  const weekday = (new Date(now + CHINA_UTC_OFFSET_MS).getUTCDay() + 6) % WEEK_DAYS
-  const monday = now - weekday * DAY_MS
+  const monday = mondayOf(now)
   const keysFrom = (start) => Array.from({ length: WEEK_DAYS }, (_, index) => chinaDateKey(start + index * DAY_MS))
   return { thisWeek: keysFrom(monday), lastWeek: keysFrom(monday - WEEK_DAYS * DAY_MS), today: chinaDateKey(now) }
 }
@@ -477,8 +456,8 @@ const sumDays = (days, keys, field) => keys.reduce((total, key) => total + ((day
 const weekly = async ({ openid, now = Date.now() }) => {
   const [math, honorsDoc, kungfu] = await Promise.all([
     readMathStats(openid),
-    readDocOrNull(honorsDocId(openid)),
-    readDocOrNull(statsDocId(openid, MILESTONE_PRACTICE_ID))
+    readDocOrNull('practice_stats', honorsDocId(openid)),
+    readDocOrNull('practice_stats', statsDocId(openid, MILESTONE_PRACTICE_ID))
   ])
   const honorsRecord = { ...emptyHonors(openid), ...(honorsDoc || {}) }
   const days = (math && math.days) || {}
@@ -508,7 +487,6 @@ module.exports = {
   honors,
   mistakes,
   weekly,
-  claimChests,
   openPracticeChests,
   pendingChestsOfPractice,
   summarizePractices,

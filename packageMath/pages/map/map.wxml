@@ -5,7 +5,7 @@
     <view class="sea__title">🏝 数理乐园</view>
     <view class="sea__subtitle">沿着金色航线一座一座玩，想先去哪座也可以喵～</view>
     <view class="sea__guide">
-      <image class="sea__guide-cat" src="{{mascot.images.happy}}" mode="aspectFit" />
+      <image class="sea__guide-cat" src="{{mascot.images.happy}}" data-src="{{mascot.images.happy}}" binderror="handleImageError" mode="aspectFit" />
       <view class="sea__bubble">{{bubble}}</view>
     </view>
     <view class="sea__actions">
@@ -28,7 +28,7 @@
   >
     <view class="island__order">{{item.order}}</view>
     <view class="island__land">
-      <image class="island__art" src="{{item.art.image}}" mode="aspectFit" />
+      <image class="island__art" src="{{item.art.image}}" data-src="{{item.art.image}}" binderror="handleImageError" mode="aspectFit" />
       <text wx:if="{{item.flagged}}" class="island__flag">🚩</text>
       <view wx:if="{{item.foggy}}" class="island__fog">☁️☁️</view>
     </view>
@@ -38,7 +38,7 @@
       <view wx:if="{{!item.foggy}}" class="island__stars">⭐ {{item.starsEarned}}/{{item.starsTotal}}</view>
       <view wx:else class="island__stars island__stars--fog">迷雾中</view>
     </view>
-    <view wx:if="{{item.isNextStop}}" class="island__boat"><text>⛵</text><image class="island__boat-cat" src="{{mascot.images.normal}}" mode="aspectFit" /></view>
+    <view wx:if="{{item.isNextStop}}" class="island__boat"><text>⛵</text><image class="island__boat-cat" src="{{mascot.images.normal}}" data-src="{{mascot.images.normal}}" binderror="handleImageError" mode="aspectFit" /></view>
   </view>
   </view>
 </view>
@@ -51,7 +51,7 @@
       <!-- catchtap: the panel's own catchtap="noop" would stop a bubbling tap before it reached the sheet. -->
       <view class="sheet__close" hover-class="sheet__close--pressed" catchtap="closeSheet">✕</view>
     </view>
-    <view class="sheet__intro"><image class="sheet__intro-cat" src="{{mascot.images.normal}}" mode="aspectFit" /><text>{{sheet.intro}}</text></view>
+    <view class="sheet__intro"><image class="sheet__intro-cat" src="{{mascot.images.normal}}" data-src="{{mascot.images.normal}}" binderror="handleImageError" mode="aspectFit" /><text>{{sheet.intro}}</text></view>
     <view wx:for="{{sheet.units}}" wx:key="id" class="unit {{item.comingSoon ? 'unit--fog' : ''}}">
       <view class="unit__main">
         <view class="unit__name">{{item.name}}</view>

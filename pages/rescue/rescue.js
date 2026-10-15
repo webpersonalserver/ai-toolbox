@@ -49,6 +49,8 @@ const describeHelperBlock = (viewState, detail) => {
 Page({
   data: {
     loading: true,
+    // Opened from a share card this can be the first page (no back button): a failed load offers a retry.
+    loadFailed: false,
     gameType: '',
     game: null,
     poemSource: '',
@@ -91,6 +93,7 @@ Page({
   },
 
   async loadRescue() {
+    this.setData({ loadFailed: false })
     try {
       await ensureLogin()
       const detail = await rescue.view(this.data.rescueId)
@@ -126,9 +129,14 @@ Page({
         solution: detail.solution
       })
     } catch (error) {
-      this.setData({ loading: false })
+      this.setData({ loading: false, loadFailed: !this.data.viewState })
       toastError(error)
     }
+  },
+
+  retryLoad() {
+    this.setData({ loading: true })
+    this.loadRescue()
   },
 
   async handleComplete(event) {
@@ -157,6 +165,9 @@ Page({
       }
     } catch (error) {
       toastError(error)
+      // Let the friend try again with empty cells (the guess was not judged).
+      const puzzle = this.selectComponent('#puzzle')
+      if (puzzle) puzzle.clearAttempt()
       if (RELOAD_ON_ERRORS.includes(error.code)) this.loadRescue()
     } finally {
       this.setData({ submitting: false })

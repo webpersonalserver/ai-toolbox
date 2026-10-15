@@ -3,7 +3,6 @@
   "usingComponents": {
     "item-chip": "/components/item-chip/item-chip",
     "profile-editor": "/components/profile-editor/profile-editor",
-    "stamina-recovery": "/components/stamina-recovery/stamina-recovery",
     "ad-reward-fab": "/components/ad-reward-fab/ad-reward-fab",
     "reward-popup": "/components/reward-popup/reward-popup"
   }

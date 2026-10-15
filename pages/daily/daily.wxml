@@ -11,7 +11,7 @@
     <view class="daily__title">今日挑战</view>
     <view class="daily__rule">10 道题：汉字和算术轮流来，每题只有一次机会，答错会告诉你正确答案。</view>
     <view class="daily__dots">
-      <view wx:for="{{dots}}" wx:key="id" class="daily__dot daily__dot--{{item.subject}}">{{item.subject === 'hanzi' ? '字' : '算'}}</view>
+      <view wx:for="{{dots}}" wx:key="id" class="daily__dot daily__dot--{{item.subject}} game-theme--{{item.subject}}">{{item.subject === 'hanzi' ? '字' : '算'}}</view>
     </view>
     <view class="daily__reward">完成就送 {{rewardText}} 和小红花，全对还有额外小红花</view>
     <button class="btn btn--primary daily__action" bindtap="start">开始挑战</button>
@@ -30,7 +30,7 @@
   <block wx:if="{{question.subject === 'hanzi'}}">
     <view class="card daily-run__board">
       <view class="daily-run__prompt">{{question.prompt}}</view>
-      <view class="daily-run__clue daily-run__clue--{{question.kind}}">{{question.clue}}</view>
+      <view class="daily-run__clue daily-run__clue--{{question.kind}} game-theme--hanzi">{{question.clue}}</view>
     </view>
     <view class="daily-run__choices">
       <view

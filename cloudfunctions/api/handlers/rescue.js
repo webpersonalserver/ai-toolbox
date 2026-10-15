@@ -71,17 +71,32 @@ const addDocIgnoringDuplicate = async (collectionName, data) => {
   }
 }
 
-const recordWrongAnswer = async (rescueId, helperOpenid) => {
-  const docId = helperAttemptDocId(rescueId, helperOpenid)
-  await addDocIgnoringDuplicate('rescue_helper_attempts', {
-    _id: docId,
+const ensureHelperAttempt = (rescueId, helperOpenid) =>
+  addDocIgnoringDuplicate('rescue_helper_attempts', {
+    _id: helperAttemptDocId(rescueId, helperOpenid),
     rescueId,
     helperOpenid,
     date: todayInChina(),
     wrongCount: 0
   })
-  await db.collection('rescue_helper_attempts').doc(docId).update({ data: { wrongCount: _.inc(1) } })
+
+const heartsGoneMessage = (maxWrong) => `${maxWrong} 颗❤️ 用完啦，换一位好友来帮 TA 吧`
+
+// A heart is spent with one conditional update (only while some are left), so guesses sent all at once cannot get
+// past the limit: the database applies them one by one.
+const spendHeart = async (rescueId, helperOpenid, maxWrong) => {
+  const docId = helperAttemptDocId(rescueId, helperOpenid)
+  const { stats } = await db
+    .collection('rescue_helper_attempts')
+    .where({ _id: docId, wrongCount: _.lt(maxWrong) })
+    .update({ data: { wrongCount: _.inc(1) } })
+  if (!stats.updated) throw new BusinessError(ERROR_CODES.RESCUE_HELPER_LOCKED, heartsGoneMessage(maxWrong))
   return wrongAnswersOf(rescueId, helperOpenid)
+}
+
+const heartsLeftInTransaction = async (transaction, rescueId, helperOpenid, maxWrong) => {
+  const { data: attempt } = await transaction.collection('rescue_helper_attempts').doc(helperAttemptDocId(rescueId, helperOpenid)).get()
+  return maxWrong - attempt.wrongCount
 }
 
 const helperLimitMessage = (limit) => `你今天已经帮 TA 解过 ${limit} 关了，明天再来吧`
@@ -165,11 +180,12 @@ const answer = async ({ openid, payload }) => {
   ])
   const { dailyLimitPerHelper, maxWrongAnswersPerHelper } = rules.rescue
   if (wrongAnswers >= maxWrongAnswersPerHelper) {
-    throw new BusinessError(ERROR_CODES.RESCUE_HELPER_LOCKED, `${maxWrongAnswersPerHelper} 颗❤️ 用完啦，换一位好友来帮 TA 吧`)
+    throw new BusinessError(ERROR_CODES.RESCUE_HELPER_LOCKED, heartsGoneMessage(maxWrongAnswersPerHelper))
   }
+  await ensureHelperAttempt(rescue._id, openid)
 
   if (String(payload.answer || '') !== level.answer) {
-    const wrongCount = await recordWrongAnswer(rescue._id, openid)
+    const wrongCount = await spendHeart(rescue._id, openid, maxWrongAnswersPerHelper)
     return { correct: false, attemptsLeft: Math.max(maxWrongAnswersPerHelper - wrongCount, 0) }
   }
 
@@ -188,6 +204,9 @@ const answer = async ({ openid, payload }) => {
     const { data: pair } = await pairRef.get()
     if (latestRescue.status !== RESCUE_STATUS.OPEN) {
       return { failure: { code: ERROR_CODES.RESCUE_CLOSED, message: closedRescueMessage(latestRescue) } }
+    }
+    if ((await heartsLeftInTransaction(transaction, rescue._id, openid, maxWrongAnswersPerHelper)) <= 0) {
+      return { failure: { code: ERROR_CODES.RESCUE_HELPER_LOCKED, message: heartsGoneMessage(maxWrongAnswersPerHelper) } }
     }
     if (pair.count >= dailyLimitPerHelper) {
       return { failure: { code: ERROR_CODES.RESCUE_HELPER_DAILY_LIMIT, message: helperLimitMessage(dailyLimitPerHelper) } }

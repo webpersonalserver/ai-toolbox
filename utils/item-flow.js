@@ -1,11 +1,12 @@
-const { account, ERROR_CODES, ApiError, toastError } = require('./api')
+const { ERROR_CODES, ApiError, toastError } = require('./api')
 const { ensureLogin, setItems } = require('./session')
 const { checkinToday } = require('./checkin')
 const { watchAdForItem } = require('./ad-reward')
 const { ITEM_META, describeAmount, minutesUntil } = require('./items')
+const { openPage } = require('./navigation')
+const { CHEST_ROOM_URL } = require('./milestone')
 
 const ITEM_NEXT_STEPS = {
-  CLAIM_RECOVERY: 'claimRecovery',
   CHECKIN: 'checkin',
   OPEN_CHESTS: 'openChests',
   AD: 'ad',
@@ -20,7 +21,6 @@ const confirm = (title, content, confirmText) =>
     wx.showModal({ title, content, confirmText, success: (result) => resolve(result.confirm) })
   })
 
-const CHEST_ROOM_URL = '/pages/welfare/chests'
 const PRACTICE_TAB_URL = '/pages/practice/index'
 
 const notify = (title, content) => wx.showModal({ title, content, showCancel: false, confirmText: '知道了' })
@@ -32,19 +32,6 @@ const titleOf = (itemType) => `${ITEM_META[itemType].label}用完啦`
 const OUT_FOR_TODAY_TEXT = {
   hint: '今天的提示用完啦，自己想一想，你一定行！明天还会送新的',
   stamina: '今天的体力都送完啦，明天还会送新的！'
-}
-
-const claimRecovery = async ({ pendingStamina }) => {
-  const agreed = await confirm(titleOf('stamina'), `有 ${pendingStamina} 点体力等你领，现在就领？`, '领取')
-  if (!agreed) return false
-  try {
-    const result = await account.claimRecoveredStamina()
-    setItems(result.items)
-    return true
-  } catch (error) {
-    toastError(error)
-    return false
-  }
 }
 
 const earnByCheckin = async ({ itemType, checkinReward }) => {
@@ -63,7 +50,7 @@ const earnByAd = async ({ itemType, adReward }) => {
 
 const openWelfareChests = async ({ itemType, welfareChests }) => {
   const agreed = await confirm(titleOf(itemType), `你有 ${welfareChests} 个宝箱还没打开，里面有体力和提示！`, '去开宝箱')
-  if (agreed) wx.navigateTo({ url: CHEST_ROOM_URL })
+  if (agreed) openPage(CHEST_ROOM_URL)
 }
 
 const suggestPractice = async ({ practiceStaminaRoom }) => {
@@ -78,7 +65,13 @@ const suggestPractice = async ({ practiceStaminaRoom }) => {
 // The server only sends waitRecovery after practice chests are capped for today, so once recovery is also done
 // the 趣味 tab is offered as something fun to do rather than as another source of stamina.
 const explainStaminaRecovery = async () => {
-  const { items } = await ensureLogin({ force: true })
+  let items
+  try {
+    ;({ items } = await ensureLogin({ force: true }))
+  } catch (error) {
+    toastError(error)
+    return
+  }
   if (items.nextStaminaAt) {
     notify(titleOf('stamina'), `再等 ${minutesUntil(items.nextStaminaAt)} 分钟就送你 1 点体力～`)
     return
@@ -89,7 +82,7 @@ const explainStaminaRecovery = async () => {
 
 /**
  * Runs an action that consumes an item. When the server reports the item is short,
- * walks the fallback order: claim recovery → check-in → open chests → rewarded ad → practice → item-specific fallback.
+ * walks the fallback order: check-in → open chests → rewarded ad → practice → item-specific fallback.
  * Resolves the action result, { needRescue: true } when the user should ask friends, or null.
  */
 const runWithItem = async (action) => {
@@ -105,9 +98,6 @@ const runWithItem = async (action) => {
     const step = error.data
     let earned = false
     switch (step.next) {
-      case ITEM_NEXT_STEPS.CLAIM_RECOVERY:
-        earned = await claimRecovery(step)
-        break
       case ITEM_NEXT_STEPS.CHECKIN:
         earned = await earnByCheckin(step)
         break

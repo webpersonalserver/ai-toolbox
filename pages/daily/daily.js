@@ -85,6 +85,8 @@ Page({
   },
 
   start() {
+    // A second tap on 开始挑战 would start a second clock.
+    if (this.data.stage === STAGES.RUNNING) return
     this.index = 0
     this.correctCount = 0
     this.missed = []

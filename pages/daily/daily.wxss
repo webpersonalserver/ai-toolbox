@@ -59,7 +59,7 @@
   font-weight: 900;
 }
 
-.daily__dot--hanzi { background: #9B7BFF; }
+.daily__dot--hanzi { background: var(--game-color); }
 .daily__dot--math { background: var(--color-success); }
 
 .daily__dot--small {
@@ -112,7 +112,7 @@
 
 .daily-run__clue {
   padding: var(--space-sm) 0;
-  color: #7A58E0;
+  color: var(--game-color-deep);
   font-weight: 900;
   line-height: 1.3;
 }

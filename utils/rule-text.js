@@ -23,7 +23,7 @@ const buildRuleSections = (rules) => {
     { title: '每日打卡', text: `每天领取 ${describeRewards(rules.checkinRewards)}` }
   ]
   if (rules.staminaRecovery.enabled) {
-    sections.push({ title: '体力恢复', text: `每 ${rules.staminaRecovery.intervalMinutes} 分钟恢复 1 点，每天最多恢复 ${rules.staminaRecovery.dailyCap} 点，恢复的体力需要手动领取` })
+    sections.push({ title: '体力恢复', text: `每 ${rules.staminaRecovery.intervalMinutes} 分钟恢复 1 点，每天最多恢复 ${rules.staminaRecovery.dailyCap} 点，恢复的体力自动到账` })
   }
   if (rules.ad.enabled) {
     const adRewards = Object.values(ITEM_TYPES)

@@ -1,8 +1,10 @@
-const { db, _ } = require('../lib/cloud')
+const { db, _, readDocOrNull } = require('../lib/cloud')
 const { loadRules } = require('../lib/rules')
 const { describeTitle } = require('../lib/achievement')
-const { getProgress } = require('../lib/progress')
-const { parseGameType } = require('../lib/games')
+const { progressDocId, getProgress } = require('../lib/progress')
+const { ALL_GAME_TYPES, parseGameType } = require('../lib/games')
+const sprint = require('./sprint')
+const { SUBJECTS: SPRINT_SUBJECTS } = require('../lib/sprint-tracks')
 
 const LEADERBOARD_CACHE_TTL_MS = 60 * 1000
 
@@ -98,4 +100,30 @@ const list = async ({ openid, payload }) => {
   }
 }
 
-module.exports = { list }
+// Read only: the card page must not create a progress record for every game the player never opened.
+const readProgress = (openid, gameType) => readDocOrNull('progress', progressDocId(openid, gameType))
+
+const gameCardOf = async (gameType, openid, rules) => {
+  const [topEntries, progress] = await Promise.all([getTopEntries(gameType, rules), readProgress(openid, gameType)])
+  const myTopEntry = topEntries.find((entry) => entry.openid === openid)
+  const leader = topEntries[0]
+  return {
+    gameType,
+    mySolved: (progress && progress.solvedCount) || 0,
+    myRank: myTopEntry ? myTopEntry.rank : progress ? await rankOf(progress, gameType) : null,
+    leader: leader ? { nickname: leader.nickname, avatarUrl: leader.avatarUrl, solvedCount: leader.solvedCount, isMe: leader.openid === openid } : null
+  }
+}
+
+// The leaderboard's front page in one call: per board, this player's rank and who is first.
+const summary = async ({ openid }) => {
+  const rules = await loadRules()
+  const [games, mathSprint, chineseSprint] = await Promise.all([
+    Promise.all(ALL_GAME_TYPES.map((gameType) => gameCardOf(gameType, openid, rules))),
+    sprint.myBest(openid, SPRINT_SUBJECTS.MATH),
+    sprint.myBest(openid, SPRINT_SUBJECTS.CHINESE)
+  ])
+  return { games, sprints: { [SPRINT_SUBJECTS.MATH]: mathSprint, [SPRINT_SUBJECTS.CHINESE]: chineseSprint } }
+}
+
+module.exports = { list, summary }

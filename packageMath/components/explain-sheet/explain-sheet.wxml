@@ -6,7 +6,7 @@
     <!-- One item keyed by step id: each step is rendered fresh, so its pop-in animation plays again. -->
     <view wx:for="{{shown}}" wx:key="id" class="es__step">
       <view class="es__talk">
-        <image class="es__cat" src="{{mascot.images.wink}}" mode="aspectFit" />
+        <image class="es__cat" src="{{mascot.images.wink}}" data-src="{{mascot.images.wink}}" binderror="handleImageError" mode="aspectFit" />
         <view class="es__bubble">{{item.say}}</view>
       </view>
       <view class="es__math">{{item.math}}</view>

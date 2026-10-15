@@ -1,4 +1,4 @@
-const { db } = require('./cloud')
+const { readDocOrNull } = require('./cloud')
 const { getTodayRecord, describeTodayStatus, hasAdLeft } = require('./daily')
 const { sumRewardsByType } = require('./rules')
 const { ITEM_TYPES } = require('./items')
@@ -6,10 +6,9 @@ const { ALL_GAME_TYPES } = require('./games')
 const { pendingChestNosOf } = require('./achievement')
 const { practiceStatsDocId } = require('./practice-rewards')
 const { readMathStats } = require('./math-stats')
-const { ERROR_CODES, BusinessError } = require('./response')
+const { ERROR_CODES, BusinessError, throwIfFailed } = require('./response')
 
 const ITEM_NEXT_STEPS = {
-  CLAIM_RECOVERY: 'claimRecovery',
   CHECKIN: 'checkin',
   OPEN_CHESTS: 'openChests',
   AD: 'ad',
@@ -22,15 +21,6 @@ const ITEM_NEXT_STEPS = {
 const FALLBACK_STEP_BY_ITEM = {
   [ITEM_TYPES.HINT]: ITEM_NEXT_STEPS.RESCUE,
   [ITEM_TYPES.STAMINA]: ITEM_NEXT_STEPS.WAIT_RECOVERY
-}
-
-const readDocOrNull = async (collection, docId) => {
-  try {
-    const { data } = await db.collection(collection).doc(docId).get()
-    return data
-  } catch (error) {
-    return null
-  }
 }
 
 // Unopened chests anywhere in the welfare bag (level chests of every game + practice chests); every one holds stamina or hints.
@@ -51,17 +41,14 @@ const practiceStaminaRoomOf = (todayRecord, rules) => {
   return Math.max(rules.practice.dailyCaps.stamina - earned, 0)
 }
 
-// Free and instant options first (claim, check-in, chests), then the ad, then earning by practice, then waiting.
+// Free and instant options first (check-in, chests), then the ad, then earning by practice, then waiting.
 const resolveNextStep = async (openid, itemType, rules, items) => {
   const [todayRecord, welfareChests] = await Promise.all([getTodayRecord(openid), countWelfareChests(openid, rules)])
   const today = describeTodayStatus(todayRecord, rules)
   const checkinReward = sumRewardsByType(rules.checkinRewards)[itemType] || 0
-  const pendingStamina = itemType === ITEM_TYPES.STAMINA && items ? items.staminaPending : 0
   const practiceStaminaRoom = itemType === ITEM_TYPES.STAMINA ? practiceStaminaRoomOf(todayRecord, rules) : 0
   let next = FALLBACK_STEP_BY_ITEM[itemType]
-  if (pendingStamina > 0) {
-    next = ITEM_NEXT_STEPS.CLAIM_RECOVERY
-  } else if (!today.checkedIn && checkinReward > 0) {
+  if (!today.checkedIn && checkinReward > 0) {
     next = ITEM_NEXT_STEPS.CHECKIN
   } else if (welfareChests > 0) {
     next = ITEM_NEXT_STEPS.OPEN_CHESTS
@@ -77,7 +64,6 @@ const resolveNextStep = async (openid, itemType, rules, items) => {
     next,
     checkinReward,
     adReward: rules.ad.rewards[itemType] || 0,
-    pendingStamina,
     welfareChests,
     practiceStaminaRoom
   }
@@ -88,4 +74,10 @@ const throwInsufficientItem = async (openid, itemType, rules, items) => {
   throw new BusinessError(ERROR_CODES.INSUFFICIENT_ITEM, '道具不足', { ...nextStep, items })
 }
 
-module.exports = { ITEM_NEXT_STEPS, resolveNextStep, throwInsufficientItem }
+// After a transaction that spends items: its failure, or "not enough" with what to do next, becomes the error.
+const throwIfSpendFailed = async (openid, outcome, rules) => {
+  throwIfFailed(outcome)
+  if (outcome.insufficientType) await throwInsufficientItem(openid, outcome.insufficientType, rules, outcome.insufficientItems)
+}
+
+module.exports = { ITEM_NEXT_STEPS, resolveNextStep, throwInsufficientItem, throwIfSpendFailed }

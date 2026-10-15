@@ -2,6 +2,7 @@ const { game, toastError } = require('../../../utils/api')
 const { ensureLogin } = require('../../../utils/session')
 const { DEFAULT_SHARE } = require('../../../utils/share')
 const { gameConfigOf, GAME_TYPES } = require('../../../utils/games')
+const { backToLevels } = require('../../../utils/navigation')
 
 // Only these entries have more to show when opened (出处 / 释义); tapping the others would do nothing.
 const EXPANDABLE_GAME_TYPES = [GAME_TYPES.IDIOM, GAME_TYPES.TYPO]
@@ -64,7 +65,7 @@ Page({
   },
 
   goPlay() {
-    wx.navigateBack()
+    backToLevels(this.data.gameType)
   },
 
   toggleEntry(event) {

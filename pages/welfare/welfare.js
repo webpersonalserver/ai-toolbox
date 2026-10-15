@@ -1,14 +1,14 @@
 const { account, game, toastError } = require('../../utils/api')
-const { setSession, updateSession, setItems } = require('../../utils/session')
-const { HIDDEN_REWARD_POPUP, CHEST_SOUND } = require('../../utils/milestone')
+const { setSession, updateSession } = require('../../utils/session')
+const { HIDDEN_REWARD_POPUP, CHEST_SOUND, CHEST_ROOM_URL } = require('../../utils/milestone')
 const { TASK_ACTIONS, countPendingChests, countUnclaimedWelfare, buildTaskRows, countOpenTasks } = require('../../utils/welfare')
 const { watchAdForItem } = require('../../utils/ad-reward')
+const { openPage } = require('../../utils/navigation')
 
 const PRACTICE_TAB_URL = '/pages/practice/index'
 const DAILY_URL = '/pages/daily/daily'
 const LOBBY_TAB_URL = '/pages/index/index'
 const KUNGFU_URL = '/pages/practice/multiplication/index'
-const CHEST_ROOM_URL = '/pages/welfare/chests'
 
 Page({
   data: {
@@ -73,17 +73,9 @@ Page({
     })
   },
 
-  claimRecovery() {
-    return this.runClaim('recovery', async () => {
-      const result = await account.claimRecoveredStamina()
-      setItems(result.items)
-      return { visible: true, title: '体力恢复好啦', subtitle: '', badge: '', rewards: [{ type: 'stamina', amount: result.claimed }], doubleToken: result.doubleToken || '', sound: CHEST_SOUND }
-    })
-  },
-
   // Chests are opened in 我的宝箱, where each one shows what it is and can be opened alone or with the rest.
   openChestRoom() {
-    wx.navigateTo({ url: CHEST_ROOM_URL })
+    openPage(CHEST_ROOM_URL)
   },
 
   handleTask(event) {
@@ -91,12 +83,11 @@ Page({
     if (done) return
     const handlers = {
       [TASK_ACTIONS.CHECKIN]: () => this.claimCheckin(),
-      [TASK_ACTIONS.RECOVERY]: () => this.claimRecovery(),
       [TASK_ACTIONS.AD_STAMINA]: () => this.watchAd('stamina'),
       [TASK_ACTIONS.AD_HINT]: () => this.watchAd('hint'),
-      [TASK_ACTIONS.DAILY]: () => wx.navigateTo({ url: DAILY_URL }),
+      [TASK_ACTIONS.DAILY]: () => openPage(DAILY_URL),
       [TASK_ACTIONS.PRACTICE]: () => wx.switchTab({ url: PRACTICE_TAB_URL }),
-      [TASK_ACTIONS.KUNGFU]: () => wx.navigateTo({ url: KUNGFU_URL }),
+      [TASK_ACTIONS.KUNGFU]: () => openPage(KUNGFU_URL),
       [TASK_ACTIONS.LEVELS]: () => wx.switchTab({ url: LOBBY_TAB_URL })
     }
     handlers[key]()

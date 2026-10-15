@@ -1,4 +1,5 @@
 const { COPY, MASCOT, mascotView } = require('../../../utils/practice/copy')
+const { fallBackFromCloudImage } = require('../../../utils/assets')
 
 // 喵算算 explains a question one step at a time; each step's picture pops in fresh.
 Component({
@@ -27,6 +28,11 @@ Component({
 
   methods: {
     noop() {},
+
+    // A cloud picture that will not load on this phone: draw the packaged copy instead (utils/assets.js).
+    handleImageError(event) {
+      if (fallBackFromCloudImage(event)) this.setData({ mascot: mascotView() })
+    },
 
     show(index) {
       const { steps } = this.data

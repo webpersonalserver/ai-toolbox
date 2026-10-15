@@ -3,11 +3,11 @@ const { ensureLogin, getSession } = require('../../../utils/session')
 const { runWithItem } = require('../../../utils/item-flow')
 const { describeRewards } = require('../../../utils/items')
 const { DEFAULT_SHARE, buildRescueShare } = require('../../../utils/share')
-const { HIDDEN_REWARD_POPUP, openMilestoneChests } = require('../../../utils/milestone')
+const { CHEST_ROOM_URL } = require('../../../utils/milestone')
 const { buildGuideSections } = require('../../../utils/rule-text')
 const { hasSeenGuide, markGuideSeen, rulesGuideKeyOf } = require('../../../utils/onboarding')
 const { gameConfigOf, hintTextsOf, clueLabelOf, describePoemSource, splitTypoClue } = require('../../../utils/games')
-const { openLeaderboardTab } = require('../../../utils/navigation')
+const { openPage, backToLevels, openLeaderboardTab } = require('../../../utils/navigation')
 const { splitClue } = require('../../../utils/clue')
 const { withMinimumDuration } = require('../../../utils/min-duration')
 const { createSoundPlayer } = require('../../../utils/practice/sound')
@@ -67,7 +67,6 @@ Page({
     levelNo: 0,
     stageName: '',
     poemSource: '',
-    total: 0,
     staminaCost: 1,
     attempt: null,
     hearts: [],
@@ -99,7 +98,6 @@ Page({
     rescueSheetVisible: false,
     cheer: HIDDEN_CHEER,
     perfectPass: false,
-    rewardPopup: HIDDEN_REWARD_POPUP,
     guideVisible: false,
     guideSections: [],
     guideConfirmText: GUIDE_CONFIRM_TEXT.REVIEW,
@@ -132,7 +130,6 @@ Page({
     const puzzle = detail.puzzle || {}
     this.setData({
       stage,
-      total: detail.total,
       staminaCost: detail.staminaCost,
       attempt: detail.attempt,
       hearts: buildHearts(detail.attempt),
@@ -332,18 +329,9 @@ Page({
   },
 
   handleOpenChests() {
-    return this.withBusy(async () => {
-      const popup = await openMilestoneChests(this.data.gameType)
-      if (!popup) return
-      this.syncItems()
-      this.setData({ 'milestone.pendingChests': 0, rewardPopup: popup })
-    })
+    openPage(CHEST_ROOM_URL)
   },
 
-  closeRewardPopup() {
-    this.setData({ rewardPopup: HIDDEN_REWARD_POPUP })
-    this.syncItems()
-  },
 
   noop() {},
 
@@ -357,7 +345,7 @@ Page({
   async goNextLevel() {
     const { gameType, nextLevelNo, stage } = this.data
     if (!nextLevelNo) {
-      wx.navigateBack()
+      backToLevels(gameType)
       return
     }
     if (stage === PLAY_STAGES.NEXT) return
@@ -384,7 +372,7 @@ Page({
   },
 
   goLevelList() {
-    wx.navigateBack()
+    backToLevels(this.data.gameType)
   },
 
   onShareAppMessage(event) {

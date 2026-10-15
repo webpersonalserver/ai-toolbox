@@ -2,9 +2,9 @@ const { game, toastError } = require('../../../utils/api')
 const { ensureLogin } = require('../../../utils/session')
 const { showRescueNotices } = require('../../../utils/rescue-notice')
 const { DEFAULT_SHARE } = require('../../../utils/share')
-const { HIDDEN_REWARD_POPUP, openMilestoneChests, describeTitleProgress } = require('../../../utils/milestone')
+const { CHEST_ROOM_URL, describeTitleProgress } = require('../../../utils/milestone')
 const { gameConfigOf, playUrlOf } = require('../../../utils/games')
-const { openLeaderboardTab } = require('../../../utils/navigation')
+const { openPage, openLeaderboardTab } = require('../../../utils/navigation')
 
 const LEVELS_PER_PAGE = 50
 
@@ -54,9 +54,7 @@ Page({
     allSolved: false,
     titleName: '',
     titleProgressText: '',
-    pendingChests: 0,
-    openingChests: false,
-    rewardPopup: HIDDEN_REWARD_POPUP
+    pendingChests: 0
   },
 
   onLoad(query) {
@@ -116,24 +114,17 @@ Page({
     this.showPage(pageIndexOf(event.currentTarget.dataset.firstLevelNo))
   },
 
-  async handleOpenChests() {
-    if (this.data.openingChests) return
-    this.setData({ openingChests: true })
-    const popup = await openMilestoneChests(this.data.gameType)
-    this.setData({ openingChests: false })
-    if (popup) this.setData({ pendingChests: 0, rewardPopup: popup })
+  handleOpenChests() {
+    openPage(CHEST_ROOM_URL)
   },
 
-  closeRewardPopup() {
-    this.setData({ rewardPopup: HIDDEN_REWARD_POPUP })
-  },
 
   openLeaderboard() {
     openLeaderboardTab(this.data.gameType)
   },
 
   openBook() {
-    wx.navigateTo({ url: `/pages/game/book/book?gameType=${this.data.gameType}` })
+    openPage(`/pages/game/book/book?gameType=${this.data.gameType}`)
   },
 
   showPreviousPage() {
@@ -151,7 +142,7 @@ Page({
       return
     }
     // Fresh levels start straight away; a failed attempt still stops on the "再来一次" card (see play.autoStartIfRequested).
-    wx.navigateTo({ url: playUrlOf(this.data.gameType, levelNo) })
+    openPage(playUrlOf(this.data.gameType, levelNo))
   },
 
   onShareAppMessage() {

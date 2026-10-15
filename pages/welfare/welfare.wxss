@@ -29,11 +29,6 @@
   font-weight: 800;
 }
 
-.welfare__icon--checkin {
-  background: var(--color-success);
-  box-shadow: 0 6rpx 0 var(--color-border);
-}
-
 .welfare__icon--image {
   background: var(--color-gold-soft);
   padding: 14rpx;

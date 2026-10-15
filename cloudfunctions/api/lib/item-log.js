@@ -6,7 +6,6 @@ const ITEM_LOG_REASONS = {
   AD: 'ad',
   USE: 'use',
   MILESTONE: 'milestone',
-  RECOVERY: 'recovery',
   REFUND: 'refund',
   PRACTICE: 'practice',
   DAILY_CHALLENGE: 'daily'

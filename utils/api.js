@@ -2,14 +2,12 @@ const CLOUD_FUNCTION_NAME = 'api'
 // Shown when the cloud gives no message of its own; the players are children, so keep it friendly and actionable.
 const FALLBACK_ERROR_MESSAGE = '哎呀，出了点小问题，再试一次吧'
 
+// The cloud's codes (cloudfunctions/api/lib/response.js) that the pages react to.
 const ERROR_CODES = {
   NETWORK: -1,
   INSUFFICIENT_ITEM: 40001,
-  ALREADY_CHECKED_IN: 40002,
-  LEVEL_LOCKED: 40003,
   RESCUE_CLOSED: 40008,
   RESCUE_HELPER_DAILY_LIMIT: 40011,
-  RESCUE_NEEDS_ATTEMPT: 40013,
   RESCUE_HELPER_LOCKED: 40014
 }
 
@@ -45,15 +43,12 @@ const account = {
   updateProfile: (profile) => call('account.updateProfile', profile),
   checkin: () => call('account.checkin'),
   grantAdReward: (itemType) => call('account.grantAdReward', { itemType }),
-  claimRecoveredStamina: () => call('account.claimRecoveredStamina'),
   claimDoubleReward: (token) => call('account.claimDoubleReward', { token })
 }
 
 const game = {
   overview: () => call('game.overview'),
   levelList: (gameType) => call('game.levelList', { gameType }),
-  summary: (gameType) => call('game.summary', { gameType }),
-  claimMilestones: (gameType) => call('game.claimMilestones', { gameType }),
   solvedBook: (gameType, page) => call('game.solvedBook', { gameType, page }),
   getLevel: (gameType, levelNo) => call('game.getLevel', { gameType, levelNo }),
   startAttempt: (gameType, levelNo) => call('game.startAttempt', { gameType, levelNo }),
@@ -74,8 +69,7 @@ const practice = {
   honors: () => call('practice.honors'),
   syncProgress: (practiceId, progress, practiced) => call('practice.syncProgress', { practiceId, progress, practiced }),
   mistakes: (practiceId, unitId) => call('practice.mistakes', { practiceId, unitId }),
-  weekly: () => call('practice.weekly'),
-  claimChests: (practiceId) => call('practice.claimChests', { practiceId })
+  weekly: () => call('practice.weekly')
 }
 
 const speech = {
@@ -93,7 +87,8 @@ const assets = {
 }
 
 const leaderboard = {
-  list: (gameType) => call('leaderboard.list', { gameType })
+  list: (gameType) => call('leaderboard.list', { gameType }),
+  summary: () => call('leaderboard.summary')
 }
 
 const admin = {
@@ -112,7 +107,7 @@ const math = {
 
 // 口算竞速: 60 seconds on one island's questions; the cloud judges the run again when it is handed in.
 const sprint = {
-  islands: () => call('sprint.islands'),
+  islands: (subject) => call('sprint.islands', { subject }),
   start: (islandId) => call('sprint.start', { islandId }),
   finish: (runId, answers) => call('sprint.finish', { runId, answers }),
   board: (islandId) => call('sprint.board', { islandId })

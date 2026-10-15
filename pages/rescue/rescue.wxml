@@ -1,5 +1,11 @@
 <loading-skeleton wx:if="{{loading}}" rows="2" />
-<view class="page rescue game-theme--{{gameType}}" wx:if="{{!loading}}">
+<view wx:if="{{!loading && loadFailed}}" class="page rescue">
+  <view class="card rescue__failed" bindtap="retryLoad">
+    <view class="rescue__failed-title">📶 没连上网络</view>
+    <view>点我再试一次</view>
+  </view>
+</view>
+<view class="page rescue game-theme--{{gameType}}" wx:if="{{!loading && !loadFailed}}">
   <view class="rescue__header">
     <image wx:if="{{requesterAvatar}}" class="rescue__avatar" src="{{requesterAvatar}}" mode="aspectFill" />
     <view wx:else class="rescue__avatar rescue__avatar--empty">友</view>

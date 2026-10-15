@@ -10,8 +10,7 @@ const countPendingChests = (games, practices = []) => {
 
 const countUnclaimedWelfare = (session, games, practices = []) => {
   const checkin = session.today.checkedIn ? 0 : 1
-  const recovery = session.items.staminaPending > 0 ? 1 : 0
-  return checkin + recovery + countPendingChests(games, practices)
+  return checkin + countPendingChests(games, practices)
 }
 
 const TASK_ACTIONS = {
@@ -35,7 +34,6 @@ const recoveryTask = (session) => {
   const { dailyCap, intervalMinutes } = rules.staminaRecovery
   const progressText = `每 ${intervalMinutes} 分钟 +1，今天已恢复 ${items.recoveredToday || 0} / ${dailyCap} 点`
   const base = { key: TASK_ACTIONS.RECOVERY, icon: ITEM_ICONS.stamina, name: '自动恢复体力', progressText }
-  if (items.staminaPending > 0) return taskRow({ ...base, actionText: `领取 +${items.staminaPending}` })
   if ((items.recoveredToday || 0) >= dailyCap) return taskRow({ ...base, done: true, statusText: '今天送完啦' })
   return taskRow({ ...base, statusText: '恢复中' })
 }

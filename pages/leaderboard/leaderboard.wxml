@@ -1,75 +1,29 @@
-<view class="lb-subjects">
-  <view
-    wx:for="{{subjectTabs}}"
-    wx:key="id"
-    class="lb-subjects__tab {{item.active ? 'lb-subjects__tab--active' : ''}}"
-    data-id="{{item.id}}"
-    bindtap="switchSubject"
-  >{{item.icon}} {{item.name}}</view>
-</view>
-<view wx:if="{{boards.length}}" class="lb-boards">
-  <view
-    wx:for="{{boards}}"
-    wx:key="id"
-    class="lb-boards__chip {{item.id === boardId ? 'lb-boards__chip--active' : ''}}"
-    data-id="{{item.id}}"
-    bindtap="switchBoard"
-  >{{item.name}}</view>
-</view>
-<view wx:if="{{isSprint}}" class="lb-boards lb-boards--islands">
-  <view
-    wx:for="{{islands}}"
-    wx:key="id"
-    class="lb-boards__chip lb-boards__chip--small {{item.id === islandId ? 'lb-boards__chip--active' : ''}}"
-    data-id="{{item.id}}"
-    bindtap="switchIsland"
-  >{{item.name}}</view>
-</view>
+<view class="page leaderboard-home">
+  <view wx:if="{{loadFailed}}" class="lb-home__notice" bindtap="loadSummary">📶 名次没加载出来，点我再试一次</view>
 
-<view wx:if="{{comingSoon}}" class="page leaderboard">
-  <view class="card leaderboard__empty">🎠 字母乐园正在建造中，英语玩法开放后这里就有排行榜～</view>
-</view>
-
-<loading-skeleton wx:if="{{loading && !comingSoon}}" rows="4" />
-<view wx:if="{{!loading && loadFailed && !comingSoon}}" class="page leaderboard">
-  <view class="card leaderboard__empty" bindtap="retryLoad">
-    <view class="leaderboard__empty-title">📶 没连上网络</view>
-    <view>点我再试一次</view>
-  </view>
-</view>
-<view class="page leaderboard" wx:if="{{!loading && !loadFailed && !comingSoon}}">
-  <view class="leaderboard__summary">{{ruleText}}</view>
-
-  <view wx:if="{{!entries.length && isSprint}}" class="card leaderboard__empty" bindtap="openSprint">这座岛还没有人挑战，点我去当第一名！</view>
-  <view wx:elif="{{!entries.length}}" class="card leaderboard__empty">还没有人上榜，快去闯关吧</view>
-
-  <view
-    wx:for="{{entries}}"
-    wx:key="rank"
-    class="leaderboard__row {{item.isMe ? 'leaderboard__row--me' : ''}}"
-  >
-    <view class="leaderboard__rank {{item.rank <= podiumSize ? 'leaderboard__rank--podium' : ''}}">{{item.rank}}</view>
-    <image wx:if="{{item.avatarUrl}}" class="leaderboard__avatar" src="{{item.avatarUrl}}" mode="aspectFill" lazy-load />
-    <view wx:else class="leaderboard__avatar leaderboard__avatar--empty">{{item.initial}}</view>
-    <view class="leaderboard__body">
-      <view class="leaderboard__name">{{item.displayName}}<text wx:if="{{item.isMe}}" class="leaderboard__me-tag">我</text></view>
-      <view class="leaderboard__title">{{item.detail}}</view>
+  <view wx:for="{{sections}}" wx:for-item="section" wx:key="id" class="lb-home__section">
+    <view class="lb-home__title">{{section.icon}} {{section.name}}</view>
+    <view wx:if="{{section.comingSoon}}" class="card lb-home__soon">正在建造中，英语玩法开放后这里就有排行榜～</view>
+    <view wx:else class="lb-home__grid">
+      <view
+        wx:for="{{section.cards}}"
+        wx:key="id"
+        class="card lb-card"
+        data-url="{{item.url}}"
+        bindtap="openBoard"
+      >
+        <view class="lb-card__head">
+          <text class="lb-card__icon">{{item.icon}}</text>
+          <text class="lb-card__name">{{item.name}}</text>
+          <text wx:if="{{item.tag}}" class="lb-card__tag">{{item.tag}}</text>
+        </view>
+        <view wx:if="{{loading}}" class="lb-card__rank lb-card__rank--loading">加载中…</view>
+        <view wx:elif="{{loadFailed}}" class="lb-card__rank lb-card__rank--loading">名次 —</view>
+        <block wx:else>
+          <view class="lb-card__rank {{item.onPodium ? 'lb-card__rank--podium' : ''}}">{{item.rankText}}</view>
+          <view class="lb-card__detail">{{item.detail}}</view>
+        </block>
+      </view>
     </view>
-    <view class="leaderboard__score">{{item.value}}<text class="leaderboard__unit"> {{unit}}</text></view>
-  </view>
-
-  <view wx:if="{{openSeatsText}}" class="card leaderboard__open-seats">{{openSeatsText}}</view>
-</view>
-
-<view wx:if="{{!loading && !loadFailed && !comingSoon && me && !me.inTop}}" class="leaderboard__mine">
-  <view class="leaderboard__row leaderboard__row--me">
-    <view class="leaderboard__rank">{{me.rankText}}</view>
-    <image wx:if="{{me.avatarUrl}}" class="leaderboard__avatar" src="{{me.avatarUrl}}" mode="aspectFill" />
-    <view wx:else class="leaderboard__avatar leaderboard__avatar--empty">{{me.initial}}</view>
-    <view class="leaderboard__body">
-      <view class="leaderboard__name">{{me.displayName}}<text class="leaderboard__me-tag">我</text></view>
-      <view class="leaderboard__title">{{me.detail}}</view>
-    </view>
-    <view class="leaderboard__score">{{me.value}}<text class="leaderboard__unit"> {{unit}}</text></view>
   </view>
 </view>

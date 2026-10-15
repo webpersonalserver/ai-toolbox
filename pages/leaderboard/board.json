@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "排行榜",
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "loading-skeleton": "/components/loading-skeleton/loading-skeleton"
+  }
+}
