@@ -106,9 +106,9 @@ const BASELINE_TITLES_BY_GAME = {
 }
 
 const DEFAULT_RULES = {
-  signupItems: { hint: 10, stamina: 50 },
+  signupItems: { hint: 8, stamina: 50 },
   checkinRewards: [
-    { type: 'hint', amount: 3 },
+    { type: 'hint', amount: 1 },
     { type: 'stamina', amount: 5 }
   ],
   // 每日挑战: paid once a day for finishing (any score); flowers come from honors.flowers.perEvent.
@@ -141,9 +141,13 @@ const DEFAULT_RULES = {
   },
   milestone: {
     everyLevels: 10,
+    // Chest n holds base + step × ⌊(n − 1) / everyChests⌋, at most max. Every bigChest.everyChests-th chest is a big
+    // one: its amount is multiplied by bigChest.multiplier, unless the type has its own big rule — then big chests
+    // from big.fromChest on hold big.amount instead, and earlier big chests are ordinary.
+    // Hints: 1 in each of the first 10 chests (levels 10–100), 2 from the 11th, and 3 in each big chest from then on.
     rewardRules: {
       stamina: { base: 10, step: 2, everyChests: 1, max: 20 },
-      hint: { base: 1, step: 1, everyChests: 5, max: 3 }
+      hint: { base: 1, step: 1, everyChests: 10, max: 2, big: { fromChest: 11, amount: 3 } }
     },
     bigChest: { everyChests: 5, multiplier: 2 }
   },
@@ -206,6 +210,7 @@ const isBoolean = (value) => typeof value === 'boolean'
 const isString = (value) => typeof value === 'string'
 const isNonNegativeInteger = (value) => Number.isInteger(value) && value >= 0
 const isPositiveInteger = (value) => Number.isInteger(value) && value > 0
+const isBigChestRule = (value) => value === undefined || (isPlainObject(value) && isPositiveInteger(value.fromChest) && isNonNegativeInteger(value.amount))
 const LEADERBOARD_MAX_SIZE = 1000
 const isLeaderboardSize = (value) => isPositiveInteger(value) && value <= LEADERBOARD_MAX_SIZE
 const isStringList = (value) => Array.isArray(value) && value.every(isString)
@@ -258,6 +263,7 @@ const RULE_VALIDATORS = {
   'milestone.rewardRules.hint.step': isNonNegativeInteger,
   'milestone.rewardRules.hint.everyChests': isPositiveInteger,
   'milestone.rewardRules.hint.max': isNonNegativeInteger,
+  'milestone.rewardRules.hint.big': isBigChestRule,
   'milestone.bigChest.everyChests': isPositiveInteger,
   'milestone.bigChest.multiplier': isPositiveInteger,
   'maintenance.itemLogRetentionDays': isPositiveInteger,

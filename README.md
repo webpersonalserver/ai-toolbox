@@ -69,9 +69,9 @@
 
 | 字段 | 默认 | 含义 |
 |---|---|---|
-| `signupItems.hint` | 10 | 新账号赠送的提示次数 |
+| `signupItems.hint` | 8 | 新账号赠送的提示次数 |
 | `signupItems.stamina` | 50 | 新账号赠送的体力 |
-| `checkinRewards` | 提示 3、体力 5 | 每日打卡奖励，数组 `[{type, amount}]`，`type` 取 `hint` / `stamina` |
+| `checkinRewards` | 提示 1、体力 5 | 每日打卡奖励，数组 `[{type, amount}]`，`type` 取 `hint` / `stamina` |
 | `ad.enabled` | `false` | 激励视频开关，开通流量主前保持 `false` |
 | `ad.adUnitId` | `''` | 激励视频广告位 ID |
 | `ad.rewards.hint` / `.stamina` | 2 / 10 | 看完一次视频奖励多少 |
@@ -89,8 +89,8 @@
 | `rescue.dailyLimitPerHelper` | 2 | 同一位好友每天最多帮同一个人解几关 |
 | `rescue.maxWrongAnswersPerHelper` | 3 | 每位好友对每条求助最多答错几次，超过就不能再答（防止乱点试出答案） |
 | `milestone.everyLevels` | 10 | 每通过多少关解锁一个宝箱 |
-| `milestone.rewardRules.<道具>` | 体力 `{base:10, step:2, everyChests:1, max:20}`；提示 `{base:1, step:1, everyChests:5, max:3}`（提示故意给得少，卡关时看视频拿提示是主要广告位置） | 第 n 个宝箱 = min(max, base + step × ⌊(n−1) ÷ everyChests⌋) |
-| `milestone.bigChest` | `{everyChests:5, multiplier:2}` | 每第 5 个宝箱（每 50 关）是大宝箱，奖励 ×2（翻倍在封顶之后计算） |
+| `milestone.rewardRules.<道具>` | 体力 `{base:10, step:2, everyChests:1, max:20}`；提示 `{base:1, step:1, everyChests:10, max:2, big:{fromChest:11, amount:3}}` | 第 n 个宝箱 = min(max, base + step × ⌊(n−1) ÷ everyChests⌋)。带 `big` 的道具不跟大宝箱翻倍：从第 `big.fromChest` 个起，大宝箱给 `big.amount`。提示即：100 关前每个宝箱 1 个、不翻倍；110 关起每个 2 个，每第 5 个大宝箱 3 个 |
+| `milestone.bigChest` | `{everyChests:5, multiplier:2}` | 每第 5 个宝箱（每 50 关）是大宝箱，没有自己 `big` 规则的道具（体力）×2（翻倍在封顶之后计算） |
 | `maintenance.itemLogRetentionDays` | 180 | 道具流水保留天数，过期由定时任务清理 |
 | `maintenance.dailyRecordRetentionDays` | 7 | 每日打卡记录、求助计数这类按天记录的数据保留天数 |
 | `leaderboard.size` | 100 | 排行榜展示前多少名（上限 1000） |

@@ -48,15 +48,15 @@ const startedAttempt = { active: true, wrongCount: 0 }
 
 ;(async () => {
   let r = await call('u1', 'account.login')
-  assert(r.code === 0 && r.data.items.hint === 10 && r.data.items.stamina === 50 && r.data.items.rescue === undefined, 'signup items hint10 stamina50', r)
+  assert(r.code === 0 && r.data.items.hint === 8 && r.data.items.stamina === 50 && r.data.items.rescue === undefined, 'signup items hint8 stamina50', r)
   assert(r.data.rules.rescue.dailyLimitPerHelper === 2, 'rescue limit exposed', r.data)
-  r = await call('u1', 'account.login'); assert(!r.data.isNewUser && r.data.items.hint === 10, 'relogin no double grant', r)
+  r = await call('u1', 'account.login'); assert(!r.data.isNewUser && r.data.items.hint === 8, 'relogin no double grant', r)
   r = await call('u1', 'game.getLevel', { gameType: 'idiom', levelNo: 1 }); assert(r.data.puzzle === null && !r.data.attempt.active && r.data.staminaCost === 1, 'puzzle hidden before start', r)
   r = await call('u1', 'game.submit', { gameType: 'idiom', levelNo: 1, answer: 'x' }); assert(r.code === 40010, 'submit needs active attempt', r)
   r = await call('u1', 'game.useHint', { gameType: 'idiom', levelNo: 1 }); assert(r.code === 40010, 'hint needs active attempt', r)
   r = await call('u1', 'game.startAttempt', { gameType: 'idiom', levelNo: 1 }); assert(r.code === 0 && r.data.items.stamina === 49 && r.data.puzzle.board.length === 12 && !r.data.puzzle.answer && r.data.attempt.attemptsLeft === 3, 'start costs 1 stamina', r)
   r = await call('u1', 'game.startAttempt', { gameType: 'idiom', levelNo: 1 }); assert(r.data.items === null && S.users.u1.items.stamina === 49, 're-enter active attempt is free', r)
-  r = await call('u1', 'game.useHint', { gameType: 'idiom', levelNo: 1 }); assert(r.code === 0 && r.data.items.hint === 9 && r.data.revealed.join('') === levels[0].answer[0], 'hint', r)
+  r = await call('u1', 'game.useHint', { gameType: 'idiom', levelNo: 1 }); assert(r.code === 0 && r.data.items.hint === 7 && r.data.revealed.join('') === levels[0].answer[0], 'hint', r)
   r = await call('u1', 'game.submit', { gameType: 'idiom', levelNo: 1, answer: '一一一一' }); assert(r.data.correct === false && r.data.attempt.attemptsLeft === 2, 'wrong -1 heart', r)
   await call('u1', 'game.submit', { gameType: 'idiom', levelNo: 1, answer: '一一一一' })
   r = await call('u1', 'game.submit', { gameType: 'idiom', levelNo: 1, answer: '一一一一' }); assert(r.data.attempt.failed && !r.data.attempt.active, '3 wrong -> failed', r)
@@ -69,7 +69,7 @@ const startedAttempt = { active: true, wrongCount: 0 }
   // stamina exhaustion & next steps
   S.users.u1.items.stamina = 0; S.users.u1.staminaAnchorAt = Date.now()
   r = await call('u1', 'game.startAttempt', { gameType: 'idiom', levelNo: 2 }); assert(r.code === 40001 && r.data.itemType === 'stamina' && r.data.next === 'checkin' && r.data.checkinReward === 5, 'no stamina -> checkin', r)
-  r = await call('u1', 'account.checkin'); assert(r.code === 0 && r.data.items.stamina === 5 && r.data.items.hint === 12, 'checkin grants hint+stamina', r)
+  r = await call('u1', 'account.checkin'); assert(r.code === 0 && r.data.items.stamina === 5 && r.data.items.hint === 8, 'checkin grants 1 hint + 5 stamina', r)
   r = await call('u1', 'account.checkin'); assert(r.code === 40002, 'checkin once', r)
   S.users.u1.items.stamina = 0; S.users.u1.staminaAnchorAt = Date.now()
   r = await call('u1', 'game.startAttempt', { gameType: 'idiom', levelNo: 2 }); assert(r.data.next === 'practice' && r.data.practiceStaminaRoom === 15, 'ad off -> earn stamina by practice', r)
@@ -552,7 +552,10 @@ const startedAttempt = { active: true, wrongCount: 0 }
   assert(r.data.achievement.milestone.nextChestNo === 5 && r.data.achievement.milestone.nextChestIsBig && r.data.achievement.milestone.nextChestRewards[0].amount === 36, 'next chest preview shows the big chest', r.data.achievement.milestone)
   S.progress['k1_idiom'].solved = Array.from({ length: 50 }, (_, i) => i + 1)
   r = await call('k1', 'chests.open', { all: true })
-  assert(r.data.chests.length === 1 && r.data.chests[0].isBig && r.data.rewards.find((x) => x.type === 'stamina').amount === 36 && r.data.rewards.find((x) => x.type === 'hint').amount === 2, 'fifth chest is doubled', r.data)
+  assert(r.data.chests.length === 1 && r.data.chests[0].isBig && r.data.rewards.find((x) => x.type === 'stamina').amount === 36 && r.data.rewards.find((x) => x.type === 'hint').amount === 1, 'fifth chest doubles stamina; hints stay 1 before level 110', r.data)
+  const { chestRewards } = require(path.join(API_ROOT, 'lib', 'achievement'))
+  const hintsInChest = (chestNo) => chestRewards(chestNo, DEFAULT_RULES).find((reward) => reward.type === 'hint').amount
+  assert([1, 5, 10, 11, 14, 15, 20, 21].map(hintsInChest).join() === '1,1,1,2,2,3,3,2', 'hints: 1 up to level 100, then 2, big chests from the 11th hold 3', [1, 5, 10, 11, 14, 15, 20, 21].map(hintsInChest))
   S.app_config = { game_rules: { _id: 'game_rules', milestone: { rewardRules: { stamina: { base: 20, step: '2' } }, bigChest: { multiplier: 3 } } } }
   S.progress['k1_idiom'].solved = Array.from({ length: 60 }, (_, i) => i + 1)
   r = await call('k1', 'chests.open', { all: true })

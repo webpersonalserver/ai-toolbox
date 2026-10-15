@@ -181,67 +181,28 @@
   background: var(--game-color-soft);
 }
 
-.hall__sprint-icon {
-  background: var(--color-surface);
-}
-
-/* 为你推荐: one card per subject, side by side. */
+/* 为你推荐: one full-width card per subject, the same shape as the game list but tinted, so the next step is obvious. */
 .hall__picks {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: var(--space-md);
   margin-bottom: var(--space-md);
 }
 
-/* Half-width cards: a smaller inner padding than full-width cards, or the content gets squeezed. */
 .hall__pick {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
-  padding: var(--space-md);
+  margin-bottom: 0;
   background: var(--game-color-soft);
 }
 
 .hall__pick-subject {
-  align-self: flex-start;
-  padding: 0 var(--space-sm);
+  margin-left: var(--space-xs);
+  padding: 2rpx var(--space-sm);
   border-radius: 999rpx;
   background: var(--color-surface);
   color: var(--game-color-deep);
   font-size: 22rpx;
   font-weight: 900;
-}
-
-.hall__pick-head {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-}
-
-.hall__pick-icon {
-  flex-shrink: 0;
-  width: 64rpx;
-  height: 64rpx;
-  margin-right: 0;
-  font-size: var(--font-md);
-}
-
-.hall__pick-name {
-  font-size: var(--font-md);
-  font-weight: 900;
-}
-
-.hall__pick-reason {
-  color: var(--color-ink-soft);
-  font-size: 22rpx;
-  line-height: 1.4;
-}
-
-.hall__pick-go {
-  align-self: flex-end;
-  color: var(--game-color-deep);
-  font-size: var(--font-sm);
-  font-weight: 900;
+  vertical-align: middle;
 }
 
 /* 全部玩法: 汉字城堡 / 数字星球 / 字母乐园, one subject at a time. */

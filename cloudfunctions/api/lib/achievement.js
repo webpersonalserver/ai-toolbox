@@ -18,13 +18,18 @@ const milestoneClaimedCount = (progress) => progress.milestoneClaimedSolvedCount
 
 const isBigChest = (chestNo, rules) => chestNo % rules.milestone.bigChest.everyChests === 0
 
+// See milestone.rewardRules in lib/rules.js: a type with its own big rule ignores the shared multiplier.
+const chestAmount = (rule, chestNo, isBig, multiplier) => {
+  const amount = Math.min(rule.max, rule.base + rule.step * Math.floor((chestNo - 1) / rule.everyChests))
+  if (!isBig) return amount
+  if (rule.big) return chestNo >= rule.big.fromChest ? rule.big.amount : amount
+  return amount * multiplier
+}
+
 const chestRewards = (chestNo, rules) => {
-  const multiplier = isBigChest(chestNo, rules) ? rules.milestone.bigChest.multiplier : 1
+  const isBig = isBigChest(chestNo, rules)
   return Object.entries(rules.milestone.rewardRules)
-    .map(([type, rule]) => {
-      const grown = rule.base + rule.step * Math.floor((chestNo - 1) / rule.everyChests)
-      return { type, amount: Math.min(rule.max, grown) * multiplier }
-    })
+    .map(([type, rule]) => ({ type, amount: chestAmount(rule, chestNo, isBig, rules.milestone.bigChest.multiplier) }))
     .filter((reward) => reward.amount > 0)
 }
 

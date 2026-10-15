@@ -34,7 +34,7 @@ const buildRuleSections = (rules) => {
   const { everyLevels, bigChest, firstChestRewards } = rules.milestone
   sections.push({
     title: '宝箱',
-    text: `每闯过 ${everyLevels} 关开一个宝箱，第一个就有 ${describeRewards(firstChestRewards)}，越往后越多；每第 ${bigChest.everyChests} 个是大宝箱，奖励翻 ${bigChest.multiplier} 倍。没开的宝箱可以在「我的宝箱」里打开`
+    text: `每闯过 ${everyLevels} 关开一个宝箱，第一个就有 ${describeRewards(firstChestRewards)}，越往后越多；每第 ${bigChest.everyChests} 个是大宝箱，奖励更多。没开的宝箱可以在「我的宝箱」里打开`
   })
   if (rules.practice) {
     const { dailyCaps } = rules.practice

@@ -28,23 +28,29 @@
     <view class="hall__game-action">{{dailyDone ? '看成绩 ›' : '去挑战 ›'}}</view>
   </view>
 
+  <!-- One full-width card per subject: the game, why it is picked, and the level it opens. -->
   <view wx:if="{{recommendations.length}}" class="hall__picks">
     <view
       wx:for="{{recommendations}}"
       wx:key="subjectId"
-      class="card hall__pick game-theme--{{item.card.gameType}}"
+      class="card hall__game hall__pick game-theme--{{item.card.gameType}}"
       hover-class="hall__game--pressed"
       data-game-type="{{item.card.gameType}}"
       data-level-no="{{item.levelNo}}"
       bindtap="openRecommendation"
     >
-      <view class="hall__pick-subject">{{item.subjectName}}</view>
-      <view class="hall__pick-head">
-        <view class="hall__game-icon hall__pick-icon">{{item.card.icon}}</view>
-        <view class="hall__pick-name">{{item.card.name}}</view>
+      <view class="hall__game-icon">{{item.card.icon}}</view>
+      <view class="hall__game-body">
+        <view class="hall__game-name">
+          {{item.card.name}}
+          <text class="hall__pick-subject">{{item.subjectName}}</text>
+        </view>
+        <view class="hall__game-desc">{{item.reason}}</view>
       </view>
-      <view class="hall__pick-reason">{{item.reason}}</view>
-      <view class="hall__pick-go">第 {{item.levelNo}} 关 ›</view>
+      <view class="hall__continue">
+        <view class="hall__continue-label">{{item.levelNo > 1 ? '继续' : '开始'}}</view>
+        <view class="hall__continue-level">第 {{item.levelNo}} 关</view>
+      </view>
     </view>
   </view>
 
@@ -95,7 +101,7 @@
   </view>
 
   <view wx:if="{{showSprint}}" class="card hall__game hall__sprint game-theme--{{sprintCard.themeGame}}" hover-class="hall__game--pressed" bindtap="openSprint">
-    <view class="hall__game-icon hall__sprint-icon">⏱</view>
+    <view class="hall__game-icon">速</view>
     <view class="hall__game-body">
       <view class="hall__game-name">{{sprintCard.name}}</view>
       <view class="hall__game-desc">{{sprintCard.intro}}</view>
