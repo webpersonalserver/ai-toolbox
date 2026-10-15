@@ -243,8 +243,7 @@
   flex-shrink: 0;
   width: auto;
   height: 88rpx;
-  margin: 0 0 0 var(--space-md);
-  padding: 0 var(--space-lg);
+  margin: 0 0 var(--jelly-depth) var(--space-md);
   line-height: 88rpx;
   font-size: var(--font-sm);
   white-space: nowrap;
