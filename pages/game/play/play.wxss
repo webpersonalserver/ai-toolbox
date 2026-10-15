@@ -240,10 +240,14 @@
 }
 
 .btn.play__reward-btn {
-  width: 180rpx;
+  flex-shrink: 0;
+  width: auto;
   height: 88rpx;
+  margin: 0 0 0 var(--space-md);
+  padding: 0 var(--space-lg);
   line-height: 88rpx;
   font-size: var(--font-sm);
+  white-space: nowrap;
 }
 
 .play__reward-hint {
