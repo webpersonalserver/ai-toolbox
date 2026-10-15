@@ -1,37 +1,111 @@
-<view class="game-tabs">
-  <view
-    wx:for="{{gameTabs}}"
-    wx:key="gameType"
-    class="game-tabs__tab {{item.gameType === gameType ? 'game-tabs__tab--active' : ''}}"
-    data-game-type="{{item.gameType}}"
-    bindtap="switchGame"
-  >{{item.shortName}}</view>
-</view>
-
-<loading-skeleton wx:if="{{loading}}" rows="3" />
-<view class="page admin" wx:if="{{!loading && current}}">
-  <view class="card admin__overview">
-    <view class="admin__rate">{{current.clearRateText}}</view>
-    <view class="admin__rate-label">当前通关率（通关全部 {{current.totalLevels}} 关的用户 / 总用户）</view>
-    <view class="admin__metrics">
-      <view class="admin__metric">
-        <view class="admin__metric-value">{{current.clearedUsers}}</view>
-        <view class="admin__metric-label">通关用户</view>
-      </view>
-      <view class="admin__metric">
-        <view class="admin__metric-value">{{current.totalUsers}}</view>
-        <view class="admin__metric-label">总用户</view>
-      </view>
-      <view class="admin__metric">
-        <view class="admin__metric-value">{{current.completionsToday}}</view>
-        <view class="admin__metric-label">今日新通关</view>
-      </view>
+<loading-skeleton wx:if="{{loading}}" rows="4" />
+<view class="page admin" wx:if="{{!loading && overview}}">
+  <!-- 1. Are children using it -->
+  <view class="admin__section-title">今天（总用户 {{overview.totalUsers}}）</view>
+  <view class="admin__cards">
+    <view class="card admin__card">
+      <view class="admin__card-value">{{overview.activeUsers}}</view>
+      <view class="admin__card-label">今日活跃</view>
+    </view>
+    <view class="card admin__card">
+      <view class="admin__card-value">{{overview.newUsers}}</view>
+      <view class="admin__card-label">今日新增</view>
+    </view>
+    <view class="card admin__card">
+      <view class="admin__card-value admin__card-value--small">{{overview.retentionText}}</view>
+      <view class="admin__card-label">次日留存（昨天新人今天回来）</view>
+    </view>
+    <view class="card admin__card">
+      <view class="admin__card-value">{{overview.dailyDone}}</view>
+      <view class="admin__card-label">完成今日挑战</view>
     </view>
   </view>
 
-  <view class="admin__section-title">最近通关</view>
+  <view class="admin__section-title">近 14 天（每小时记一次）</view>
   <view class="card admin__list">
-    <view wx:if="{{!recentCompletions.length}}" class="admin__empty">还没有人通关</view>
+    <view wx:if="{{!overview.trend.length}}" class="admin__empty">定时任务运行后出现</view>
+    <view wx:if="{{overview.trend.length}}" class="admin__row admin__row--head">
+      <view class="admin__cell">日期</view>
+      <view class="admin__cell">活跃</view>
+      <view class="admin__cell">新增</view>
+    </view>
+    <view wx:for="{{overview.trend}}" wx:key="date" class="admin__row">
+      <view class="admin__cell">{{item.dateText}}</view>
+      <view class="admin__cell">{{item.activeUsers}}</view>
+      <view class="admin__cell">{{item.newUsers}}</view>
+    </view>
+  </view>
+
+  <!-- 2. What they play -->
+  <view class="admin__section-title">玩法</view>
+  <view class="card admin__list">
+    <view class="admin__row admin__row--head">
+      <view class="admin__cell">玩法</view>
+      <view class="admin__cell">玩过</view>
+      <view class="admin__cell">今日过关</view>
+      <view class="admin__cell">最远</view>
+    </view>
+    <view wx:for="{{overview.games}}" wx:key="gameType" class="admin__row">
+      <view class="admin__cell">{{item.name}}</view>
+      <view class="admin__cell">{{item.players}} 人</view>
+      <view class="admin__cell">{{item.passedToday}} 人</view>
+      <view class="admin__cell">{{item.furthest}} 关</view>
+    </view>
+    <view class="admin__hint">
+      本周竞速成绩：<text wx:for="{{overview.sprints}}" wx:key="subject">{{index ? ' · ' : ''}}{{item.name}} {{item.runs}} 份</text>（一人一场地一份）
+    </view>
+  </view>
+
+  <!-- 4 & 5. Hints and 求助, today -->
+  <view class="admin__section-title">道具与求助（今天）</view>
+  <view class="card admin__list">
+    <view class="admin__row"><view class="admin__row-main">提示 送出 / 用掉</view><view class="admin__row-side">{{overview.hints.given}} / {{overview.hints.spent}}</view></view>
+    <view class="admin__row"><view class="admin__row-main">提示不够用的次数</view><view class="admin__row-side">{{overview.hints.shortage}}</view></view>
+    <view class="admin__row"><view class="admin__row-main">体力不够用的次数</view><view class="admin__row-side">{{overview.staminaShortage}}</view></view>
+    <view class="admin__row"><view class="admin__row-main">求助 发起 / 被解决</view><view class="admin__row-side">{{overview.rescues.created}} / {{overview.rescues.solved}}</view></view>
+  </view>
+
+  <!-- 3. Per game: where they get stuck, then the clear numbers -->
+  <view class="admin__section-title">按玩法看</view>
+  <view class="game-tabs admin__tabs">
+    <view
+      wx:for="{{gameTabs}}"
+      wx:key="gameType"
+      class="game-tabs__tab {{item.gameType === gameType ? 'game-tabs__tab--active' : ''}}"
+      data-game-type="{{item.gameType}}"
+      bindtap="switchGame"
+    >{{item.shortName}}</view>
+  </view>
+
+  <view class="card admin__list">
+    <view class="admin__list-head">
+      <text class="admin__list-title">卡关 Top 10</text>
+      <view class="admin__sorts">
+        <text class="admin__sort {{stuckSort === 'fails' ? 'admin__sort--on' : ''}}" data-sort="fails" bindtap="switchStuckSort">按失败</text>
+        <text class="admin__sort {{stuckSort === 'hints' ? 'admin__sort--on' : ''}}" data-sort="hints" bindtap="switchStuckSort">按提示</text>
+      </view>
+    </view>
+    <view wx:if="{{!stuckRows.length}}" class="admin__empty">还没有数据（从这个版本起开始记录）</view>
+    <view wx:if="{{stuckRows.length}}" class="admin__row admin__row--head">
+      <view class="admin__cell">关卡</view>
+      <view class="admin__cell">开始</view>
+      <view class="admin__cell">失败</view>
+      <view class="admin__cell">失败率</view>
+      <view class="admin__cell">提示</view>
+    </view>
+    <view wx:for="{{stuckRows}}" wx:key="levelNo" class="admin__row">
+      <view class="admin__cell">第 {{item.levelNo}} 关</view>
+      <view class="admin__cell">{{item.starts}}</view>
+      <view class="admin__cell">{{item.fails}}</view>
+      <view class="admin__cell">{{item.failRate}}%</view>
+      <view class="admin__cell">{{item.hints}}</view>
+    </view>
+  </view>
+
+  <view wx:if="{{current}}" class="card admin__list">
+    <view class="admin__list-head"><text class="admin__list-title">通关</text></view>
+    <view class="admin__row"><view class="admin__row-main">通关全部 {{current.totalLevels}} 关</view><view class="admin__row-side">{{current.clearedUsers}} 人 · {{current.clearRateText}}</view></view>
+    <view class="admin__row"><view class="admin__row-main">今日新通关</view><view class="admin__row-side">{{current.completionsToday}} 人</view></view>
     <view
       wx:for="{{recentCompletions}}"
       wx:key="index"
@@ -40,42 +114,27 @@
       bindlongpress="copyOpenid"
     >
       <view class="admin__row-main">{{item.displayName}}</view>
-      <view class="admin__row-side">{{item.totalLevels}} 关 · {{item.dateText}}</view>
+      <view class="admin__row-side">{{item.dateText}}</view>
     </view>
     <view wx:if="{{recentCompletions.length}}" class="admin__hint">长按一行可复制该用户的 openid</view>
   </view>
 
-  <view class="admin__section-title">每日趋势（每小时更新当天数据）</view>
-  <view class="card admin__list">
-    <view wx:if="{{!dailyHistory.length}}" class="admin__empty">暂无数据，定时任务运行后出现</view>
-    <view class="admin__row admin__row--head" wx:if="{{dailyHistory.length}}">
-      <view class="admin__cell">日期</view>
-      <view class="admin__cell">总用户</view>
-      <view class="admin__cell">通关</view>
-      <view class="admin__cell">通关率</view>
+  <block wx:if="{{showAds}}">
+    <view class="admin__section-title">视频广告（近 7 天）</view>
+    <view class="card admin__list">
+      <view wx:if="{{!adStats.length}}" class="admin__empty">还没有人看过视频</view>
+      <view wx:if="{{adStats.length}}" class="admin__row admin__row--head">
+        <view class="admin__cell">日期</view>
+        <view class="admin__cell">看的人</view>
+        <view class="admin__cell">体力/提示/翻倍</view>
+        <view class="admin__cell">人均</view>
+      </view>
+      <view wx:for="{{adStats}}" wx:key="date" class="admin__row">
+        <view class="admin__cell">{{item.dateText}}</view>
+        <view class="admin__cell">{{item.viewers}}</view>
+        <view class="admin__cell">{{item.staminaViews}}/{{item.hintViews}}/{{item.doubleViews}}</view>
+        <view class="admin__cell">{{item.viewsPerViewer}} 次</view>
+      </view>
     </view>
-    <view wx:for="{{dailyHistory}}" wx:key="date" class="admin__row">
-      <view class="admin__cell">{{item.dateText}}</view>
-      <view class="admin__cell">{{item.totalUsers}}</view>
-      <view class="admin__cell">{{item.clearedUsers}}</view>
-      <view class="admin__cell">{{item.clearRateText}}</view>
-    </view>
-  </view>
-
-  <view class="admin__section-title">视频广告（近 7 天，所有玩法合计）</view>
-  <view class="card admin__list">
-    <view wx:if="{{!adStats.length}}" class="admin__empty">还没有人看过视频（视频功能开启后才会有数据）</view>
-    <view class="admin__row admin__row--head" wx:if="{{adStats.length}}">
-      <view class="admin__cell">日期</view>
-      <view class="admin__cell">看的人</view>
-      <view class="admin__cell">体力/提示/翻倍</view>
-      <view class="admin__cell">人均</view>
-    </view>
-    <view wx:for="{{adStats}}" wx:key="date" class="admin__row">
-      <view class="admin__cell">{{item.dateText}}</view>
-      <view class="admin__cell">{{item.viewers}}</view>
-      <view class="admin__cell">{{item.staminaViews}}/{{item.hintViews}}/{{item.doubleViews}}</view>
-      <view class="admin__cell">{{item.viewsPerViewer}} 次</view>
-    </view>
-  </view>
+  </block>
 </view>

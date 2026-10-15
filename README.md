@@ -211,6 +211,16 @@
   - 选一年级或二年级，每个年级一个榜；题目是汉字闯关的四选一题（看图识字、拼音选字、认偏旁、选字组词），每局 150 道不重复
   - 题库由 `node scripts/build_hanzi_sprint.js` 从 `database/levels/hanzi.json` 生成到 `cloudfunctions/api/data/hanzi-sprint-pool.json`（改了汉字关卡后记得运行，`tests/boundaries.test.js` 会检查）；挑战场列表在 `cloudfunctions/api/lib/sprint-tracks.js`，页面那份在 `utils/sprint.js`，两份也由 boundaries 测试核对
 
+## 复习本与数据统计
+
+- **复习本**（「我的 → 我的段位」点任一玩法，或选关页的「复习本 ›」，页面 `pages/game/book`，接口 `game.reviewList`）：一个列表，收的是**闯过但不是独立完成**的关：答错过（最后一次挑战的 `attempts[关].wrongCount`）、挑战失败过（`failCounts[关]`）、用过提示（`hintsUsed[关]`）、好友帮忙过关（`rescuedLevels`）。每题只显示题面和原因标签，不显示答案，两个操作：「我会了」确认后移走（`game.dismissReview`，记进 `reviewDismissed`，移走后找不回）；「再练一次」进复习模式（`pages/game/play?review=1`，接口 `game.reviewLevel` / `game.reviewSubmit`）：不扣体力、没有提示和红心，答错可以一直试，答对后显示答案，孩子选「斩掉，我会了」或「先留着」。「我的」页每个玩法显示「复习 N 题」（`game.overview` 里的 `reviewCount`）
+- **数据统计**（管理员，「我的 → 数据统计」，接口 `admin.overview` / `admin.stuckLevels` / `admin.stats`，计算在 `lib/admin-overview.js`）：
+  - 今天：活跃（`users.lastLoginAt`）、新增、次日留存（昨天新人今天回来的比例）、完成今日挑战；近 14 天活跃 / 新增由每小时的定时任务存进 `stats_daily`（`kind: overview`）
+  - 玩法：每个玩法玩过的人数、今天过关人数、最远关卡；本周识字 / 口算竞速成绩数
+  - 道具与求助：今天提示送出 / 用掉、提示和体力不够用的次数（`stats_events`）、求助发起 / 被解决
+  - 按玩法看：卡关 Top 10（按失败次数或提示次数，`level_stats` 每关累计开始 / 失败 / 过关 / 提示），以及原来的通关数据；视频广告只在开启后显示
+  - 计数是答题时顺手累加的（`lib/play-stats.js`），失败只记日志、不影响玩家；从这个版本上线起才开始有数据
+
 ## 今日挑战（大厅「为你推荐」第一张）
 
 - 每天 10 道题，汉字和算术轮流出（字、算、字、算…）。每题只有一次机会，答错马上显示正确答案；顶部计时

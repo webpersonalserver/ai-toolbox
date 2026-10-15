@@ -11,7 +11,8 @@ const command = {
   in: (value) => ({ [COMMAND]: 'in', value }),
   gt: (value) => ({ [COMMAND]: 'gt', value }),
   gte: (value) => ({ [COMMAND]: 'gte', value }),
-  lt: (value) => ({ [COMMAND]: 'lt', value })
+  lt: (value) => ({ [COMMAND]: 'lt', value }),
+  and: (...conditions) => ({ [COMMAND]: 'and', value: conditions })
 }
 
 const collectionStore = (name) => (store[name] = store[name] || {})
@@ -62,14 +63,16 @@ const setPath = (target, path, value) => {
 
 const applyUpdate = (doc, data) => Object.entries(data).forEach(([path, value]) => setPath(doc, path, value))
 
-const matches = (doc, where) =>
-  Object.entries(where).every(([key, condition]) => {
-    if (condition && condition[COMMAND] === 'in') return condition.value.includes(doc[key])
-    if (condition && condition[COMMAND] === 'gt') return comparable(doc[key]) > comparable(condition.value)
-    if (condition && condition[COMMAND] === 'gte') return comparable(doc[key]) >= comparable(condition.value)
-    if (condition && condition[COMMAND] === 'lt') return comparable(doc[key]) < comparable(condition.value)
-    return doc[key] === condition
-  })
+const matchesCondition = (value, condition) => {
+  if (condition && condition[COMMAND] === 'and') return condition.value.every((part) => matchesCondition(value, part))
+  if (condition && condition[COMMAND] === 'in') return condition.value.includes(value)
+  if (condition && condition[COMMAND] === 'gt') return comparable(value) > comparable(condition.value)
+  if (condition && condition[COMMAND] === 'gte') return comparable(value) >= comparable(condition.value)
+  if (condition && condition[COMMAND] === 'lt') return comparable(value) < comparable(condition.value)
+  return value === condition
+}
+
+const matches = (doc, where) => Object.entries(where).every(([key, condition]) => matchesCondition(doc[key], condition))
 
 let autoId = 0
 const docApi = (name, id) => ({

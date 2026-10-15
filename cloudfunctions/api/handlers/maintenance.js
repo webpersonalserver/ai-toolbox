@@ -4,6 +4,7 @@ const { DAY_MS, chinaDateKey } = require('../lib/date')
 const { snapshotDailyStats } = require('../lib/stats')
 const { ALL_GAME_TYPES } = require('../lib/games')
 const { RESCUE_STATUS } = require('../lib/rescue-store')
+const { snapshotActivity } = require('../lib/admin-overview')
 
 
 const removeWhere = async (collectionName, condition) => {
@@ -54,6 +55,10 @@ const cleanupExpiredRecords = async () => {
   return removed
 }
 
-const snapshotStats = () => Promise.all(ALL_GAME_TYPES.map((gameType) => snapshotDailyStats(gameType)))
+// Hourly: each game's clear numbers, and today's active / new players for the 数据统计 trend.
+const snapshotStats = async () => {
+  const [games] = await Promise.all([Promise.all(ALL_GAME_TYPES.map((gameType) => snapshotDailyStats(gameType))), snapshotActivity()])
+  return games
+}
 
 module.exports = { cleanupExpiredRecords, snapshotStats }

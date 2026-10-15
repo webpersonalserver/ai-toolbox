@@ -23,13 +23,23 @@
       </view>
     </view>
     <block wx:else>
-      <view wx:for="{{gameTitles}}" wx:key="gameType" class="mine__game game-theme--{{item.gameType}}">
+      <!-- The whole row opens the game's 复习本 (口算闯关 has none: its level list instead). -->
+      <view
+        wx:for="{{gameTitles}}"
+        wx:key="gameType"
+        class="mine__game game-theme--{{item.gameType}}"
+        hover-class="mine__game--pressed"
+        data-game-type="{{item.gameType}}"
+        bindtap="openBook"
+      >
         <view class="mine__game-main">
           <view class="mine__game-name">{{item.name}}</view>
           <view class="mine__title-name">{{item.titleName}}</view>
           <view class="mine__title-progress">已通过 {{item.solvedCount}} 关 · {{item.titleProgressText}}</view>
         </view>
-        <view class="mine__book" data-game-type="{{item.gameType}}" bindtap="openBook">{{item.bookName}} ›</view>
+        <view wx:if="{{!item.hasReviewBook}}" class="mine__book">去闯关 ›</view>
+        <view wx:elif="{{item.reviewCount}}" class="mine__book">复习 {{item.reviewCount}} 题 ›</view>
+        <view wx:else class="mine__book mine__book--done">没有要复习的 ›</view>
       </view>
     </block>
     <view class="mine__title-toggle" bindtap="toggleTitles">

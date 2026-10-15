@@ -54,7 +54,8 @@ Page({
           ...gameConfigOf(gameType),
           titleName: summaryByGame[gameType].achievement.title.name,
           titleProgressText: describeTitleProgress(summaryByGame[gameType].achievement),
-          solvedCount: summaryByGame[gameType].solvedCount
+          solvedCount: summaryByGame[gameType].solvedCount,
+          reviewCount: summaryByGame[gameType].reviewCount || 0
         }))
       })
     } catch (error) {
@@ -132,7 +133,8 @@ Page({
   },
 
   openBook(event) {
-    openPage(`/pages/game/book/book?gameType=${event.currentTarget.dataset.gameType}`)
+    const { gameType } = event.currentTarget.dataset
+    openPage(gameConfigOf(gameType).hasReviewBook ? `/pages/game/book/book?gameType=${gameType}` : `/pages/game/levels/levels?gameType=${gameType}`)
   },
 
   onShareAppMessage() {

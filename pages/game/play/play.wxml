@@ -5,7 +5,8 @@
       <view wx:if="{{stageName}}" class="play__stage">{{stageName}}</view>
       <view class="play__level">第 {{levelNo}} 关</view>
     </view>
-    <view class="play__items">
+    <view wx:if="{{review}}" class="play__review-tag">复习 · 不扣体力</view>
+    <view wx:else class="play__items">
       <item-chip item-type="stamina" value="{{items.stamina}}" />
       <item-chip item-type="hint" value="{{items.hint}}" />
     </view>
@@ -41,7 +42,12 @@
   </view>
 
   <block wx:if="{{stage === 'playing'}}">
-    <view class="play__hearts">
+    <view wx:if="{{review}}" class="play__review-bar">
+      <text class="play__review-hint">自己想一想，答错可以再试</text>
+      <view class="play__answer-toggle" bindtap="toggleAnswer">{{answerShown ? '🙈 藏起答案' : '👀 看答案'}}</view>
+    </view>
+    <view wx:if="{{review && answerShown}}" class="play__review-answer">答案：{{reviewAnswer}}</view>
+    <view wx:else class="play__hearts">
       <image wx:for="{{hearts}}" wx:key="index" class="play__heart {{item ? '' : 'play__heart--lost'}}" src="{{item ? '/assets/icons/heart-full.png' : '/assets/icons/heart-empty.png'}}" mode="aspectFit" />
     </view>
     <view class="card play__clue">
@@ -69,7 +75,7 @@
       bind:complete="handleComplete"
     />
 
-    <view class="play__actions">
+    <view wx:if="{{!review}}" class="play__actions">
       <button class="btn btn--primary play__action" loading="{{busy}}" bindtap="handleHint">
         提示（{{hintsUsed}}/{{maxHints}}）
       </button>
@@ -78,7 +84,17 @@
     </view>
   </block>
 
-  <view wx:if="{{stage === 'solved'}}" class="card play__result">
+  <view wx:if="{{stage === 'solved' && review}}" class="card play__result">
+    <view class="play__result-title">答对啦！</view>
+    <game-solution game-type="{{gameType}}" solution="{{solution}}" />
+    <view class="play__review-ask">这题会了吗？</view>
+    <view class="play__actions">
+      <button class="btn btn--muted play__action" bindtap="backToBook">先留着</button>
+      <button class="btn btn--primary play__action" loading="{{busy}}" bindtap="dismissAndBack">斩掉，我会了</button>
+    </view>
+  </view>
+
+  <view wx:if="{{stage === 'solved' && !review}}" class="card play__result">
     <view class="play__result-title">答对啦！</view>
     <view class="play__result-badges">
       <view class="play__result-badge">闯过第 {{levelNo}} 关</view>

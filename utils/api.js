@@ -49,7 +49,10 @@ const account = {
 const game = {
   overview: () => call('game.overview'),
   levelList: (gameType) => call('game.levelList', { gameType }),
-  solvedBook: (gameType, page) => call('game.solvedBook', { gameType, page }),
+  reviewList: (gameType, page) => call('game.reviewList', { gameType, page }),
+  dismissReview: (gameType, levelNo) => call('game.dismissReview', { gameType, levelNo }),
+  reviewLevel: (gameType, levelNo) => call('game.reviewLevel', { gameType, levelNo }),
+  reviewSubmit: (gameType, levelNo, answer) => call('game.reviewSubmit', { gameType, levelNo, answer }),
   getLevel: (gameType, levelNo) => call('game.getLevel', { gameType, levelNo }),
   startAttempt: (gameType, levelNo) => call('game.startAttempt', { gameType, levelNo }),
   submit: (gameType, levelNo, answer) => call('game.submit', { gameType, levelNo, answer }),
@@ -93,6 +96,8 @@ const leaderboard = {
 
 const admin = {
   stats: (gameType) => call('admin.stats', { gameType }),
+  overview: () => call('admin.overview'),
+  stuckLevels: (gameType) => call('admin.stuckLevels', { gameType }),
   switches: () => call('admin.switches'),
   updateSwitches: (switches) => call('admin.updateSwitches', { switches })
 }

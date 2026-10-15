@@ -10,6 +10,7 @@ const { countLevels } = require('../lib/level-count')
 const { shownBoardOf } = require('../lib/games')
 const { seededRandom } = require('../lib/seeded-random')
 const { progressDocId } = require('../lib/progress')
+const { bumpDailyEvents } = require('../lib/play-stats')
 
 // 每日挑战: 10 questions a Beijing day — 5 汉字闯关 levels picked here (the same for children at about the same
 // level), and 5 sums the page makes from the date (utils/daily.js). Finishing pays once a day, whatever the score.
@@ -93,7 +94,7 @@ const submit = async ({ openid, payload }) => {
   })
   throwIfFailed(outcome)
   if (outcome.alreadyDone) return { alreadyDone: true, result: outcome.result, rewards: [], honors: null }
-  await writeItemLogs(openid, deltas, ITEM_LOG_REASONS.DAILY_CHALLENGE)
+  await Promise.all([writeItemLogs(openid, deltas, ITEM_LOG_REASONS.DAILY_CHALLENGE), bumpDailyEvents({ dailyDone: 1 })])
   const flowerEvents = [{ reason: FLOWER_REASONS.DAILY_CHALLENGE, count: 1 }]
   if (correct === TOTAL_QUESTIONS) flowerEvents.push({ reason: FLOWER_REASONS.DAILY_PERFECT, count: 1 })
   let honors = null

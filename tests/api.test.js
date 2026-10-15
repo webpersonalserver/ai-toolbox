@@ -59,7 +59,7 @@ const startedAttempt = { active: true, wrongCount: 0 }
   r = await call('u1', 'game.useHint', { gameType: 'idiom', levelNo: 1 }); assert(r.code === 0 && r.data.items.hint === 7 && r.data.revealed.join('') === levels[0].answer[0], 'hint', r)
   r = await call('u1', 'game.submit', { gameType: 'idiom', levelNo: 1, answer: '一一一一' }); assert(r.data.correct === false && r.data.attempt.attemptsLeft === 2, 'wrong -1 heart', r)
   await call('u1', 'game.submit', { gameType: 'idiom', levelNo: 1, answer: '一一一一' })
-  r = await call('u1', 'game.submit', { gameType: 'idiom', levelNo: 1, answer: '一一一一' }); assert(r.data.attempt.failed && !r.data.attempt.active, '3 wrong -> failed', r)
+  r = await call('u1', 'game.submit', { gameType: 'idiom', levelNo: 1, answer: '一一一一' }); assert(r.data.attempt.failed && !r.data.attempt.active && S.progress.u1_idiom.failCounts[1] === 1, '3 wrong -> failed (remembered for the 复习本)', r)
   r = await call('u1', 'game.submit', { gameType: 'idiom', levelNo: 1, answer: levels[0].answer }); assert(r.code === 40010, 'no submit after fail', r)
   r = await call('u1', 'game.getLevel', { gameType: 'idiom', levelNo: 1 }); assert(r.data.attempt.failed && r.data.puzzle === null, 'failed state persisted', r)
   r = await call('u1', 'game.startAttempt', { gameType: 'idiom', levelNo: 1 }); assert(r.data.items.stamina === 48 && r.data.attempt.attemptsLeft === 3 && r.data.puzzle.revealed.join('') === levels[0].answer[0], 'retry costs stamina, revealed kept', r)
@@ -121,7 +121,7 @@ const startedAttempt = { active: true, wrongCount: 0 }
   r = await call('u2', 'rescue.answer', { rescueId, answer: levels[2].answer }); assert(r.data.correct, 'friend solves', r)
   await call('u3', 'account.login'); r = await call('u3', 'rescue.answer', { rescueId, answer: levels[2].answer }); assert(r.code === 40008, 'second helper closed', r)
   r = await call('u1', 'game.levelList', { gameType: 'idiom' }); assert(r.data.currentLevel === 4 && r.data.rescueNotices.length === 1, 'requester advanced + notice', r)
-  r = await call('u1', 'game.getLevel', { gameType: 'idiom', levelNo: 3 }); assert(r.data.solved && !r.data.attempt.active, 'rescued level attempt closed', r)
+  r = await call('u1', 'game.getLevel', { gameType: 'idiom', levelNo: 3 }); assert(r.data.solved && !r.data.attempt.active && S.progress.u1_idiom.rescuedLevels.includes(3), 'rescued level attempt closed, marked for the 复习本', r)
   S.progress['u1_idiom'].currentLevel = 5
   S.progress['u1_idiom'].attempts['4'] = { ...startedAttempt }
   S.progress['u1_idiom'].attempts['5'] = { ...startedAttempt }
@@ -151,8 +151,28 @@ const startedAttempt = { active: true, wrongCount: 0 }
   r = await call('u5', 'game.levelList', { gameType: 'idiom' }); assert(r.data.achievement.milestone.pendingChests === 1 && r.data.achievement.milestone.levelsToNextChest === 1, 'pending after more solves', r.data.achievement)
   S.progress['u5_idiom'].solved.push(30)
   r = await call('u5', 'chests.open', { all: true }); assert(r.data.chests.length === 2 && r.data.rewards.find((x) => x.type === 'hint').amount === 2 && r.data.rewards.find((x) => x.type === 'stamina').amount === 26, 'chests 2 and 3 summed (12 + 14 stamina)', r.data)
-  r = await call('u5', 'game.solvedBook', { gameType: 'idiom', page: 1 }); assert(r.data.total === 30 && r.data.entries.length === 20 && r.data.entries[0].levelNo === 1 && r.data.entries[0].answer === levels[0].answer && r.data.hasMore, 'book page 1', r.data.total)
-  r = await call('u5', 'game.solvedBook', { gameType: 'idiom', page: 2 }); assert(r.data.entries.length === 10 && !r.data.hasMore, 'book page 2', r.data.entries.length)
+  // 复习本: levels passed with help (wrong answers, a lost attempt, hints, a friend) wait until crossed out (我会了)
+  r = await call('u5', 'game.reviewList', { gameType: 'idiom', page: 1 }); assert(r.code === 0 && r.data.total === 0 && r.data.entries.length === 0, 'levels passed on their own are not in the 复习本', r.data)
+  S.progress.u5_idiom.attempts = { ...(S.progress.u5_idiom.attempts || {}), 3: { active: false, wrongCount: 2 } }
+  S.progress.u5_idiom.hintsUsed = { ...(S.progress.u5_idiom.hintsUsed || {}), 7: 1 }
+  S.progress.u5_idiom.failCounts = { 9: 1 }
+  S.progress.u5_idiom.rescuedLevels = [12]
+  r = await call('u5', 'game.reviewList', { gameType: 'idiom', page: 1 })
+  const reviewEntries = r.data.entries
+  assert(r.code === 0 && r.data.total === 4 && reviewEntries.map((entry) => entry.levelNo).join() === '3,7,9,12' && reviewEntries[0].wrongCount === 2 && reviewEntries[1].hintsUsed === 1 && reviewEntries[2].fails === 1 && reviewEntries[3].rescued && reviewEntries[0].clue && reviewEntries[0].answer === undefined, '复习本: wrong answers, hints, lost attempts and friends, with the question and no answer', reviewEntries)
+  r = await call('u5', 'game.levelList', { gameType: 'idiom' })
+  r = await call('u5', 'game.overview', {}); assert(r.data.games.find((summary) => summary.gameType === 'idiom').reviewCount === 4, 'the game summary carries how many wait in the 复习本', r.data.games)
+  r = await call('u5', 'game.reviewLevel', { gameType: 'idiom', levelNo: 3 })
+  assert(r.code === 0 && r.data.puzzle.board.length > 0 && r.data.puzzle.answer === undefined && r.data.puzzle.revealed.length === 0 && r.data.answer === levels[2].answer, 'review gives the puzzle fresh, with the answer kept aside for 看答案', r.data)
+  r = await call('u5', 'game.reviewLevel', { gameType: 'poetry', levelNo: 1 }); assert(r.code === 40000, 'only passed levels can be reviewed', r)
+  const reviewStamina = S.users.u5.items.stamina
+  r = await call('u5', 'game.reviewSubmit', { gameType: 'idiom', levelNo: 3, answer: 'x' }); assert(r.code === 0 && r.data.correct === false && S.users.u5.items.stamina === reviewStamina, 'a wrong review answer costs nothing', r.data)
+  r = await call('u5', 'game.reviewSubmit', { gameType: 'idiom', levelNo: 3, answer: levels[2].answer })
+  assert(r.code === 0 && r.data.correct && r.data.solution.answer === levels[2].answer, 'right in review: the answer is shown', r.data)
+  r = await call('u5', 'game.reviewList', { gameType: 'idiom', page: 1 }); assert(r.data.total === 4, 'getting it right keeps it until the child crosses it out (先留着)', r.data.total)
+  r = await call('u5', 'game.dismissReview', { gameType: 'idiom', levelNo: 3 }); assert(r.code === 0, '我会了', r)
+  r = await call('u5', 'game.dismissReview', { gameType: 'poetry', levelNo: 1 }); assert(r.code === 40000, 'only passed levels can be crossed out', r)
+  r = await call('u5', 'game.reviewList', { gameType: 'idiom', page: 1 }); assert(r.data.total === 3 && !r.data.entries.some((entry) => entry.levelNo === 3), 'crossed out: gone from the 复习本', r.data)
   const baseline = DEFAULT_RULES.titles.idiom
   S.app_config = { game_rules: { _id: 'game_rules', titles: { idiom: [...baseline, { name: '尚书', minSolved: 1200 }] } } }
   S.progress['u5_idiom'].solved = Array.from({ length: 1000 }, (_, i) => i + 1)
@@ -242,7 +262,7 @@ const startedAttempt = { active: true, wrongCount: 0 }
   assert(r.data.current.clearRate === Math.round((clearedNow / Object.keys(S.users).length) * 10000) / 10000 && r.data.recentCompletions[0].openid === 'c1', 'clear rate and recent completions', r.data)
   sdk.testing.actAs('')
   r = await main({ Type: 'Timer', TriggerName: 'snapshotStats' }); assert(r.code === 0 && r.data.length === ALL_GAME_TYPES.length && S.stats_daily[`idiom_${r.data[0].date}`].clearedUsers === clearedNow, 'hourly snapshot written for every game', r)
-  r = await main({ Type: 'Timer', TriggerName: 'snapshotStats' }); assert(Object.keys(S.stats_daily).filter((id) => !id.startsWith('ads_')).length === ALL_GAME_TYPES.length, 'snapshot overwrites same day', Object.keys(S.stats_daily))
+  r = await main({ Type: 'Timer', TriggerName: 'snapshotStats' }); assert(Object.keys(S.stats_daily).filter((id) => !id.startsWith('ads_') && !id.startsWith('overview_')).length === ALL_GAME_TYPES.length, 'snapshot overwrites same day', Object.keys(S.stats_daily))
   r = await call('c1', 'admin.stats', { gameType: 'idiom' }); assert(r.data.dailyHistory.length === 1 && r.data.dailyHistory[0].clearedUsers === clearedNow, 'admin sees daily history', r.data.dailyHistory)
   S.app_config = { game_rules: { _id: 'game_rules', admin: { openids: 'c1' } } }
   r = await call('c1', 'admin.stats', { gameType: 'idiom' }); assert(r.code === 40300, 'malformed admin list falls back to no admins', r)
@@ -329,7 +349,6 @@ const startedAttempt = { active: true, wrongCount: 0 }
   r = await call('g1', 'game.submit', { gameType: 'hanzi', levelNo: 1, answer: hanzi1.answer })
   assert(r.data.correct && r.data.solution.char === hanzi1.char && r.data.solution.pinyin === hanzi1.pinyin && 'word' in r.data.solution, 'hanzi solution shows the character, its pinyin and a word', r.data.solution)
   r = await call('g1', 'game.levelList', { gameType: 'hanzi' }); assert(r.code === 0 && r.data.achievement.title.name === '识字娃娃', 'hanzi has its own titles', r.data.achievement && r.data.achievement.title)
-  r = await call('g1', 'game.solvedBook', { gameType: 'poetry', page: 1 }); assert(r.data.total === 1 && r.data.entries[0].verse === poetry1.verse, 'poetry book', r.data)
   await call('g1', 'game.startAttempt', { gameType: 'poetry', levelNo: 2 })
   r = await call('g1', 'rescue.create', { gameType: 'poetry', levelNo: 2 }); const poetryRescue = r.data.rescueId
   await call('g2', 'account.login')
@@ -933,6 +952,32 @@ const startedAttempt = { active: true, wrongCount: 0 }
   await call('m2', 'account.login')
   r = await call('m2', 'practice.report', { practiceId: 'math', unitId: 'add-sub-10', solvedDelta: 1, streak: 1, streakRunId: 'n', reportId: 'n1' })
   assert(r.code === 0 && S.practice_stats.m2_math.units['add-sub-10'].solved === 1 && !S.practice_stats.m2_math.migratedFrom, 'new players get a fresh record', S.practice_stats.m2_math)
+  // 数据统计: counters bumped as children play, the overview and the levels where they get stuck (admins only)
+  S.app_config = {}
+  S.admins = { statsAdmin: { _id: 'statsAdmin', openid: 'ov-admin' } }
+  await call('ov1', 'account.login')
+  const statBefore = { starts: 0, fails: 0, hints: 0, passes: 0, ...(S.level_stats.xiehouyu_1 || {}) }
+  await call('ov1', 'game.startAttempt', { gameType: 'xiehouyu', levelNo: 1 })
+  for (let tries = 0; tries < 3; tries += 1) await call('ov1', 'game.submit', { gameType: 'xiehouyu', levelNo: 1, answer: 'x' })
+  await call('ov1', 'game.startAttempt', { gameType: 'xiehouyu', levelNo: 1 })
+  await call('ov1', 'game.useHint', { gameType: 'xiehouyu', levelNo: 1 })
+  r = await call('ov1', 'game.submit', { gameType: 'xiehouyu', levelNo: 1, answer: S.levels.xiehouyu_1.answer }); assert(r.data.correct, 'stats player passes', r.data)
+  const levelStat = S.level_stats.xiehouyu_1
+  assert(levelStat.starts - statBefore.starts === 2 && levelStat.fails - statBefore.fails === 1 && levelStat.hints - statBefore.hints === 1 && levelStat.passes - statBefore.passes === 1, 'level counters: 2 starts, 1 lost attempt, 1 hint, 1 pass', levelStat)
+  S.users.ov1.items.hint = 0
+  await call('ov1', 'game.startAttempt', { gameType: 'xiehouyu', levelNo: 2 })
+  r = await call('ov1', 'game.useHint', { gameType: 'xiehouyu', levelNo: 2 }); assert(r.code === 40001, 'out of hints', r)
+  r = await call('ov1', 'admin.overview', {}); assert(r.code === 40300, 'only admins see the overview', r)
+  r = await call('ov-admin', 'admin.overview', {})
+  const xiehouyuRow = r.data.games.find((row) => row.gameType === 'xiehouyu')
+  assert(r.code === 0 && r.data.activeUsers >= 1 && r.data.newUsers >= 1 && r.data.totalUsers >= r.data.activeUsers && xiehouyuRow.players >= 1 && xiehouyuRow.passedToday >= 1 && r.data.hints.spent >= 1 && r.data.hints.given >= 8 && r.data.hints.shortage >= 1 && r.data.sprints.length === 2 && 'created' in r.data.rescues && Array.isArray(r.data.trend), 'overview: activity, games, hints (given, spent, short), 竞速, 求助', r.data)
+  r = await call('ov-admin', 'admin.stuckLevels', { gameType: 'xiehouyu' })
+  assert(r.code === 0 && r.data.byFails[0].levelNo === 1 && r.data.byFails[0].failRate === Math.round((levelStat.fails / levelStat.starts) * 100) && r.data.byHints.some((row) => row.levelNo === 1) && r.data.byHints[0].hints >= r.data.byHints[r.data.byHints.length - 1].hints, 'stuck levels: most lost attempts and most hints, with the fail rate', r.data)
+  sdk.testing.actAs('')
+  r = await main({ Type: 'Timer', TriggerName: 'snapshotStats' })
+  const todayOverview = Object.values(S.stats_daily).find((doc) => doc.kind === 'overview')
+  assert(r.code === 0 && todayOverview && todayOverview.activeUsers >= 1, 'the hourly trigger saves today\'s activity for the trend', todayOverview)
+  S.admins = {}
   // stamina recovery rules, with fixed clocks: one point per 30 minutes, at most 15 per Beijing day
   const { settleStamina } = require(path.join(API_ROOT, 'lib', 'items'))
   const recovery = { enabled: true, intervalMinutes: 30, dailyCap: 15 }

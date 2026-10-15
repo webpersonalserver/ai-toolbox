@@ -5,6 +5,7 @@ const { computeClearStats } = require('../lib/stats')
 const { parseGameType } = require('../lib/games')
 const { recentAdStats } = require('../lib/ad-stats')
 const { isAdmin } = require('../lib/admins')
+const { computeOverview, stuckLevelsOf } = require('../lib/admin-overview')
 const { DEFAULT_SWITCHES, NUMBER_RANGES, loadSwitches, parseSwitchPatch, saveSwitches } = require('../lib/switches')
 
 const RECENT_COMPLETION_LIMIT = 20
@@ -63,4 +64,16 @@ const updateSwitches = async ({ openid, payload }) => {
   return switchesView(await saveSwitches(patch))
 }
 
-module.exports = { stats, switches, updateSwitches }
+// 数据统计 front page: activity, games, 竞速, hints, 求助 and the daily trend (lib/admin-overview.js).
+const overview = async ({ openid }) => {
+  await assertAdmin(openid)
+  return computeOverview()
+}
+
+// Where children get stuck in one game.
+const stuckLevels = async ({ openid, payload }) => {
+  await assertAdmin(openid)
+  return stuckLevelsOf(parseGameType(payload))
+}
+
+module.exports = { stats, overview, stuckLevels, switches, updateSwitches }

@@ -25,9 +25,61 @@
 }
 
 .book__level {
+  font-weight: 800;
+}
+
+.book__stage {
   color: var(--color-ink-faint);
   font-size: var(--font-sm);
-  text-align: right;
+}
+
+.book__label {
+  margin-top: var(--space-sm);
+  color: var(--color-ink-soft);
+  font-size: var(--font-sm);
+}
+
+/* The question as the child met it in the level (masked characters stay masked, the wrong character stays red). */
+.book__clue {
+  margin-top: var(--space-xs);
+  font-size: var(--font-lg);
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+.book__clue--hanzi {
+  font-size: 64rpx;
+}
+
+.book__clue-wrong {
+  color: var(--color-primary);
+  text-decoration: underline wavy;
+}
+
+.book__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  margin-top: var(--space-sm);
+}
+
+.book__tag {
+  padding: 2rpx var(--space-sm);
+  border-radius: 999rpx;
+  background: var(--game-color-soft);
+  color: var(--game-color-deep);
+  font-size: 22rpx;
+  font-weight: 800;
+}
+
+.book__actions {
+  display: flex;
+  gap: var(--space-md);
+  margin-top: var(--space-md);
+}
+
+.btn.book__action {
+  flex: 1;
 }
 
 .book__footer {

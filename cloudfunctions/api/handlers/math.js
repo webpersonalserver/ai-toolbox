@@ -9,6 +9,7 @@ const { describeTitle, describeAchievement } = require('../lib/achievement')
 const { progressDocId, getProgress, assertLevelUnlocked, findUnplayableReason, describeAttempt, isLevelSolved, solveLevelInTransaction } = require('../lib/progress')
 const { loadSwitches } = require('../lib/switches')
 const { applyHonorsSafely } = require('../lib/honors')
+const { bumpLevelStats } = require('../lib/play-stats')
 const { MATH_GAME_TYPE, TOTAL_LEVELS, QUESTIONS_PER_LEVEL, stageOfLevel, levelQuestions, publicQuestionOf, isRightAnswer } = require('../lib/math-challenge')
 
 // 口算闯关: a lobby game like the others (stamina to start, wrong answers per attempt, hints, chests every 10 levels,
@@ -72,7 +73,9 @@ const start = async ({ openid, payload }) => {
     return { charged: true, items: change.items }
   })
   await throwIfSpendFailed(openid, outcome, rules)
-  if (outcome.charged) await writeItemLogs(openid, staminaDelta, ITEM_LOG_REASONS.USE, { gameType: MATH_GAME_TYPE, levelNo })
+  if (outcome.charged) {
+    await Promise.all([writeItemLogs(openid, staminaDelta, ITEM_LOG_REASONS.USE, { gameType: MATH_GAME_TYPE, levelNo }), bumpLevelStats(MATH_GAME_TYPE, levelNo, { starts: 1 })])
+  }
   const progress = await getProgress(openid, MATH_GAME_TYPE)
   return { ...toLevelView({ levelNo, progress, rules }), items: outcome.items || null }
 }
@@ -113,7 +116,11 @@ const answer = async ({ openid, payload }) => {
   })
   throwIfFailed(outcome)
   const base = { correct, index: outcome.attempt.index, attempt: describeAttempt(outcome.attempt, rules) }
-  if (!outcome.passed) return base
+  if (!outcome.passed) {
+    if (!outcome.attempt.active) await bumpLevelStats(MATH_GAME_TYPE, levelNo, { fails: 1 })
+    return base
+  }
+  await bumpLevelStats(MATH_GAME_TYPE, levelNo, { passes: 1 })
   const titleBefore = describeTitle(outcome.solvedCountBefore, rules, MATH_GAME_TYPE)
   const titleAfter = describeTitle(outcome.solvedCountAfter, rules, MATH_GAME_TYPE)
   const [allCleared, progress] = await Promise.all([
@@ -158,7 +165,9 @@ const hint = async ({ openid, payload }) => {
     return { index: attempt.index, items: change.items }
   })
   await throwIfSpendFailed(openid, outcome, rules)
-  if (!outcome.alreadyShown) await writeItemLogs(openid, hintDelta, ITEM_LOG_REASONS.USE, { gameType: MATH_GAME_TYPE, levelNo })
+  if (!outcome.alreadyShown) {
+    await Promise.all([writeItemLogs(openid, hintDelta, ITEM_LOG_REASONS.USE, { gameType: MATH_GAME_TYPE, levelNo }), bumpLevelStats(MATH_GAME_TYPE, levelNo, { hints: 1 })])
+  }
   return { index: outcome.index, answer: levelQuestions(levelNo)[outcome.index].answer, items: outcome.items || null }
 }
 

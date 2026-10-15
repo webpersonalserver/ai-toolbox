@@ -101,16 +101,22 @@ Page({
     guideVisible: false,
     guideSections: [],
     guideConfirmText: GUIDE_CONFIRM_TEXT.REVIEW,
-    startAfterGuide: false
+    startAfterGuide: false,
+    // 再练一次 from the 复习本 (?review=1): a passed level again, free, no hints or hearts; the answer can be shown and
+    // hidden again (看答案) so the child looks instead of guessing.
+    review: false,
+    reviewAnswer: '',
+    answerShown: false
   },
 
   onLoad(query) {
     this.shouldAutoStart = query.autoStart === AUTO_START_FLAG
     const levelNo = Number(query.levelNo) || 1
     const gameConfig = gameConfigOf(query.gameType)
+    const review = query.review === '1'
     this.soundPlayer = createSoundPlayer()
-    this.setData({ levelNo, gameType: gameConfig.gameType, game: gameConfig, hintTexts: hintTextsOf(gameConfig) })
-    wx.setNavigationBarTitle({ title: `${gameConfig.name} · 第 ${levelNo} 关` })
+    this.setData({ levelNo, review, gameType: gameConfig.gameType, game: gameConfig, hintTexts: hintTextsOf(gameConfig) })
+    wx.setNavigationBarTitle({ title: `${gameConfig.name} · ${review ? '复习' : ''}第 ${levelNo} 关` })
     this.loadLevel()
   },
 
@@ -165,6 +171,12 @@ Page({
     if (this.data.stage === PLAY_STAGES.ERROR) this.setData({ stage: PLAY_STAGES.LOADING })
     try {
       await ensureLogin()
+      if (this.data.review) {
+        const detail = await game.reviewLevel(this.data.gameType, this.data.levelNo)
+        this.setData({ reviewAnswer: detail.answer, answerShown: false })
+        this.applyLevelDetail({ ...detail, solved: false, attempt: {}, hintsUsed: 0, maxHints: 0, staminaCost: 0, solution: null })
+        return
+      }
       this.applyLevelDetail(await game.getLevel(this.data.gameType, this.data.levelNo))
       this.autoStartIfRequested()
     } catch (error) {
@@ -251,9 +263,52 @@ Page({
     })
   },
 
+  // Review: a wrong answer just shakes (try again as often as needed); right moves the level to 已掌握.
+  async submitReview(answer) {
+    const result = await withMinimumDuration(() => game.reviewSubmit(this.data.gameType, this.data.levelNo, answer), MIN_CHECKING_MS)
+    if (!result.correct) {
+      this.soundPlayer.play('wrong')
+      this.selectComponent('#puzzle').showWrongAnswer()
+      return
+    }
+    this.setData({ stage: PLAY_STAGES.SOLVED, solution: result.solution })
+    this.celebrate({ visible: true, title: '答对啦！', subtitle: '自己做出来的，真棒', mascot: '📒', big: false })
+  },
+
+  // After getting it right in review: 斩掉 crosses it out of the 复习本, 先留着 leaves it there.
+  async dismissAndBack() {
+    await this.withBusy(async () => {
+      try {
+        await game.dismissReview(this.data.gameType, this.data.levelNo)
+        wx.navigateBack()
+      } catch (error) {
+        toastError(error)
+      }
+    })
+  },
+
+  backToBook() {
+    wx.navigateBack()
+  },
+
+  toggleAnswer() {
+    this.setData({ answerShown: !this.data.answerShown })
+  },
+
   async handleComplete(event) {
     if (this.data.submitting) return
     this.setData({ submitting: true })
+    if (this.data.review) {
+      try {
+        await this.submitReview(event.detail.answer)
+      } catch (error) {
+        toastError(error)
+        this.selectComponent('#puzzle').clearAttempt()
+      } finally {
+        this.setData({ submitting: false })
+      }
+      return
+    }
     try {
       wx.vibrateShort({ type: 'light' })
       const result = await withMinimumDuration(

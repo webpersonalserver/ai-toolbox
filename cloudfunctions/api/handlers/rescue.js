@@ -212,7 +212,7 @@ const answer = async ({ openid, payload }) => {
       return { failure: { code: ERROR_CODES.RESCUE_HELPER_DAILY_LIMIT, message: helperLimitMessage(dailyLimitPerHelper) } }
     }
     // The requester's level is solved in the same transaction, so a rescue can never be "solved" while the level stays locked.
-    const solved = await solveLevelInTransaction(transaction, rescue.requesterOpenid, rescue.gameType, rescue.levelNo)
+    const solved = await solveLevelInTransaction(transaction, rescue.requesterOpenid, rescue.gameType, rescue.levelNo, { rescued: true })
     if (solved.alreadySolved) {
       await rescueRef.update({ data: { status: RESCUE_STATUS.CLOSED_BY_REQUESTER, closedAt: db.serverDate() } })
       return { requesterSolvedAlready: true }

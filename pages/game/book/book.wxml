@@ -1,30 +1,39 @@
 <loading-skeleton wx:if="{{loading}}" rows="3" />
-<view class="page book" wx:if="{{!loading}}">
+<view class="page book game-theme--{{gameType}}" wx:if="{{!loading}}">
   <view wx:if="{{loadFailed}}" class="card book__empty" bindtap="retryLoad">
     <view class="book__empty-title">📶 没连上网络</view>
     <view>点我再试一次</view>
   </view>
 
   <block wx:else>
-  <view class="book__summary">已收录 {{total}} {{game.bookUnit}}<text wx:if="{{expandable && total}}"> · 点卡片看详细解释</text></view>
+    <view class="book__summary">共 {{total}} 题 · 闯关时答错、失败、用提示或好友帮过的关都在这里</view>
 
-  <view wx:if="{{!total}}" class="card book__empty">
-    <view class="book__empty-title">这里还空空的</view>
-    <view>每闯过一关，就会收进{{game.bookName}}哦</view>
-    <button class="btn btn--primary book__empty-btn" bindtap="goPlay">去闯第一关</button>
-  </view>
+    <view wx:if="{{!total}}" class="card book__empty">
+      <view class="book__empty-title">🎉 没有要复习的题</view>
+      <view>闯关时答错或用提示的关，会放到这里等你复习</view>
+      <button class="btn btn--primary book__empty-btn" bindtap="goPlay">去闯关</button>
+    </view>
 
-  <view
-    wx:for="{{entries}}"
-    wx:key="levelNo"
-    class="card book__entry"
-    data-level-no="{{item.levelNo}}"
-    bindtap="toggleEntry"
-  >
-    <view class="book__level">第 {{item.levelNo}} 关<text wx:if="{{item.stage}}"> · {{item.stage}}</text></view>
-    <game-solution game-type="{{gameType}}" solution="{{item}}" compact="{{expandedLevelNo !== item.levelNo}}" />
-  </view>
+    <view wx:for="{{entries}}" wx:key="levelNo" class="card book__entry">
+      <view class="book__head">
+        <text class="book__level">第 {{item.levelNo}} 关</text>
+        <text wx:if="{{item.stage}}" class="book__stage"> · {{item.stage}}</text>
+      </view>
+      <view class="book__label">{{item.label}}</view>
+      <view wx:if="{{gameType === 'hanzi'}}" class="book__clue book__clue--hanzi">{{item.clue}}</view>
+      <view wx:elif="{{gameType === 'typo'}}" class="book__clue">
+        <text wx:for="{{item.clueChars}}" wx:for-item="char" wx:key="index" class="{{char.wrong ? 'book__clue-wrong' : ''}}">{{char.char}}</text>
+      </view>
+      <view wx:else class="book__clue"><text wx:for="{{item.clueSegments}}" wx:for-item="segment" wx:key="index" class="{{segment.masked ? 'clue-mask' : ''}}">{{segment.text}}</text></view>
+      <view class="book__tags">
+        <text wx:for="{{item.tags}}" wx:for-item="tag" wx:key="*this" class="book__tag">{{tag}}</text>
+      </view>
+      <view class="book__actions">
+        <button class="btn btn--ghost book__action" loading="{{dismissingLevelNo === item.levelNo}}" data-level-no="{{item.levelNo}}" bindtap="dismiss">我会了</button>
+        <button class="btn btn--primary book__action" data-level-no="{{item.levelNo}}" bindtap="practiseAgain">再练一次</button>
+      </view>
+    </view>
 
-  <view wx:if="{{loadingMore}}" class="book__footer">加载中…</view>
+    <view wx:if="{{loadingMore}}" class="book__footer">加载中…</view>
   </block>
 </view>

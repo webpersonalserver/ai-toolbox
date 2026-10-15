@@ -38,6 +38,7 @@ const {
 } = require('../lib/progress')
 const { loadSwitches } = require('../lib/switches')
 const { applyHonorsSafely } = require('../lib/honors')
+const { bumpLevelStats } = require('../lib/play-stats')
 
 const BOOK_PAGE_SIZE = 20
 
@@ -168,15 +169,28 @@ const pendingGameChests = async (openid, gameType) => {
   }))
 }
 
-const solvedBook = async ({ openid, payload }) => {
+// 复习本: the levels passed with help — a wrong answer, a lost attempt, a hint or a friend (求助) — that the child
+// has not crossed out yet (「我会了」, progress.reviewDismissed). Only the question is shown, never the answer.
+const reviewReasonsOf = (progress, levelNo) => {
+  if ((progress.reviewDismissed || []).includes(levelNo)) return null
+  const reasons = {
+    wrongCount: ((progress.attempts || {})[levelNo] || {}).wrongCount || 0,
+    fails: (progress.failCounts || {})[levelNo] || 0,
+    hintsUsed: hintsUsedOnLevel(progress, levelNo),
+    rescued: (progress.rescuedLevels || []).includes(levelNo)
+  }
+  return reasons.wrongCount || reasons.fails || reasons.hintsUsed || reasons.rescued ? reasons : null
+}
+
+const reviewLevelNosOf = (progress) => [...progress.solved].sort((left, right) => left - right).filter((levelNo) => reviewReasonsOf(progress, levelNo))
+
+const reviewList = async ({ openid, payload }) => {
   const gameType = parseGameType(payload)
   const page = Math.max(Number(payload.page) || 1, 1)
-  const progress = await getProgress(openid, gameType)
-  const solvedLevelNos = [...progress.solved].sort((left, right) => left - right)
-  const pageLevelNos = solvedLevelNos.slice((page - 1) * BOOK_PAGE_SIZE, page * BOOK_PAGE_SIZE)
-  if (!pageLevelNos.length) {
-    return { total: solvedLevelNos.length, page, entries: [], hasMore: false }
-  }
+  const [progress, switches] = await Promise.all([getProgress(openid, gameType), loadSwitches()])
+  const levelNos = reviewLevelNosOf(progress)
+  const pageLevelNos = levelNos.slice((page - 1) * BOOK_PAGE_SIZE, page * BOOK_PAGE_SIZE)
+  if (!pageLevelNos.length) return { total: levelNos.length, page, entries: [], hasMore: false }
   const { data } = await db
     .collection('levels')
     .where({ gameType, levelNo: _.in(pageLevelNos) })
@@ -184,13 +198,42 @@ const solvedBook = async ({ openid, payload }) => {
     .get()
   const entries = data
     .sort((left, right) => left.levelNo - right.levelNo)
-    .map((level) => ({ levelNo: level.levelNo, ...toSolution(level) }))
-  return {
-    total: solvedLevelNos.length,
-    page,
-    entries,
-    hasMore: page * BOOK_PAGE_SIZE < solvedLevelNos.length
-  }
+    .map((level) => {
+      const { clue, stage, kind, prompt, wrongPosition } = toPuzzle(level, switches)
+      return { levelNo: level.levelNo, clue, stage, kind, prompt, wrongPosition, ...reviewReasonsOf(progress, level.levelNo) }
+    })
+  return { total: levelNos.length, page, entries, hasMore: page * BOOK_PAGE_SIZE < levelNos.length }
+}
+
+const parseReviewable = async (openid, payload) => {
+  const gameType = parseGameType(payload)
+  const levelNo = parseLevelNo(payload)
+  const progress = await getProgress(openid, gameType)
+  if (!isLevelSolved(progress, levelNo)) throw new BusinessError(ERROR_CODES.BAD_REQUEST, '先闯过这一关，才能复习哦')
+  return { gameType, levelNo }
+}
+
+// 我会了: crossed out of the 复习本 for good.
+const dismissReview = async ({ openid, payload }) => {
+  const { gameType, levelNo } = await parseReviewable(openid, payload)
+  await db.collection('progress').doc(progressDocId(openid, gameType)).update({ data: { reviewDismissed: _.addToSet(levelNo), updatedAt: db.serverDate() } })
+  return { levelNo }
+}
+
+// 再练一次: the level again for practice — free, no hints, no hearts. Getting it right changes nothing by itself:
+// the child then chooses to cross it out (dismissReview) or keep it. The answer goes along so the page can show it
+// on request (看答案): nothing is at stake here, and looking beats guessing.
+const reviewLevel = async ({ openid, payload }) => {
+  const { gameType, levelNo } = await parseReviewable(openid, payload)
+  const [level, total, switches] = await Promise.all([getLevel(gameType, levelNo), countLevels(gameType), loadSwitches()])
+  return { levelNo, total, answer: level.answer, puzzle: { ...toPuzzle(level, switches), revealed: [], eliminated: [] } }
+}
+
+const reviewSubmit = async ({ openid, payload }) => {
+  const { gameType, levelNo } = await parseReviewable(openid, payload)
+  const level = await getLevel(gameType, levelNo)
+  if (String(payload.answer || '') !== level.answer) return { correct: false }
+  return { correct: true, solution: toSolution(level) }
 }
 
 const getLevelDetail = async ({ openid, payload }) => {
@@ -228,7 +271,7 @@ const startAttempt = async ({ openid, payload }) => {
   })
   await throwIfSpendFailed(openid, outcome, rules)
   if (outcome.charged) {
-    await writeItemLogs(openid, staminaDelta, ITEM_LOG_REASONS.USE, { gameType, levelNo })
+    await Promise.all([writeItemLogs(openid, staminaDelta, ITEM_LOG_REASONS.USE, { gameType, levelNo }), bumpLevelStats(gameType, levelNo, { starts: 1 })])
   }
   const progress = await getProgress(openid, gameType)
   return { ...toLevelDetail({ level, progress, rules, total, switches }), items: outcome.items || null }
@@ -259,14 +302,18 @@ const submit = async ({ openid, payload }) => {
     }
     const wrongCount = attempt.wrongCount + 1
     const nextAttempt = { active: wrongCount < rules.level.maxWrongAttempts, wrongCount }
-    await progressRef.update({ data: { [`attempts.${levelNo}`]: _.set(nextAttempt) } })
+    // An attempt lost is remembered for the 复习本 (the next attempt starts its wrong count again from 0).
+    const failed = nextAttempt.active ? {} : { [`failCounts.${levelNo}`]: _.inc(1) }
+    await progressRef.update({ data: { [`attempts.${levelNo}`]: _.set(nextAttempt), ...failed } })
     return { attempt: nextAttempt }
   })
   throwIfFailed(outcome)
 
   if (!isCorrect) {
+    if (!outcome.attempt.active) await bumpLevelStats(gameType, levelNo, { fails: 1 })
     return { correct: false, attempt: describeAttempt(outcome.attempt, rules) }
   }
+  await bumpLevelStats(gameType, levelNo, { passes: 1 })
   await closeOpenRescue(openid, gameType, levelNo)
   const titleBefore = describeTitle(outcome.solvedCountBefore, rules, gameType)
   const titleAfter = describeTitle(outcome.solvedCountAfter, rules, gameType)
@@ -314,7 +361,7 @@ const useHint = async ({ openid, payload }) => {
     return { hintsUsed: hintsUsed + 1, items: change.items }
   })
   await throwIfSpendFailed(openid, outcome, rules)
-  await writeItemLogs(openid, hintDelta, ITEM_LOG_REASONS.USE, { gameType, levelNo })
+  await Promise.all([writeItemLogs(openid, hintDelta, ITEM_LOG_REASONS.USE, { gameType, levelNo }), bumpLevelStats(gameType, levelNo, { hints: 1 })])
   return {
     items: outcome.items,
     hintsUsed: outcome.hintsUsed,
@@ -336,6 +383,7 @@ const summarizeGame = async (openid, gameType, rules) => {
     allCleared: isAllCleared(progress.solved.length, total),
     // When a level was last passed: the lobby recommends and opens the tab of the game played most recently.
     lastSolvedAt: progress.lastSolvedAt ? new Date(progress.lastSolvedAt).getTime() : 0,
+    reviewCount: reviewLevelNosOf(progress).length,
     achievement: describeAchievement(progress, rules)
   }
 }
@@ -346,7 +394,10 @@ module.exports = {
   levelList,
   openGameChests,
   pendingGameChests,
-  solvedBook,
+  reviewList,
+  dismissReview,
+  reviewLevel,
+  reviewSubmit,
   getLevel: getLevelDetail,
   startAttempt,
   submit,

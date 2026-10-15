@@ -12,4 +12,10 @@ const mondayOf = (timestamp) => timestamp - ((new Date(timestamp + CHINA_UTC_OFF
 
 const weekKeyOf = (timestamp) => `week${chinaDateKey(mondayOf(timestamp))}`
 
-module.exports = { DAY_MS, chinaDateKey, todayInChina, mondayOf, weekKeyOf }
+// 0:00 Beijing time of the day the timestamp falls on.
+const chinaDayStart = (timestamp) => {
+  const shifted = timestamp + CHINA_UTC_OFFSET_MS
+  return shifted - (shifted % DAY_MS) - CHINA_UTC_OFFSET_MS
+}
+
+module.exports = { DAY_MS, chinaDateKey, todayInChina, mondayOf, weekKeyOf, chinaDayStart }

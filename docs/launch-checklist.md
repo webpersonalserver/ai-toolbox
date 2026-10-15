@@ -56,28 +56,35 @@
 - [x] `app_config`
 - [ ] `completions`
 - [ ] `stats_daily`
-- [ ] `admins`（管理员名单：一个管理员一条 `{ "openid": "...", "name": "..." }`，`_id` 自动生成即可；权限设成自定义规则 `{"read": false, "write": false}`，只有云函数能读）
+- [x] `admins`（管理员名单：一个管理员一条 `{ "openid": "...", "name": "..." }`，`_id` 自动生成即可；权限设成自定义规则 `{"read": false, "write": false}`，只有云函数能读）
 - [ ] `practice_stats`（趣味练习的题数、连对、待开宝箱；每人每个练习一条，按 `_id` 读写，不需要索引）
 - [x] `sprint_scores`（口算竞速成绩：每人每座岛每周一条、外加一条历史最好；权限同样是自定义规则 `{"read": false, "write": false}`）
+- [x] `level_stats`（数据统计的卡关数据：每关一条，开始 / 失败 / 过关 / 提示次数；权限 `{"read": false, "write": false}`）
+- [x] `stats_events`（数据统计的每日事件：提示 / 体力不够用次数、完成今日挑战人数；每天一条；权限同上）
 
 ### 4.2 建索引（必须）
 
 | 集合 | 索引字段 | 完成 |
 |---|---|---|
-| `rescues` | `requesterOpenid` + `gameType` + `status` + `noticeSeen`（`gameType` 不能漏，代码查询里带了这个字段） | [ ] |
-| `item_logs` | `createdAt` | [ ] |
-| `daily` | `date` | [ ] |
-| `rescue_help_pairs` | `date` | [ ] |
-| `rescue_helper_attempts` | `date` | [ ] |
-| `levels` | `gameType` + `levelNo` | [ ] |
-| `progress` | `gameType` + `solvedCount`（降序）+ `lastSolvedAt`（升序） | [ ] |
-| `completions` | `gameType` + `completedAt`；`gameType` + `date` | [ ] |
-| `stats_daily` | `gameType` + `date` | [ ] |
+| `rescues` | `requesterOpenid` + `gameType` + `status` + `noticeSeen`（`gameType` 不能漏，代码查询里带了这个字段） | [x] |
+| `item_logs` | `createdAt` | [x] |
+| `daily` | `date` | [x] |
+| `rescue_help_pairs` | `date` | [x] |
+| `rescue_helper_attempts` | `date` | [x] |
+| `levels` | `gameType` + `levelNo` | [x] |
+| `progress` | `gameType` + `solvedCount`（降序）+ `lastSolvedAt`（升序） | [x] |
+| `completions` | `gameType` + `completedAt`；`gameType` + `date` | [x] |
+| `stats_daily` | `gameType` + `date`；`kind` + `date`（降序）（数据统计的近 14 天趋势） | [x] |
+| `level_stats` | `gameType` + `fails`（降序）；`gameType` + `hints`（降序）（卡关 Top 10） | [x] |
+| `users` | `lastLoginAt`；`createdAt`（今日活跃、新增、次日留存） | [x] |
+| `progress` | `gameType` + `lastSolvedAt`（今日过关人数） | [x] |
+| `item_logs` | `itemType` + `reason` + `createdAt`；`itemType` + `createdAt`（今天提示送出 / 用掉） | [x] |
+| `rescues` | `createdAt`；`status` + `solvedAt`（今天的求助） | [x] |
 | `sprint_scores` | `period` + `islandId` + `score`（降序）+ `wrong`（升序）+ `achievedAt`（升序）（口算竞速排行榜，不建的话排行榜查询会报错） | [x] |
 
 ### 4.3 导入数据（格式选 JSON）
 
-冲突处理模式**一律选 Upsert**：Upsert 会用文件内容覆盖同 `_id` 的记录，重复导入也不会出错；Insert 遇到已有记录会跳过，重新导入时等于没导。
+冲突处理模式**一律选 Upsert**：Upsert 会用文件内容覆盖同 `_id` 的记录，重复导入也不会出错；选 Insert 遇到已有记录会报 `E11000 duplicate key` 导入失败。
 
 - [x] `levels` ← `database/levels/idiom.json`（1000 关）。**已经导入过的也要用 Upsert 重新导入一次**：2026-10 成语释义改写成了自己的表述
 - [x] `levels` ← `database/levels/poetry.json`（500 关）

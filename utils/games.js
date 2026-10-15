@@ -15,7 +15,7 @@ const TYPO_BOARD_COLUMNS = 4
 const GAME_ORDER = [GAME_TYPES.HANZI, GAME_TYPES.MATH, GAME_TYPES.IDIOM, GAME_TYPES.TYPO, GAME_TYPES.POETRY, GAME_TYPES.XIEHOUYU]
 
 const GAME_CONFIGS = {
-  // 口算闯关: 10 questions a level on its own page (pages/game/math); no collection book.
+  // 口算闯关: 10 questions a level on its own page (pages/game/math); no 复习本.
   [GAME_TYPES.MATH]: {
     gameType: GAME_TYPES.MATH,
     name: '口算闯关',
@@ -23,8 +23,7 @@ const GAME_CONFIGS = {
     icon: '算',
     intro: '数理乐园同款题目，在这里一关关闯、比谁闯得远；想慢慢练就去「趣味」',
     clueLabel: '口算闯关',
-    bookName: '',
-    bookUnit: '',
+    hasReviewBook: false,
     hintEffect: '直接看到这道题的答案',
     keptAfterFailure: '已经看过的答案',
     boardColumns: TYPO_BOARD_COLUMNS
@@ -36,8 +35,7 @@ const GAME_CONFIGS = {
     icon: '字',
     intro: '看图识字、拼音选字、认偏旁、选字组词',
     clueLabel: '汉字闯关',
-    bookName: '生字本',
-    bookUnit: '个生字',
+    hasReviewBook: true,
     hintEffect: '排除 2 个错误选项',
     keptAfterFailure: '已排除的选项',
     boardColumns: TYPO_BOARD_COLUMNS
@@ -49,8 +47,7 @@ const GAME_CONFIGS = {
     icon: '成',
     intro: '看释义，拼出四字成语',
     clueLabel: '释义',
-    bookName: '成语本',
-    bookUnit: '个成语',
+    hasReviewBook: true,
     boardColumns: DEFAULT_BOARD_COLUMNS
   },
   [GAME_TYPES.POETRY]: {
@@ -60,8 +57,7 @@ const GAME_CONFIGS = {
     icon: '诗',
     intro: '从幼儿园到高中，补全经典诗句',
     clueLabel: '补全诗句',
-    bookName: '诗词本',
-    bookUnit: '句诗词',
+    hasReviewBook: true,
     boardColumns: DEFAULT_BOARD_COLUMNS
   },
   [GAME_TYPES.XIEHOUYU]: {
@@ -71,8 +67,7 @@ const GAME_CONFIGS = {
     icon: '歇',
     intro: '看前半句和意思，猜出后半句',
     clueLabel: '歇后语',
-    bookName: '歇后语本',
-    bookUnit: '条歇后语',
+    hasReviewBook: true,
     boardColumns: DEFAULT_BOARD_COLUMNS
   },
   [GAME_TYPES.TYPO]: {
@@ -84,8 +79,7 @@ const GAME_CONFIGS = {
     clueLabel: '找出并改正标红的错字',
     // When 标出错字 is off in 控制中心 the wrong character is not marked.
     clueLabelUnmarked: '成语里有一个错字，找出来并选出正确的字',
-    bookName: '错字本',
-    bookUnit: '个易错成语',
+    hasReviewBook: true,
     hintEffect: '排除 2 个错误选项',
     keptAfterFailure: '已排除的选项',
     boardColumns: TYPO_BOARD_COLUMNS

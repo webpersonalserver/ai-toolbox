@@ -7,6 +7,7 @@ const { pendingChestNosOf } = require('./achievement')
 const { practiceStatsDocId } = require('./practice-rewards')
 const { readMathStats } = require('./math-stats')
 const { ERROR_CODES, BusinessError, throwIfFailed } = require('./response')
+const { bumpDailyEvents } = require('./play-stats')
 
 const ITEM_NEXT_STEPS = {
   CHECKIN: 'checkin',
@@ -70,7 +71,7 @@ const resolveNextStep = async (openid, itemType, rules, items) => {
 }
 
 const throwInsufficientItem = async (openid, itemType, rules, items) => {
-  const nextStep = await resolveNextStep(openid, itemType, rules, items)
+  const [nextStep] = await Promise.all([resolveNextStep(openid, itemType, rules, items), bumpDailyEvents({ [`${itemType}Shortage`]: 1 })])
   throw new BusinessError(ERROR_CODES.INSUFFICIENT_ITEM, '道具不足', { ...nextStep, items })
 }
 

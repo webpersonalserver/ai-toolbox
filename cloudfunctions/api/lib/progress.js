@@ -78,7 +78,8 @@ const hintsUsedOnLevel = (progress, levelNo) => (progress.hintsUsed || {})[level
  * Marks a level solved inside the caller's transaction, writing the solved list, solvedCount and lastSolvedAt
  * together so the count used by the leaderboard and clear stats can never drift from the list.
  */
-const solveLevelInTransaction = async (transaction, openid, gameType, levelNo) => {
+// rescued: a friend answered it (求助); the level then waits in the player's 复习本.
+const solveLevelInTransaction = async (transaction, openid, gameType, levelNo, { rescued = false } = {}) => {
   const progressRef = transaction.collection('progress').doc(progressDocId(openid, gameType))
   const { data: progress } = await progressRef.get()
   if (progress.solved.includes(levelNo)) return { alreadySolved: true, solvedCount: progress.solved.length }
@@ -91,7 +92,8 @@ const solveLevelInTransaction = async (transaction, openid, gameType, levelNo) =
       currentLevel: _.max(levelNo + 1),
       [`attempts.${levelNo}`]: _.set({ active: false, wrongCount }),
       lastSolvedAt: db.serverDate(),
-      updatedAt: db.serverDate()
+      updatedAt: db.serverDate(),
+      ...(rescued ? { rescuedLevels: _.addToSet(levelNo) } : {})
     }
   })
   return { alreadySolved: false, solvedCountBefore: solvedCount - 1, solvedCount, wrongCount }

@@ -23,7 +23,10 @@ const ROUTES = {
   'account.claimDoubleReward': account.claimDoubleReward,
   'game.overview': overview.overview,
   'game.levelList': game.levelList,
-  'game.solvedBook': game.solvedBook,
+  'game.reviewList': game.reviewList,
+  'game.dismissReview': game.dismissReview,
+  'game.reviewLevel': game.reviewLevel,
+  'game.reviewSubmit': game.reviewSubmit,
   'game.getLevel': game.getLevel,
   'game.startAttempt': game.startAttempt,
   'game.submit': game.submit,
@@ -55,6 +58,8 @@ const ROUTES = {
   'leaderboard.list': leaderboard.list,
   'leaderboard.summary': leaderboard.summary,
   'admin.stats': admin.stats,
+  'admin.overview': admin.overview,
+  'admin.stuckLevels': admin.stuckLevels,
   'admin.switches': admin.switches,
   'admin.updateSwitches': admin.updateSwitches
 }
