@@ -1,3 +1,68 @@
+/* Subject tabs (汉字城堡 / 数字星球 / 字母乐园) on top, the subject's boards as chips below — the same split as the lobby. */
+.lb-subjects {
+  display: flex;
+  gap: 8rpx;
+  margin: var(--space-md) var(--space-lg) 0;
+  padding: 6rpx;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+}
+
+.lb-subjects__tab {
+  flex: 1;
+  padding: var(--space-sm) 0;
+  border-radius: var(--radius-sm);
+  color: var(--color-ink-soft);
+  font-size: var(--font-md);
+  font-weight: 800;
+  text-align: center;
+}
+
+.lb-subjects__tab--active {
+  background: var(--color-surface);
+  box-shadow: 0 4rpx 0 var(--color-border);
+  color: var(--color-primary-deep);
+}
+
+/* Boards wrap onto a second row rather than scrolling, so every board can be seen at once. */
+.lb-boards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+  padding: 0 var(--space-lg);
+}
+
+.lb-boards--islands {
+  margin-top: var(--space-sm);
+}
+
+.lb-boards__chip {
+  display: flex;
+  align-items: center;
+  height: 60rpx;
+  padding: 0 24rpx;
+  box-sizing: border-box;
+  border-radius: 999rpx;
+  background: var(--color-surface);
+  box-shadow: 0 4rpx 0 var(--color-border);
+  color: var(--color-ink-soft);
+  font-size: var(--font-sm);
+  font-weight: 800;
+}
+
+.lb-boards__chip--small {
+  height: 48rpx;
+  padding: 0 20rpx;
+  font-size: 22rpx;
+}
+
+.lb-boards__chip--active {
+  background: var(--color-primary);
+  box-shadow: 0 4rpx 0 var(--color-primary-deep);
+  color: var(--color-on-accent);
+}
+
 .leaderboard {
   padding-bottom: 200rpx;
 }

@@ -89,6 +89,7 @@ const helperLimitMessage = (limit) => `你今天已经帮 TA 解过 ${limit} 关
 const create = async ({ openid, payload }) => {
   if (!(await loadSwitches()).sharing) throw new BusinessError(ERROR_CODES.FORBIDDEN, '好友求助暂时关闭了')
   const gameType = parseGameType(payload)
+  if (gameType === 'math') throw new BusinessError(ERROR_CODES.BAD_REQUEST, '口算闯关暂时不能求助好友')
   const levelNo = Number(payload.levelNo)
   const progress = await getProgress(openid, gameType)
   assertLevelPlayable(progress, levelNo)

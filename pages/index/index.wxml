@@ -30,10 +30,42 @@
     <view class="hall__game-action">{{dailyDone ? '看成绩 ›' : '去挑战 ›'}}</view>
   </view>
 
-  <view class="hall__section-title">玩法</view>
+  <view wx:if="{{recommendations.length}}" class="hall__section-title">为你推荐</view>
+  <view class="hall__picks">
+    <view
+      wx:for="{{recommendations}}"
+      wx:key="subjectId"
+      class="card hall__pick game-theme--{{item.card.gameType}}"
+      hover-class="hall__game--pressed"
+      data-game-type="{{item.card.gameType}}"
+      data-level-no="{{item.levelNo}}"
+      bindtap="openRecommendation"
+    >
+      <view class="hall__pick-subject">{{item.subjectName}}</view>
+      <view class="hall__pick-head">
+        <view class="hall__game-icon hall__pick-icon">{{item.card.icon}}</view>
+        <view class="hall__pick-name">{{item.card.name}}</view>
+      </view>
+      <view class="hall__pick-reason">{{item.reason}}</view>
+      <view class="hall__pick-go">第 {{item.levelNo}} 关 ›</view>
+    </view>
+  </view>
+
+  <view class="hall__section-title">全部玩法</view>
+  <view class="hall__tabs">
+    <view
+      wx:for="{{subjectTabs}}"
+      wx:key="id"
+      class="hall__tab {{item.active ? 'hall__tab--active' : ''}}"
+      data-id="{{item.id}}"
+      bindtap="chooseSubject"
+    >{{item.icon}} {{item.name}}</view>
+  </view>
+
+  <view wx:if="{{comingSoon}}" class="card hall__soon">🎠 字母乐园正在建造中，英语玩法敬请期待～</view>
 
   <view
-    wx:for="{{gameCards}}"
+    wx:for="{{subjectCards}}"
     wx:key="gameType"
     class="card hall__game game-theme--{{item.gameType}}"
     hover-class="hall__game--pressed"
@@ -44,8 +76,7 @@
     <view class="hall__game-body">
       <view class="hall__game-name">
         {{item.name}}
-        <text wx:if="{{item.recommended}}" class="chip hall__game-recommend">新手推荐</text>
-        <text wx:elif="{{item.titleName}}" class="chip hall__game-title">{{item.titleName}}</text>
+        <text wx:if="{{item.titleName}}" class="chip hall__game-title">{{item.titleName}}</text>
       </view>
       <view wx:if="{{item.allCleared}}" class="hall__game-desc">全部闯过啦！新关卡正在路上～</view>
       <view wx:elif="{{item.total}}" class="hall__game-desc">已闯过 {{item.solvedCount}} 关 · {{item.titleProgressText}}</view>
@@ -64,6 +95,15 @@
       <view class="hall__continue-level">第 {{item.currentLevel}} 关</view>
     </view>
     <view wx:else class="hall__game-action">查看</view>
+  </view>
+
+  <view wx:if="{{showSprint}}" class="card hall__game hall__sprint" hover-class="hall__game--pressed" bindtap="openSprint">
+    <view class="hall__game-icon hall__sprint-icon">⏱</view>
+    <view class="hall__game-body">
+      <view class="hall__game-name">口算竞速</view>
+      <view class="hall__game-desc">选一座数理岛，60 秒比比谁答得多，每周排行</view>
+    </view>
+    <view class="hall__game-action">去挑战 ›</view>
   </view>
 </view>
 

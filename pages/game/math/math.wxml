@@ -1,0 +1,72 @@
+<view class="page mathlv game-theme--math">
+  <view class="mathlv__topbar">
+    <view>
+      <view wx:if="{{stageName}}" class="mathlv__stage">{{stageName}}</view>
+      <view class="mathlv__level">第 {{levelNo}} 关</view>
+    </view>
+    <view class="mathlv__items">
+      <item-chip item-type="stamina" value="{{items.stamina}}" />
+      <item-chip item-type="hint" value="{{items.hint}}" />
+    </view>
+  </view>
+
+  <view wx:if="{{stage === 'loading'}}" class="mathlv__center">正在出题…</view>
+
+  <view wx:elif="{{stage === 'failedLoad'}}" class="card mathlv__ready" bindtap="retryLoad">
+    <view class="mathlv__ready-title">📶 没连上网络</view>
+    <view class="mathlv__ready-desc">点我再试一次</view>
+  </view>
+
+  <view wx:elif="{{stage === 'ready'}}" class="card mathlv__ready">
+    <block wx:if="{{attempt.failed}}">
+      <view class="mathlv__ready-title">差一点点！</view>
+      <view class="mathlv__ready-desc">这次错了 {{attempt.maxWrongAttempts}} 次，再来一次就能过，看过的答案会保留。</view>
+    </block>
+    <block wx:else>
+      <view class="mathlv__ready-title">准备好了吗？</view>
+      <view class="mathlv__ready-desc">一关 10 道题，可以错 {{attempt.maxWrongAttempts - 1}} 次，答错留在这一题，答对才往下走。</view>
+    </block>
+    <button class="btn btn--primary mathlv__start" loading="{{busy}}" bindtap="start">
+      {{attempt.failed ? '再来一次' : '开始挑战'}}<image class="mathlv__cost-icon" src="/assets/icons/stamina.png" mode="aspectFit" />-{{staminaCost}}
+    </button>
+  </view>
+
+  <block wx:elif="{{stage === 'playing'}}">
+    <view class="mathlv__hearts">
+      <image wx:for="{{hearts}}" wx:key="index" class="mathlv__heart {{item ? '' : 'mathlv__heart--lost'}}" src="{{item ? '/assets/icons/heart-full.png' : '/assets/icons/heart-empty.png'}}" mode="aspectFit" />
+    </view>
+    <view class="mathlv__dots">
+      <view wx:for="{{dots}}" wx:key="id" class="mathlv__dot mathlv__dot--{{item.state}}"></view>
+    </view>
+    <view wx:if="{{question.story}}" class="mathlv__story">{{question.story}}</view>
+    <view class="mathlv__helper">
+      <view wx:if="{{shownAnswer}}" class="mathlv__shown">💡 答案是 {{shownAnswer}}，填上它吧</view>
+      <view wx:else class="mathlv__hint" hover-class="mathlv__hint--pressed" bindtap="useHint">💡 提示（直接看答案）</view>
+    </view>
+    <kungfu-question
+      id="question"
+      question="{{question}}"
+      plain
+      judge="remote"
+      confirm-text="确定"
+      max-digits="{{question.maxDigits}}"
+      bind:submitted="handleSubmitted"
+      bind:empty="handleEmpty"
+    />
+  </block>
+
+  <view wx:elif="{{stage === 'solved'}}" class="mathlv__solved">
+    <view class="card mathlv__result">
+      <view class="mathlv__result-title">🏅 这关闯过啦</view>
+      <view wx:if="{{result}}" class="mathlv__result-line">{{result.titleText}}</view>
+      <view wx:if="{{result}}" class="mathlv__result-line">{{result.chestText}}</view>
+      <view class="mathlv__review">
+        <view wx:for="{{review}}" wx:key="id" class="mathlv__review-item">{{item.text}}</view>
+      </view>
+    </view>
+    <button wx:if="{{result && result.nextLevelNo}}" class="btn btn--primary mathlv__start" bindtap="goNext">下一关</button>
+    <button class="btn btn--ghost mathlv__start" bindtap="backToLevels">回关卡列表</button>
+  </view>
+</view>
+
+<practice-cheer visible="{{cheer.visible}}" title="{{cheer.title}}" subtitle="{{cheer.subtitle}}" mascot="{{cheer.mascot}}" big="{{cheer.big}}" />

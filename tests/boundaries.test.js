@@ -33,5 +33,16 @@ const scan = (files, adapters, pattern, side) =>
 scan([...FRONTEND_DIRS.flatMap(listJs), 'app.js'], FRONTEND_ADAPTERS, FRONTEND_PATTERN, 'frontend')
 scan(BACKEND_DIRS.flatMap(listJs), BACKEND_ADAPTERS, BACKEND_PATTERN, 'cloud function')
 
+// The cloud's copy of the question makers (口算闯关, 口算竞速) must match the phone's, or the two would disagree on answers.
+const practiceCopy = require(path.join(ROOT, 'scripts', 'sync_cloud_practice.js'))
+practiceCopy.FILES.forEach((file) => {
+  const target = path.join(practiceCopy.TARGET, file)
+  const expected = practiceCopy.HEADER + fs.readFileSync(path.join(practiceCopy.SOURCE, file), 'utf8')
+  if (!fs.existsSync(target) || fs.readFileSync(target, 'utf8') !== expected) {
+    failed += 1
+    console.log(`FAIL cloud copy of utils/practice/${file} is out of date: run node scripts/sync_cloud_practice.js`)
+  }
+})
+
 console.log(failed ? `${failed} boundary checks failed` : 'all migration boundaries hold')
 process.exitCode = failed ? 1 : 0

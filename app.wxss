@@ -50,6 +50,12 @@ page {
   --game-color-soft: #FFE6D3;
 }
 
+.game-theme--math {
+  --game-color: #6CC24A;
+  --game-color-deep: #4E9A2F;
+  --game-color-soft: #E6F6DC;
+}
+
 .game-theme--hanzi {
   --game-color: #9B7BFF;
   --game-color-deep: #7A58E0;

@@ -69,12 +69,25 @@ const HANZI_BASELINE_TITLES = [
   { name: '汉字小字典', minSolved: 400 }
 ]
 
+const MATH_BASELINE_TITLES = [
+  { name: '口算小兵', minSolved: 0 },
+  { name: '口算小将', minSolved: 10 },
+  { name: '计算小能手', minSolved: 30 },
+  { name: '速算小达人', minSolved: 60 },
+  { name: '口算小博士', minSolved: 100 },
+  { name: '数学小状元', minSolved: 160 },
+  { name: '口算大王', minSolved: 240 },
+  { name: '数学小天才', minSolved: 360 },
+  { name: '口算宗师', minSolved: 500 }
+]
+
 const BASELINE_TITLES_BY_GAME = {
   idiom: IDIOM_BASELINE_TITLES,
   poetry: POETRY_BASELINE_TITLES,
   xiehouyu: XIEHOUYU_BASELINE_TITLES,
   typo: TYPO_BASELINE_TITLES,
-  hanzi: HANZI_BASELINE_TITLES
+  hanzi: HANZI_BASELINE_TITLES,
+  math: MATH_BASELINE_TITLES
 }
 
 const DEFAULT_RULES = {
@@ -96,8 +109,7 @@ const DEFAULT_RULES = {
   },
   level: {
     staminaCost: 1,
-    maxWrongAttempts: 3,
-    maxHints: 3
+    maxWrongAttempts: 3
   },
   levelByGame: {
     typo: { maxWrongAttempts: 1 },
@@ -218,7 +230,6 @@ const RULE_VALIDATORS = {
   'ad.recoveryDoubleMinAmount': isPositiveInteger,
   'level.staminaCost': isNonNegativeInteger,
   'level.maxWrongAttempts': isPositiveInteger,
-  'level.maxHints': isNonNegativeInteger,
   'staminaRecovery.enabled': isBoolean,
   'staminaRecovery.intervalMinutes': isPositiveInteger,
   'staminaRecovery.dailyCap': isNonNegativeInteger,
@@ -275,8 +286,7 @@ const writePath = (target, path, value) => {
 
 const LEVEL_FIELD_VALIDATORS = {
   staminaCost: RULE_VALIDATORS['level.staminaCost'],
-  maxWrongAttempts: RULE_VALIDATORS['level.maxWrongAttempts'],
-  maxHints: RULE_VALIDATORS['level.maxHints']
+  maxWrongAttempts: RULE_VALIDATORS['level.maxWrongAttempts']
 }
 
 const sanitizeLevelByGame = (levelByGame, rejected) => {

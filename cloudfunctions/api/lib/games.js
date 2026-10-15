@@ -5,7 +5,9 @@ const GAME_TYPES = {
   POETRY: 'poetry',
   XIEHOUYU: 'xiehouyu',
   TYPO: 'typo',
-  HANZI: 'hanzi'
+  HANZI: 'hanzi',
+  // 口算闯关: levels are made in the cloud (lib/math-challenge.js), not stored; played through handlers/math.js.
+  MATH: 'math'
 }
 
 const HINT_STRATEGIES = {
@@ -14,6 +16,7 @@ const HINT_STRATEGIES = {
 }
 
 const ELIMINATED_PER_HINT = 2
+// With 提示不能直接给出答案 on, eliminating stops while this many choices are left.
 const ELIMINATE_KEEP_AT_LEAST = 2
 
 const HINT_STRATEGY_BY_GAME = {

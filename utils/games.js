@@ -3,7 +3,8 @@ const GAME_TYPES = {
   POETRY: 'poetry',
   XIEHOUYU: 'xiehouyu',
   TYPO: 'typo',
-  HANZI: 'hanzi'
+  HANZI: 'hanzi',
+  MATH: 'math'
 }
 
 // Boards show 12 characters (see shownBoardOf in the cloud), in 3 rows of 4 big cells.
@@ -11,9 +12,23 @@ const DEFAULT_BOARD_COLUMNS = 4
 const TYPO_BOARD_COLUMNS = 4
 
 // 汉字闯关 first: most players are in grades 1-2.
-const GAME_ORDER = [GAME_TYPES.HANZI, GAME_TYPES.IDIOM, GAME_TYPES.TYPO, GAME_TYPES.POETRY, GAME_TYPES.XIEHOUYU]
+const GAME_ORDER = [GAME_TYPES.HANZI, GAME_TYPES.MATH, GAME_TYPES.IDIOM, GAME_TYPES.TYPO, GAME_TYPES.POETRY, GAME_TYPES.XIEHOUYU]
 
 const GAME_CONFIGS = {
+  // 口算闯关: 10 questions a level on its own page (pages/game/math); no collection book.
+  [GAME_TYPES.MATH]: {
+    gameType: GAME_TYPES.MATH,
+    name: '口算闯关',
+    shortName: '口算',
+    icon: '算',
+    intro: '沿着数理乐园的路线一关关往上闯，比比谁闯得远',
+    clueLabel: '口算闯关',
+    bookName: '',
+    bookUnit: '',
+    hintEffect: '直接看到这道题的答案',
+    keptAfterFailure: '已经看过的答案',
+    boardColumns: TYPO_BOARD_COLUMNS
+  },
   [GAME_TYPES.HANZI]: {
     gameType: GAME_TYPES.HANZI,
     name: '汉字闯关',
@@ -87,6 +102,12 @@ const hintTextsOf = (gameConfig) => ({
 
 const gameConfigOf = (gameType) => GAME_CONFIGS[gameType] || GAME_CONFIGS[GAME_TYPES.IDIOM]
 
+// Where a level is played: 口算闯关 has its own page, every other game the character-board page.
+const playUrlOf = (gameType, levelNo) =>
+  gameType === GAME_TYPES.MATH
+    ? `/pages/game/math/math?levelNo=${levelNo}&autoStart=1`
+    : `/pages/game/play/play?gameType=${gameType}&levelNo=${levelNo}&autoStart=1`
+
 // What the clue card asks: 汉字闯关 brings its own prompt; 成语找错字 words it differently when the wrong character is
 // not marked (标出错字 off in 控制中心, so the puzzle has no wrongPosition); other games use their fixed label.
 const clueLabelOf = (gameConfig, puzzle) => {
@@ -104,4 +125,4 @@ const describePoemSource = (source) => {
   return `${dynasty}${source.author}《${source.poemTitle}》`
 }
 
-module.exports = { GAME_TYPES, GAME_ORDER, GAME_CONFIGS, gameConfigOf, hintTextsOf, clueLabelOf, describePoemSource, splitTypoClue }
+module.exports = { GAME_TYPES, GAME_ORDER, GAME_CONFIGS, gameConfigOf, playUrlOf, hintTextsOf, clueLabelOf, describePoemSource, splitTypoClue }

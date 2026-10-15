@@ -1,24 +1,47 @@
-<view class="game-tabs">
+<view class="lb-subjects">
   <view
-    wx:for="{{gameTabs}}"
-    wx:key="gameType"
-    class="game-tabs__tab {{item.gameType === gameType ? 'game-tabs__tab--active' : ''}}"
-    data-game-type="{{item.gameType}}"
-    bindtap="switchGame"
-  >{{item.shortName}}</view>
+    wx:for="{{subjectTabs}}"
+    wx:key="id"
+    class="lb-subjects__tab {{item.active ? 'lb-subjects__tab--active' : ''}}"
+    data-id="{{item.id}}"
+    bindtap="switchSubject"
+  >{{item.icon}} {{item.name}}</view>
+</view>
+<view wx:if="{{boards.length}}" class="lb-boards">
+  <view
+    wx:for="{{boards}}"
+    wx:key="id"
+    class="lb-boards__chip {{item.id === boardId ? 'lb-boards__chip--active' : ''}}"
+    data-id="{{item.id}}"
+    bindtap="switchBoard"
+  >{{item.name}}</view>
+</view>
+<view wx:if="{{isSprint}}" class="lb-boards lb-boards--islands">
+  <view
+    wx:for="{{islands}}"
+    wx:key="id"
+    class="lb-boards__chip lb-boards__chip--small {{item.id === islandId ? 'lb-boards__chip--active' : ''}}"
+    data-id="{{item.id}}"
+    bindtap="switchIsland"
+  >{{item.name}}</view>
 </view>
 
-<loading-skeleton wx:if="{{loading}}" rows="4" />
-<view wx:if="{{!loading && loadFailed}}" class="page leaderboard">
+<view wx:if="{{comingSoon}}" class="page leaderboard">
+  <view class="card leaderboard__empty">🎠 字母乐园正在建造中，英语玩法开放后这里就有排行榜～</view>
+</view>
+
+<loading-skeleton wx:if="{{loading && !comingSoon}}" rows="4" />
+<view wx:if="{{!loading && loadFailed && !comingSoon}}" class="page leaderboard">
   <view class="card leaderboard__empty" bindtap="retryLoad">
     <view class="leaderboard__empty-title">📶 没连上网络</view>
     <view>点我再试一次</view>
   </view>
 </view>
-<view class="page leaderboard" wx:if="{{!loading && !loadFailed}}">
-  <view class="leaderboard__summary">按闯过的关数排名，展示前 {{size}} 名</view>
+<view class="page leaderboard" wx:if="{{!loading && !loadFailed && !comingSoon}}">
+  <view class="leaderboard__summary">{{ruleText}}</view>
 
-  <view wx:if="{{!entries.length}}" class="card leaderboard__empty">还没有人上榜，快去闯关吧</view>
+  <view wx:if="{{!entries.length && isSprint}}" class="card leaderboard__empty" bindtap="openSprint">这座岛还没有人挑战，点我去当第一名！</view>
+  <view wx:elif="{{!entries.length}}" class="card leaderboard__empty">还没有人上榜，快去闯关吧</view>
 
   <view
     wx:for="{{entries}}"
@@ -30,23 +53,23 @@
     <view wx:else class="leaderboard__avatar leaderboard__avatar--empty">{{item.initial}}</view>
     <view class="leaderboard__body">
       <view class="leaderboard__name">{{item.displayName}}<text wx:if="{{item.isMe}}" class="leaderboard__me-tag">我</text></view>
-      <view class="leaderboard__title">{{item.titleName}}</view>
+      <view class="leaderboard__title">{{item.detail}}</view>
     </view>
-    <view class="leaderboard__score">{{item.solvedCount}}<text class="leaderboard__unit"> 关</text></view>
+    <view class="leaderboard__score">{{item.value}}<text class="leaderboard__unit"> {{unit}}</text></view>
   </view>
 
   <view wx:if="{{openSeatsText}}" class="card leaderboard__open-seats">{{openSeatsText}}</view>
 </view>
 
-<view wx:if="{{!loading && !loadFailed && me && !me.inTop}}" class="leaderboard__mine">
+<view wx:if="{{!loading && !loadFailed && !comingSoon && me && !me.inTop}}" class="leaderboard__mine">
   <view class="leaderboard__row leaderboard__row--me">
     <view class="leaderboard__rank">{{me.rankText}}</view>
     <image wx:if="{{me.avatarUrl}}" class="leaderboard__avatar" src="{{me.avatarUrl}}" mode="aspectFill" />
     <view wx:else class="leaderboard__avatar leaderboard__avatar--empty">{{me.initial}}</view>
     <view class="leaderboard__body">
       <view class="leaderboard__name">{{me.displayName}}<text class="leaderboard__me-tag">我</text></view>
-      <view class="leaderboard__title">{{me.rank ? me.titleName : '还没上榜，闯过 1 关就能上榜'}}</view>
+      <view class="leaderboard__title">{{me.detail}}</view>
     </view>
-    <view class="leaderboard__score">{{me.solvedCount}}<text class="leaderboard__unit"> 关</text></view>
+    <view class="leaderboard__score">{{me.value}}<text class="leaderboard__unit"> {{unit}}</text></view>
   </view>
 </view>

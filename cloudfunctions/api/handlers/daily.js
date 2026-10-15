@@ -8,6 +8,7 @@ const { ITEM_LOG_REASONS, writeItemLogs } = require('../lib/item-log')
 const { FLOWER_REASONS, applyHonors } = require('../lib/honors')
 const { countLevels } = require('../lib/level-count')
 const { shownBoardOf } = require('../lib/games')
+const { seededRandom } = require('../lib/seeded-random')
 
 // 每日挑战: the same 10 questions for everyone on a Beijing day — 5 汉字闯关 levels picked here, and 5 sums the page
 // makes from the same date (utils/daily.js). Finishing pays once a day, whatever the score.
@@ -16,18 +17,6 @@ const HANZI_QUESTIONS = 5
 const MATH_QUESTIONS = 5
 const TOTAL_QUESTIONS = HANZI_QUESTIONS + MATH_QUESTIONS
 const MAX_SECONDS = 3600
-
-// Small seeded generator (mulberry32) so a date always picks the same levels.
-const seededRandom = (seedText) => {
-  let state = [...seedText].reduce((hash, char) => Math.imul(hash ^ char.charCodeAt(0), 2654435761) >>> 0, 2166136261)
-  return () => {
-    state = (state + 0x6d2b79f5) >>> 0
-    let value = state
-    value = Math.imul(value ^ (value >>> 15), value | 1)
-    value ^= value + Math.imul(value ^ (value >>> 7), value | 61)
-    return ((value ^ (value >>> 14)) >>> 0) / 4294967296
-  }
-}
 
 const pickLevelNos = (dateKey, total) => {
   const random = seededRandom(`daily:${dateKey}`)

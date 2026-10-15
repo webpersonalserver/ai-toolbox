@@ -93,3 +93,35 @@
   color: var(--color-primary-deep);
   font-weight: 800;
 }
+
+/* − value + for number settings. */
+.control__stepper {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.control__step {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background: var(--color-primary-soft);
+  color: var(--color-primary-deep);
+  font-size: var(--font-lg);
+  font-weight: 900;
+}
+
+.control__step--off {
+  opacity: 0.35;
+}
+
+.control__value {
+  min-width: 56rpx;
+  font-size: var(--font-lg);
+  font-weight: 900;
+  text-align: center;
+}

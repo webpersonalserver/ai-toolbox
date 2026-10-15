@@ -5,16 +5,35 @@ const { describeRewards } = require('../../utils/items')
 const { DEFAULT_SHARE } = require('../../utils/share')
 const { showRescueNotices } = require('../../utils/rescue-notice')
 const { describeTitleProgress } = require('../../utils/milestone')
-const { GAME_ORDER, gameConfigOf } = require('../../utils/games')
+const { GAME_ORDER, gameConfigOf, playUrlOf } = require('../../utils/games')
 const { GUIDE_KEYS, hasSeenGuide, markGuideSeen } = require('../../utils/onboarding')
 const { countUnclaimedWelfare, buildTaskRows, countOpenTasks } = require('../../utils/welfare')
 const { adOffersOf } = require('../../utils/ad-reward')
 const { HIDDEN_REWARD_POPUP, CHEST_SOUND } = require('../../utils/milestone')
+const { SUBJECTS, recommendationsOf, initialSubjectOf, cardsOfSubject } = require('../../utils/lobby')
 
-// Most players are in grades 1-2, so a brand-new player is pointed at 汉字闯关.
-const BEGINNER_GAME_TYPE = 'hanzi'
 const WELFARE_URL = '/pages/welfare/welfare'
 const DAILY_URL = '/pages/daily/daily'
+// The tab the child picked last time (a per-phone convenience; the lobby works without it).
+const SUBJECT_STORAGE_KEY = 'lobby.subject.v1'
+
+const readSavedSubject = () => {
+  try {
+    return wx.getStorageSync(SUBJECT_STORAGE_KEY) || ''
+  } catch (error) {
+    return ''
+  }
+}
+
+const saveSubject = (subjectId) => {
+  try {
+    wx.setStorageSync(SUBJECT_STORAGE_KEY, subjectId)
+  } catch (error) {
+    console.warn('[lobby] tab not remembered', error)
+  }
+}
+
+const subjectTabs = (activeId) => SUBJECTS.map((subject) => ({ id: subject.id, name: subject.name, icon: subject.icon, active: subject.id === activeId }))
 
 const describeDaily = (result) =>
   result ? `今天已完成：答对 ${result.correct} / ${result.total} 题，明天再来` : '10 道题，汉字和算术轮流来，完成就有奖励'
@@ -24,12 +43,6 @@ const describeWelfare = (session, unclaimed, openTasks) => {
   if (!session.today.checkedIn) return `今日打卡可领${describeRewards(session.rules.checkinRewards)}`
   if (unclaimed) return '还有福利没领，点开看看'
   return openTasks ? `还有 ${openTasks} 个任务能赚体力和提示` : '今天的福利都领完啦'
-}
-
-const orderGameCards = (cards) => {
-  const isNewPlayer = cards.every((card) => !card.solvedCount)
-  const ordered = [...cards].sort((left, right) => right.lastSolvedAt - left.lastSolvedAt)
-  return ordered.map((card) => ({ ...card, recommended: isNewPlayer && card.gameType === BEGINNER_GAME_TYPE }))
 }
 
 const toGameCard = (summary) => ({
@@ -54,7 +67,13 @@ Page({
     welfareDesc: '',
     adOffers: [],
     rewardPopup: HIDDEN_REWARD_POPUP,
-    gameCards: GAME_ORDER.map((gameType) => gameConfigOf(gameType)),
+    gameCards: [],
+    recommendations: [],
+    subjectTabs: subjectTabs('chinese'),
+    subjectId: 'chinese',
+    subjectCards: [],
+    showSprint: false,
+    comingSoon: false,
     welcomeVisible: false,
     dailyDone: false,
     dailyDesc: describeDaily(null),
@@ -82,8 +101,10 @@ Page({
           countUnclaimedWelfare(session, games, practices),
           countOpenTasks(buildTaskRows({ session, games, practices, practiceEarnedToday }))
         ),
-        gameCards: orderGameCards(GAME_ORDER.filter((gameType) => summaryByGame[gameType]).map((gameType) => toGameCard(summaryByGame[gameType])))
+        gameCards: GAME_ORDER.filter((gameType) => summaryByGame[gameType]).map((gameType) => toGameCard(summaryByGame[gameType]))
       })
+      this.setData({ recommendations: recommendationsOf(this.data.gameCards) })
+      this.showSubject(this.subjectChosen ? this.data.subjectId : initialSubjectOf(this.data.gameCards, readSavedSubject()))
       showRescueNotices(rescueNotices.map((notice) => ({ ...notice, gameName: gameConfigOf(notice.gameType).name })))
       this.offerProfileWelcome(session.profile)
     } catch (error) {
@@ -127,6 +148,10 @@ Page({
     wx.navigateTo({ url: WELFARE_URL })
   },
 
+  openSprint() {
+    wx.navigateTo({ url: '/pages/game/sprint/sprint' })
+  },
+
   openDaily() {
     wx.navigateTo({ url: DAILY_URL })
   },
@@ -147,9 +172,32 @@ Page({
     wx.showToast({ title: `你叫「${this.data.profileNickname}」啦，随时可在「我的」里改`, icon: 'none', duration: 2500 })
   },
 
+  showSubject(subjectId) {
+    const subject = SUBJECTS.find((candidate) => candidate.id === subjectId)
+    this.setData({
+      subjectId,
+      subjectTabs: subjectTabs(subjectId),
+      subjectCards: cardsOfSubject(subjectId, this.data.gameCards),
+      showSprint: Boolean(subject.hasSprint),
+      comingSoon: Boolean(subject.comingSoon)
+    })
+  },
+
+  chooseSubject(event) {
+    const { id } = event.currentTarget.dataset
+    this.subjectChosen = true
+    saveSubject(id)
+    this.showSubject(id)
+  },
+
+  openRecommendation(event) {
+    const { gameType, levelNo } = event.currentTarget.dataset
+    wx.navigateTo({ url: playUrlOf(gameType, levelNo) })
+  },
+
   continueGame(event) {
     const { gameType, levelNo } = event.currentTarget.dataset
-    wx.navigateTo({ url: `/pages/game/play/play?gameType=${gameType}&levelNo=${levelNo}&autoStart=1` })
+    wx.navigateTo({ url: playUrlOf(gameType, levelNo) })
   },
 
   openGame(event) {

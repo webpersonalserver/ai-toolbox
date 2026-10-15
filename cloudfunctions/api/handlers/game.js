@@ -49,12 +49,16 @@ const parseLevelNo = (payload) => {
   return levelNo
 }
 
-const maxHintsForLevel = (level, rules) => {
-  const strategyLimit =
-    hintStrategyOf(level.gameType) === HINT_STRATEGIES.ELIMINATE
-      ? Math.floor((level.board.length - ELIMINATE_KEEP_AT_LEAST) / ELIMINATED_PER_HINT)
-      : level.answer.length - 1
-  return Math.min(rules.level.maxHints, strategyLimit)
+// No set number of hints per level: hints are the player's own items. By default they may give the whole answer
+// (揭字 every character, 排除 every wrong choice); with 提示不能直接给出答案 on (控制中心) 揭字 stops before the last
+// character and 排除 while two choices are left.
+const maxHintsForLevel = (level, switches = {}) => {
+  const keepLastStep = switches.hintKeepLastStep === true
+  if (hintStrategyOf(level.gameType) === HINT_STRATEGIES.ELIMINATE) {
+    const wrongChoices = level.board.length - 1
+    return keepLastStep ? Math.floor((level.board.length - ELIMINATE_KEEP_AT_LEAST) / ELIMINATED_PER_HINT) : Math.ceil(wrongChoices / ELIMINATED_PER_HINT)
+  }
+  return keepLastStep ? level.answer.length - 1 : level.answer.length
 }
 
 const describeHintEffect = (level, hintsUsed) =>
@@ -74,7 +78,7 @@ const toLevelDetail = ({ level, progress, rules, total, switches }) => {
     solved,
     attempt,
     hintsUsed,
-    maxHints: maxHintsForLevel(level, rules),
+    maxHints: maxHintsForLevel(level, switches),
     staminaCost: rules.level.staminaCost,
     puzzle: isPlaying ? { ...toPuzzle(level, switches), ...describeHintEffect(level, hintsUsed) } : null,
     solution: solved ? toSolution(level) : null
@@ -315,9 +319,9 @@ const useHint = async ({ openid, payload }) => {
   const gameType = parseGameType(payload)
   const now = Date.now()
   const levelNo = parseLevelNo(payload)
-  const [rules, level] = await Promise.all([loadRulesForGame(gameType), getLevel(gameType, levelNo)])
+  const [rules, level, switches] = await Promise.all([loadRulesForGame(gameType), getLevel(gameType, levelNo), loadSwitches()])
   await getProgress(openid, gameType)
-  const maxHints = maxHintsForLevel(level, rules)
+  const maxHints = maxHintsForLevel(level, switches)
   const hintDelta = { [ITEM_TYPES.HINT]: -1 }
 
   const outcome = await db.runTransaction(async (transaction) => {
@@ -330,7 +334,7 @@ const useHint = async ({ openid, payload }) => {
     }
     const hintsUsed = hintsUsedOnLevel(progress, levelNo)
     if (hintsUsed >= maxHints) {
-      return { failure: { code: ERROR_CODES.HINT_LIMIT_REACHED, message: '这关的提示用完啦，自己想想，你可以的！' } }
+      return { failure: { code: ERROR_CODES.HINT_LIMIT_REACHED, message: switches.hintKeepLastStep ? '再提示就是直接给答案啦，最后一步自己来，你可以的！' : '答案已经全部揭开啦' } }
     }
     const change = await changeItemsInTransaction(transaction, openid, hintDelta, rules, now)
     if (change.insufficientType) return { insufficientType: change.insufficientType, insufficientItems: change.items }
@@ -361,6 +365,8 @@ const summarizeGame = async (openid, gameType, rules) => {
     currentLevel: Math.min(progress.currentLevel, total),
     solvedCount: progress.solved.length,
     allCleared: isAllCleared(progress.solved.length, total),
+    // When a level was last passed: the lobby recommends and opens the tab of the game played most recently.
+    lastSolvedAt: progress.lastSolvedAt ? new Date(progress.lastSolvedAt).getTime() : 0,
     achievement: describeAchievement(progress, rules)
   }
 }

@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "口算竞速",
+  "disableScroll": true,
+  "usingComponents": {
+    "item-chip": "/components/item-chip/item-chip",
+    "kungfu-question": "/components/kungfu-question/kungfu-question"
+  }
+}

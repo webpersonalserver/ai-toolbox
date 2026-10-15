@@ -157,6 +157,11 @@ Page({
       nextLevelNo: detail.levelNo < detail.total ? detail.levelNo + 1 : null
     })
     this.syncItems()
+    // Every character already revealed by hints (the hand-in did not go through last time): hand it in now.
+    const revealed = puzzle.revealed || []
+    if (stage === PLAY_STAGES.PLAYING && revealed.length && revealed.length === puzzle.answerLength) {
+      this.handleComplete({ detail: { answer: revealed.join('') } })
+    }
   },
 
   async loadLevel() {
@@ -221,7 +226,7 @@ Page({
     if (!session) return
     this.setData({
       guideVisible: true,
-      guideSections: buildGuideSections(session.rules, this.data.game, this.data.maxHints),
+      guideSections: buildGuideSections(session.rules, this.data.game),
       guideConfirmText: startAfterGuide ? GUIDE_CONFIRM_TEXT.BEFORE_START : GUIDE_CONFIRM_TEXT.REVIEW,
       startAfterGuide
     })
@@ -294,7 +299,7 @@ Page({
 
   handleHint() {
     if (this.data.hintsUsed >= this.data.maxHints) {
-      wx.showToast({ title: '这关的提示用完啦，自己想想，你可以的！', icon: 'none' })
+      wx.showToast({ title: isSwitchOn('hintKeepLastStep') ? '再提示就是直接给答案啦，最后一步自己来！' : '提示已经用到头啦', icon: 'none' })
       return
     }
     return this.withBusy(async () => {
@@ -306,6 +311,10 @@ Page({
         return
       }
       this.setData({ revealed: result.revealed, eliminated: result.eliminated, hintsUsed: result.hintsUsed })
+      // Hints revealed the whole answer: hand it in, there is nothing left to tap.
+      if (result.revealed.length && result.revealed.length === this.data.answerLength) {
+        await this.handleComplete({ detail: { answer: result.revealed.join('') } })
+      }
     })
   },
 

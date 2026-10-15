@@ -1,5 +1,9 @@
 const { ITEM_TYPES, describeAmount, describeRewards } = require('./items')
 const { hintTextsOf, gameConfigOf } = require('./games')
+const { isSwitchOn } = require('./switches')
+
+// How far hints go, following 提示不能直接给出答案 in 控制中心.
+const hintReachText = () => (isSwitchOn('hintKeepLastStep') ? '最后一个字（或最后两个选项）要自己完成' : '用到底就能直接揭开答案')
 
 const levelRulesOf = (rules, gameType) => ({ ...rules.level, ...((rules.levelByGame || {})[gameType] || {}) })
 
@@ -39,7 +43,7 @@ const buildRuleSections = (rules) => {
       text: `体力不够时去「趣味」练一练：数理乐园答对题数、连对数达标得宝箱（每天最多 ${describeAmount(ITEM_TYPES.STAMINA, dailyCaps.stamina)}、${describeAmount(ITEM_TYPES.HINT, dailyCaps.hint)}）；九九神功每练成一重也有宝箱`
     })
   }
-  sections.push({ title: '提示与求助', text: `每关最多提示 ${rules.level.maxHints} 次；卡关可免费求助好友，同一位好友每天最多帮你 ${rules.rescue.dailyLimitPerHelper} 次` })
+  sections.push({ title: '提示与求助', text: `提示不限次数，每次消耗 1 个提示道具，${hintReachText()}；卡关可免费求助好友，同一位好友每天最多帮你 ${rules.rescue.dailyLimitPerHelper} 次` })
   return sections
 }
 
@@ -51,13 +55,13 @@ const describeStaminaSources = (rules) => {
 
 // First-run guide for a 6-10 year old: three short lines with an icon each, the detail in small print below.
 // There is deliberately no "挑战失败" line; losing all hearts is explained gently on the play page when it happens.
-const buildGuideSections = (rules, gameConfig, maxHints) => {
+const buildGuideSections = (rules, gameConfig) => {
   const { staminaCost, maxWrongAttempts } = levelRulesOf(rules, gameConfig.gameType)
   const { hintEffect, keptAfterFailure } = hintTextsOf(gameConfig)
   return [
     { title: `⚡ 开一关用 ${staminaCost} 点体力`, text: describeStaminaSources(rules) },
     { title: `❤️ 有 ${maxWrongAttempts} 颗❤️，答错少一颗`, text: `用完了就再来一次，${keptAfterFailure}会帮你留着` },
-    { title: '💡 卡住了？用提示，或者求助好友', text: `提示能${hintEffect}（每关 ${maxHints} 次）；好友答对，你就直接过关` }
+    { title: '💡 卡住了？用提示，或者求助好友', text: `提示能${hintEffect}，不限次数，${hintReachText()}；好友答对，你就直接过关` }
   ]
 }
 

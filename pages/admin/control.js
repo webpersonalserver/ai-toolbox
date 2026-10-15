@@ -5,6 +5,31 @@ const { admin } = require('../../utils/api')
 // defaultOn: the state before anyone flips it.
 const SWITCH_GROUPS = [
   {
+    module: '大厅 · 口算竞速',
+    switches: [
+      {
+        key: 'sprintWeeklyReset',
+        name: '排行榜每周清零',
+        scene: '大厅点「口算竞速」，选好岛屿后页面下方的排行榜',
+        controls: '口算竞速的排行榜是每周重新排，还是一直累计',
+        onText: '每周一 0 点（北京时间）重新开始排名，每人记本周最好的一次',
+        offText: '不清零，一直按历史最好成绩排名',
+        defaultOn: true
+      },
+      {
+        key: 'sprintStaminaCost',
+        type: 'number',
+        name: '每次挑战扣体力',
+        scene: '大厅点「口算竞速」，选好岛屿后点「开始挑战」时',
+        controls: '玩一次口算竞速要扣几点体力',
+        unit: '点体力',
+        defaultValue: 5,
+        min: 0,
+        max: 30
+      }
+    ]
+  },
+  {
     module: '大厅闯关 · 猜成语、诗词填空、歇后语',
     switches: [
       {
@@ -29,6 +54,20 @@ const SWITCH_GROUPS = [
         onText: '错字标成红色，孩子只要从 8 个字里选出正确的字',
         offText: '错字不标红，孩子要先自己找出是哪个字写错了，再选出正确的字，更难',
         defaultOn: true
+      }
+    ]
+  },
+  {
+    module: '大厅闯关 · 全部玩法的提示',
+    switches: [
+      {
+        key: 'hintKeepLastStep',
+        name: '提示不能直接给出答案',
+        scene: '大厅任意玩法的答题页，点「提示」按钮时（猜成语、诗词、歇后语揭开字；成语找错字、汉字闯关划掉错误选项）',
+        controls: '提示道具能不能一直用到把答案完全揭开',
+        onText: '揭字的玩法最后一个字要自己填，划选项的玩法最后剩 2 个要自己选',
+        offText: '有提示道具就能一直用，可以把答案全部揭开、自动过关（提示是孩子自己的道具）',
+        defaultOn: false
       }
     ]
   },
@@ -66,8 +105,12 @@ const toGroups = (values) =>
   SWITCH_GROUPS.map((group) => ({
     ...group,
     switches: group.switches.map((item) => {
+      if (item.type === 'number') {
+        const value = Number.isInteger(values[item.key]) ? values[item.key] : item.defaultValue
+        return { ...item, value, highlight: true, stateText: `现在：${value} ${item.unit}`, defaultText: `默认 ${item.defaultValue}`, canLower: value > item.min, canRaise: value < item.max }
+      }
       const on = typeof values[item.key] === 'boolean' ? values[item.key] : item.defaultOn
-      return { ...item, on, stateText: on ? '现在：已开启' : '现在：已关闭', defaultText: item.defaultOn ? '默认开启' : '默认关闭' }
+      return { ...item, on, highlight: on, stateText: on ? '现在：已开启' : '现在：已关闭', defaultText: item.defaultOn ? '默认开启' : '默认关闭' }
     })
   }))
 
@@ -97,14 +140,11 @@ Page({
   showDetail(event) {
     const group = SWITCH_GROUPS.find((candidate) => candidate.switches.some((item) => item.key === event.currentTarget.dataset.key))
     const item = group.switches.find((candidate) => candidate.key === event.currentTarget.dataset.key)
-    const lines = [
-      `模块：${group.module}`,
-      `场景：${item.scene}`,
-      `控制什么：${item.controls}`,
-      `开启时：${item.onText}`,
-      `关闭时：${item.offText}`,
-      item.defaultOn ? '默认：开启' : '默认：关闭'
-    ]
+    const effectLines =
+      item.type === 'number'
+        ? [`可以设成：${item.min}–${item.max} ${item.unit}`, `默认：${item.defaultValue} ${item.unit}`]
+        : [`开启时：${item.onText}`, `关闭时：${item.offText}`, item.defaultOn ? '默认：开启' : '默认：关闭']
+    const lines = [`模块：${group.module}`, `场景：${item.scene}`, `控制什么：${item.controls}`, ...effectLines]
     wx.showModal({
       title: item.name,
       content: lines.join('\n\n'),
@@ -130,15 +170,35 @@ Page({
     this.setData({ [path]: on }, () => this.setData({ [path]: !on }))
   },
 
-  confirmChange() {
+  confirmChange(content = '这个开关对所有玩家生效') {
     return new Promise((resolve) => {
       wx.showModal({
         title: '确定修改？',
-        content: '这个开关对所有玩家生效',
+        content,
         success: (result) => resolve(result.confirm),
         fail: () => resolve(false)
       })
     })
+  },
+
+  // − / + on a number setting (e.g. 口算竞速 stamina): one step at a time, asked once before saving.
+  async changeNumber(event) {
+    const { key, step } = event.currentTarget.dataset
+    const item = this.data.groups.flatMap((group) => group.switches).find((candidate) => candidate.key === key)
+    const value = Math.min(item.max, Math.max(item.min, item.value + Number(step)))
+    if (value === item.value || !(await this.confirmChange(`改成 ${value} ${item.unit}，对所有玩家生效`))) return
+    this.setData({ saving: key })
+    try {
+      const { switches } = await admin.updateSwitches({ [key]: value })
+      this.setData({ groups: toGroups(switches) })
+      wx.showToast({ title: `已改成 ${value}`, icon: 'success' })
+    } catch (error) {
+      console.error('[control] setting not saved', error)
+      wx.showToast({ title: error.message || '没保存上，再试一次', icon: 'none' })
+      this.load()
+    } finally {
+      this.setData({ saving: '' })
+    }
   },
 
   // Every switch is live for all players at once, so a stray tap must not change anything without a second yes.

@@ -30,7 +30,9 @@ Component({
     revealed: { type: Boolean, value: false },
     plain: { type: Boolean, value: false },
     confirmText: { type: String, value: '出招' },
-    maxDigits: { type: Number, value: 2 }
+    maxDigits: { type: Number, value: 2 },
+    // 'remote': the question carries no answer; the page judges (口算闯关 asks the cloud) and calls markAnswer().
+    judge: { type: String, value: 'local' }
   },
 
   data: {
@@ -64,7 +66,7 @@ Component({
 
   methods: {
     isBusy() {
-      return this.data.locked || this.data.state === 'correct' || this.data.state === 'revealed'
+      return this.data.locked || ['correct', 'revealed', 'checking'].includes(this.data.state)
     },
 
     handleKey(event) {
@@ -89,9 +91,23 @@ Component({
         this.triggerEvent('empty')
         return
       }
-      const correct = value === this.data.question.answer
+      if (this.data.judge === 'remote') {
+        this.setData({ state: 'checking' })
+        this.triggerEvent('submitted', { value })
+        return
+      }
+      this.markAnswer(value === this.data.question.answer, value)
+    },
+
+    // The page could not get a verdict (network): let the child answer again.
+    resetAnswer() {
+      this.setData({ state: 'idle' })
+    },
+
+    // Shows a verdict: right stays green, wrong shakes and clears for another try.
+    markAnswer(correct, value = '') {
       this.setData({ state: correct ? 'correct' : 'wrong' })
-      this.triggerEvent('answered', { correct })
+      this.triggerEvent('answered', { correct, value })
       if (correct) return
       this.clearTimer = setTimeout(() => {
         if (this.data.state === 'wrong') this.setData({ input: '', pickedChoice: '', state: 'idle' })

@@ -3,7 +3,7 @@ const { ensureLogin } = require('../../../utils/session')
 const { showRescueNotices } = require('../../../utils/rescue-notice')
 const { DEFAULT_SHARE } = require('../../../utils/share')
 const { HIDDEN_REWARD_POPUP, openMilestoneChests, describeTitleProgress } = require('../../../utils/milestone')
-const { gameConfigOf } = require('../../../utils/games')
+const { gameConfigOf, playUrlOf } = require('../../../utils/games')
 const { openLeaderboardTab } = require('../../../utils/navigation')
 
 const LEVELS_PER_PAGE = 50
@@ -151,7 +151,7 @@ Page({
       return
     }
     // Fresh levels start straight away; a failed attempt still stops on the "再来一次" card (see play.autoStartIfRequested).
-    wx.navigateTo({ url: `/pages/game/play/play?gameType=${this.data.gameType}&levelNo=${levelNo}&autoStart=1` })
+    wx.navigateTo({ url: playUrlOf(this.data.gameType, levelNo) })
   },
 
   onShareAppMessage() {

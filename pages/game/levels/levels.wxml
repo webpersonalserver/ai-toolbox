@@ -11,7 +11,7 @@
       <view class="chip">{{titleName}}</view>
       <view class="levels__links">
         <view class="levels__link" bindtap="openLeaderboard">排行榜 ›</view>
-        <view class="levels__link" bindtap="openBook">{{game.bookName}} ›</view>
+        <view wx:if="{{game.bookName}}" class="levels__link" bindtap="openBook">{{game.bookName}} ›</view>
       </view>
     </view>
     <view class="levels__summary">

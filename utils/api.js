@@ -102,9 +102,25 @@ const admin = {
   updateSwitches: (switches) => call('admin.updateSwitches', { switches })
 }
 
+// 口算闯关: questions come without answers; each answer is judged in the cloud.
+const math = {
+  level: (levelNo) => call('math.level', { levelNo }),
+  start: (levelNo) => call('math.start', { levelNo }),
+  answer: (levelNo, index, answer) => call('math.answer', { levelNo, index, answer }),
+  hint: (levelNo) => call('math.hint', { levelNo })
+}
+
+// 口算竞速: 60 seconds on one island's questions; the cloud judges the run again when it is handed in.
+const sprint = {
+  islands: () => call('sprint.islands'),
+  start: (islandId) => call('sprint.start', { islandId }),
+  finish: (runId, answers) => call('sprint.finish', { runId, answers }),
+  board: (islandId) => call('sprint.board', { islandId })
+}
+
 const daily = {
   today: () => call('daily.today'),
   submit: (result) => call('daily.submit', result)
 }
 
-module.exports = { ERROR_CODES, ApiError, toastError, account, game, rescue, practice, daily, speech, chests, assets, leaderboard, admin }
+module.exports = { ERROR_CODES, ApiError, toastError, account, game, rescue, practice, math, sprint, daily, speech, chests, assets, leaderboard, admin }

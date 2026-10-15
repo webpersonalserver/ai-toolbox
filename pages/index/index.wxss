@@ -23,11 +23,13 @@
   text-align: right;
 }
 
+/* Spacing rhythm: cards in a group sit var(--space-md) apart; a section title adds var(--space-lg) above itself,
+   so groups are var(--space-md) + var(--space-lg) apart, and a title sits var(--space-md) above its cards. */
 .hall__welfare {
   display: flex;
   align-items: center;
   gap: var(--space-md);
-  margin-bottom: var(--space-xl);
+  margin-bottom: var(--space-md);
 }
 
 .hall__welfare--has {
@@ -66,18 +68,12 @@
   font-size: var(--font-sm);
 }
 
-.hall__game-recommend {
-  background: var(--color-success);
-  color: var(--color-on-accent);
-}
-
-
 .btn.hall__checkin-btn {
   width: 180rpx;
 }
 
 .hall__section-title {
-  margin-bottom: var(--space-md);
+  margin: var(--space-lg) 0 var(--space-md);
   color: var(--color-ink-soft);
   font-size: var(--font-sm);
   font-weight: 600;
@@ -140,7 +136,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-left: var(--space-sm);
+  margin-left: var(--space-md);
   margin-bottom: var(--jelly-depth);
   padding: var(--space-xs) var(--space-md);
   border-radius: var(--radius-md);
@@ -189,4 +185,103 @@
 
 .hall__daily-icon {
   background: var(--color-surface);
+}
+
+/* 口算竞速: a challenge, so it stands out from the game list with the 口算 green. */
+.hall__sprint {
+  background: #E6F6DC;
+}
+
+.hall__sprint-icon {
+  background: var(--color-surface);
+}
+
+/* 为你推荐: one card per subject, side by side. */
+.hall__picks {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+
+/* Half-width cards: a smaller inner padding than full-width cards, or the content gets squeezed. */
+.hall__pick {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-md);
+  background: var(--game-color-soft);
+}
+
+.hall__pick-subject {
+  align-self: flex-start;
+  padding: 0 var(--space-sm);
+  border-radius: 999rpx;
+  background: var(--color-surface);
+  color: var(--game-color-deep);
+  font-size: 22rpx;
+  font-weight: 900;
+}
+
+.hall__pick-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.hall__pick-icon {
+  flex-shrink: 0;
+  width: 64rpx;
+  height: 64rpx;
+  margin-right: 0;
+  font-size: var(--font-md);
+}
+
+.hall__pick-name {
+  font-size: var(--font-md);
+  font-weight: 900;
+}
+
+.hall__pick-reason {
+  color: var(--color-ink-soft);
+  font-size: 22rpx;
+  line-height: 1.4;
+}
+
+.hall__pick-go {
+  align-self: flex-end;
+  color: var(--game-color-deep);
+  font-size: var(--font-sm);
+  font-weight: 900;
+}
+
+/* 全部玩法: 汉字城堡 / 数字星球 / 字母乐园, one subject at a time. */
+.hall__tabs {
+  display: flex;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-md);
+  padding: var(--space-xs);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+}
+
+.hall__tab {
+  flex: 1;
+  padding: var(--space-sm) 0;
+  border-radius: var(--radius-sm);
+  color: var(--color-ink-soft);
+  font-size: var(--font-md);
+  font-weight: 800;
+  text-align: center;
+}
+
+.hall__tab--active {
+  background: var(--color-surface);
+  box-shadow: 0 4rpx 0 var(--color-border);
+  color: var(--color-primary-deep);
+}
+
+.hall__soon {
+  color: var(--color-ink-soft);
+  text-align: center;
 }

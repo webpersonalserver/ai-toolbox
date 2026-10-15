@@ -25,6 +25,8 @@ const getProgress = async (openid, gameType) => {
 }
 
 const getLevel = async (gameType, levelNo) => {
+  // 口算闯关 has no stored levels; its own handlers (handlers/math.js) make the questions.
+  if (gameType === 'math') throw new BusinessError(ERROR_CODES.BAD_REQUEST, '口算闯关请从口算闯关页进入')
   try {
     const { data } = await db.collection('levels').doc(levelDocId(gameType, levelNo)).get()
     return data

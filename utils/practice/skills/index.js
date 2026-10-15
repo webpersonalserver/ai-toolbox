@@ -5,8 +5,9 @@ const chain = require('./chain')
 const compare = require('./compare')
 const division = require('./division')
 const column = require('./column')
+const times = require('./times')
 
-const SKILLS = { addSub, split, chain, compare, division, column }
+const SKILLS = { addSub, split, chain, compare, division, column, times }
 
 const skillOf = (name) => {
   const skill = SKILLS[name]

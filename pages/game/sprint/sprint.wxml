@@ -1,0 +1,77 @@
+<view class="page sprint">
+  <view class="sprint__topbar">
+    <view class="sprint__title">⏱ 口算竞速</view>
+    <view class="sprint__items">
+      <item-chip item-type="stamina" value="{{items.stamina}}" />
+    </view>
+  </view>
+
+  <view wx:if="{{stage === 'loading'}}" class="sprint__center">正在准备…</view>
+  <view wx:elif="{{stage === 'failed'}}" class="card sprint__center" bindtap="load">📶 没连上网络，点我再试一次</view>
+
+  <block wx:elif="{{stage === 'choose'}}">
+    <view class="sprint__rule">选一座岛，{{seconds}} 秒能答多少答多少。得分 = 答对 − 答错，同分时答错少的排前面。</view>
+    <view class="sprint__islands">
+      <view
+        wx:for="{{islands}}"
+        wx:key="id"
+        class="card sprint__island {{item.id === selectedId ? 'sprint__island--on' : ''}}"
+        data-id="{{item.id}}"
+        bindtap="chooseIsland"
+      >
+        <view class="sprint__island-name">{{item.name}}</view>
+        <view class="sprint__island-scope">{{item.scope}}</view>
+        <view class="sprint__island-best">{{item.bestText}}</view>
+      </view>
+    </view>
+    <button class="btn btn--primary sprint__start" loading="{{busy}}" bindtap="start">
+      挑战{{selectedName}}<image class="sprint__cost-icon" src="/assets/icons/stamina.png" mode="aspectFit" />-{{staminaCost}}
+    </button>
+    <view class="card sprint__board">
+      <view class="sprint__board-title">{{selectedName}} · {{weekly ? '本周排行' : '总排行'}}</view>
+      <view wx:if="{{!board}}" class="sprint__muted">加载中…</view>
+      <view wx:elif="{{!board.entries.length}}" class="sprint__muted">还没有人挑战，你来当第一名！</view>
+      <view wx:for="{{board.entries}}" wx:key="rank" class="sprint__entry {{item.isMe ? 'sprint__entry--me' : ''}}">
+        <text class="sprint__rank">{{item.rank}}</text>
+        <text class="sprint__name">{{item.nickname}}</text>
+        <text class="sprint__score">{{item.score}} 分</text>
+        <text class="sprint__detail">对 {{item.correct}} 错 {{item.wrong}}</text>
+      </view>
+      <view wx:if="{{board.me}}" class="sprint__me">我：第 {{board.me.rank}} 名 · {{board.me.score}} 分</view>
+    </view>
+  </block>
+
+  <block wx:elif="{{stage === 'checking'}}">
+    <view class="sprint__clock">0</view>
+    <view class="sprint__tally">得分 {{score}} · 对 {{correct}} · 错 {{wrong}}</view>
+    <view class="sprint__center">时间到！正在算分…</view>
+  </block>
+
+  <block wx:elif="{{stage === 'running'}}">
+    <view class="sprint__clock {{warning ? 'sprint__clock--warning' : ''}}">{{remaining}}</view>
+    <view class="sprint__tally">得分 {{score}} · 对 {{correct}} · 错 {{wrong}}</view>
+    <kungfu-question
+      question="{{question}}"
+      locked="{{locked}}"
+      plain
+      confirm-text="确定"
+      max-digits="{{question.maxDigits}}"
+      bind:answered="handleAnswered"
+      bind:empty="handleEmpty"
+    />
+  </block>
+
+  <view wx:else class="sprint__result">
+    <view class="card sprint__result-card">
+      <block wx:if="{{result.counted}}">
+        <view wx:if="{{result.isNewBest}}" class="sprint__badge">新纪录！</view>
+        <view class="sprint__big">{{result.score}}<text class="sprint__big-unit">分</text></view>
+        <view class="sprint__line">答对 {{result.correct}} · 答错 {{result.wrong}}</view>
+        <view class="sprint__line">{{result.weekly ? '本周' : ''}}最好 {{result.best}} 分 · 第 {{result.rank}} 名</view>
+      </block>
+      <view wx:else class="sprint__line">{{result.message}}</view>
+    </view>
+    <button class="btn btn--primary sprint__start" loading="{{busy}}" bindtap="again">再来一次<image class="sprint__cost-icon" src="/assets/icons/stamina.png" mode="aspectFit" />-{{staminaCost}}</button>
+    <button class="btn btn--ghost sprint__start" bindtap="backToIslands">看排行 / 换岛屿</button>
+  </view>
+</view>

@@ -3,6 +3,8 @@
     "pages/index/index",
     "pages/game/levels/levels",
     "pages/game/play/play",
+    "pages/game/math/math",
+    "pages/game/sprint/sprint",
     "pages/game/book/book",
     "pages/leaderboard/leaderboard",
     "pages/admin/stats",

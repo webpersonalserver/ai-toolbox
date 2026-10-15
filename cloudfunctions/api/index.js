@@ -12,6 +12,8 @@ const speech = require('./handlers/speech')
 const assets = require('./handlers/assets')
 const chests = require('./handlers/chests')
 const daily = require('./handlers/daily')
+const math = require('./handlers/math')
+const sprint = require('./handlers/sprint')
 
 const ROUTES = {
   'account.login': account.login,
@@ -39,6 +41,14 @@ const ROUTES = {
   'practice.honors': practice.honors,
   'practice.mistakes': practice.mistakes,
   'practice.weekly': practice.weekly,
+  'math.level': math.level,
+  'math.start': math.start,
+  'math.answer': math.answer,
+  'math.hint': math.hint,
+  'sprint.islands': sprint.islands,
+  'sprint.start': sprint.start,
+  'sprint.finish': sprint.finish,
+  'sprint.board': sprint.board,
   'daily.today': daily.today,
   'daily.submit': daily.submit,
   'practice.claimChests': practice.claimChests,

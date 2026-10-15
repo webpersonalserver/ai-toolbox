@@ -285,6 +285,10 @@ const startedAttempt = { active: true, wrongCount: 0 }
   r = await call('g1', 'admin.switches', {}); assert(r.code === 0 && r.data.switches.pinyinAid === false, 'admin sees 拼音辅助 off by default', r.data)
   r = await call('g1', 'admin.updateSwitches', { switches: { pinyinAid: 'yes' } }); assert(r.code === 40000, 'a switch only takes true or false', r)
   r = await call('g1', 'admin.updateSwitches', { switches: { unknownSwitch: true } }); assert(r.code === 40000, 'unknown switches are refused', r)
+  r = await call('g1', 'admin.updateSwitches', { switches: { sprintStaminaCost: 31 } }); assert(r.code === 40000, 'a number setting must stay in its range (0–30)', r)
+  r = await call('g1', 'admin.updateSwitches', { switches: { sprintStaminaCost: true } }); assert(r.code === 40000, 'a number setting takes a whole number', r)
+  r = await call('g1', 'admin.updateSwitches', { switches: { sprintStaminaCost: 3 } }); assert(r.code === 0 && r.data.switches.sprintStaminaCost === 3, 'admin sets 口算竞速 stamina', r.data)
+  r = await call('g1', 'admin.updateSwitches', { switches: { sprintStaminaCost: 5 } })
   r = await call('g1', 'admin.updateSwitches', { switches: { pinyinAid: true } }); assert(r.code === 0 && r.data.switches.pinyinAid === true, 'admin turns 拼音辅助 on', r.data)
   r = await call('g1', 'game.getLevel', { gameType: 'xiehouyu', levelNo: 1 })
   assert(JSON.stringify(r.data.puzzle.answerPinyin) === JSON.stringify(xiehouyu1.answerPinyin) && r.data.puzzle.answerPinyin.length === xiehouyu1.answer.length, '拼音辅助 on: the puzzle carries one syllable per answer cell', r.data.puzzle)
@@ -344,7 +348,7 @@ const startedAttempt = { active: true, wrongCount: 0 }
   assert(shownBoards.every(({ level, shown }) => level.answer.split('').every((char) => countOf(shown, char) >= countOf(level.answer.split(''), char))), 'the shown board keeps every answer character, repeats included', shownBoards.find(({ level, shown }) => !level.answer.split('').every((char) => shown.includes(char))))
   assert(shownBoards.every(({ level, shown }) => isInOrder(shown, level.board)) && JSON.stringify(shownBoardOf(levels[0])) === JSON.stringify(shownBoardOf(levels[0])), 'the shown board keeps the stored order and is the same every time', null)
   assert(shownBoardOf(typoLevels[0]).length === 8, 'typo boards (8) are shown as they are', null)
-  assert(r.data.maxHints === 3 && r.data.puzzle.eliminated.length === 0 && r.data.puzzle.revealed.length === 0 && r.data.puzzle.answer === undefined, 'typo hints are eliminations, answer hidden', r.data)
+  assert(r.data.maxHints === 4 && r.data.puzzle.eliminated.length === 0 && r.data.puzzle.revealed.length === 0 && r.data.puzzle.answer === undefined, 'typo hints are eliminations, answer hidden', r.data)
   assert(r.data.puzzle.clueHint === typo1.clueHint, 'primary-school typo level carries the explanation hint', r.data.puzzle.clueHint)
   let eliminated = []
   for (let hint = 1; hint <= 3; hint++) {
@@ -352,7 +356,9 @@ const startedAttempt = { active: true, wrongCount: 0 }
     eliminated = r.data.eliminated
     assert(r.code === 0 && eliminated.length === hint * 2 && eliminated.every((index) => typo1.board[index] !== typo1.answer) && r.data.revealed.length === 0, `typo hint ${hint} eliminates two wrong candidates`, r.data)
   }
-  r = await call('t1', 'game.useHint', { gameType: 'typo', levelNo: 1 }); assert(r.code === 40005, 'typo hint limit keeps at least two candidates', r)
+  r = await call('t1', 'game.useHint', { gameType: 'typo', levelNo: 1 }); eliminated = r.data.eliminated
+  assert(r.code === 0 && eliminated.length === 7 && eliminated.every((index) => typo1.board[index] !== typo1.answer), 'by default the 4th hint removes every wrong choice, only the answer is left', r.data)
+  r = await call('t1', 'game.useHint', { gameType: 'typo', levelNo: 1 }); assert(r.code === 40005, 'nothing left to eliminate', r)
   r = await call('t1', 'game.getLevel', { gameType: 'typo', levelNo: 1 }); assert(r.data.puzzle.eliminated.join() === eliminated.join(), 'eliminations persist', r.data.puzzle.eliminated)
   const wrongPick = typo1.board.find((char) => char !== typo1.answer)
   r = await call('t1', 'game.submit', { gameType: 'typo', levelNo: 1, answer: wrongPick })
@@ -361,14 +367,108 @@ const startedAttempt = { active: true, wrongCount: 0 }
   r = await call('t1', 'game.submit', { gameType: 'typo', levelNo: 1, answer: typo1.answer })
   assert(r.data.correct && r.data.solution.idiom === typo1.idiom && r.data.solution.wrongChar === typo1.wrongChar && r.data.solution.explanation, 'typo solution shows the corrected idiom', r.data.solution)
   r = await call('t1', 'game.summary', { gameType: 'typo' }); assert(r.data.achievement.title.name === '书童', 'typo titles', r.data.achievement.title)
+  // No set number of hints per level. By default hints may reveal the whole answer (they are the player's items);
+  // with 提示不能直接给出答案 on (控制中心) the last character is left to the player.
+  await call('hl', 'account.login')
+  await call('hl', 'game.levelList', { gameType: 'xiehouyu' })
+  const longLevels = xiehouyuLevels.filter((level) => level.levelNo <= LOADED_LEVEL_COUNT && level.answer.length >= 5)
+  const [longLevel, otherLongLevel] = longLevels
+  S.progress.hl_xiehouyu.currentLevel = Math.max(longLevel.levelNo, otherLongLevel.levelNo)
+  S.users.hl.items.hint = 20
+  await call('hl', 'game.startAttempt', { gameType: 'xiehouyu', levelNo: longLevel.levelNo })
+  const hintResults = []
+  for (let index = 0; index <= longLevel.answer.length; index += 1) hintResults.push(await call('hl', 'game.useHint', { gameType: 'xiehouyu', levelNo: longLevel.levelNo }))
+  const lastAllowed = hintResults[longLevel.answer.length - 1]
+  assert(lastAllowed.code === 0 && lastAllowed.data.revealed.join('') === longLevel.answer && lastAllowed.data.maxHints === longLevel.answer.length, 'by default hints can reveal every character of the answer', hintResults.map((result) => result.code))
+  assert(hintResults[longLevel.answer.length].code === 40005 && S.users.hl.items.hint === 20 - longLevel.answer.length, 'past the whole answer a hint is refused and costs nothing', hintResults[longLevel.answer.length])
+  r = await call('hl', 'game.submit', { gameType: 'xiehouyu', levelNo: longLevel.levelNo, answer: longLevel.answer }); assert(r.data.correct, 'a level fully revealed by hints can be passed', r.data)
+  const savedSwitches = S.app_config && S.app_config.switches
+  S.app_config = { ...(S.app_config || {}), switches: { _id: 'switches', hintKeepLastStep: true } }
+  await call('hl', 'game.startAttempt', { gameType: 'xiehouyu', levelNo: otherLongLevel.levelNo })
+  const guarded = []
+  for (let index = 0; index < otherLongLevel.answer.length; index += 1) guarded.push(await call('hl', 'game.useHint', { gameType: 'xiehouyu', levelNo: otherLongLevel.levelNo }))
+  assert(guarded.slice(0, -1).every((result) => result.code === 0) && guarded[guarded.length - 1].code === 40005 && guarded[guarded.length - 2].data.maxHints === otherLongLevel.answer.length - 1, '提示不能直接给出答案 on: the last character is left to the player', guarded.map((result) => result.code))
+  if (savedSwitches) S.app_config.switches = savedSwitches
+  else delete S.app_config.switches
+  // 口算闯关: 10 questions made in the cloud, judged one at a time; stamina, chances, hints, titles and the leaderboard
+  const mathChallenge = require(path.join(__dirname, '..', 'cloudfunctions', 'api', 'lib', 'math-challenge'))
+  await call('mq', 'account.login')
+  r = await call('mq', 'math.level', { levelNo: 1 })
+  const firstQuestions = mathChallenge.levelQuestions(1)
+  assert(r.code === 0 && r.data.questions.length === 10 && r.data.questions.every((question) => !('answer' in question) && !('equation' in question)) && r.data.stage === '10 以内分与合' && r.data.total === 999, 'a level is 10 questions without their answers', r.data)
+  r = await call('mq', 'math.level', { levelNo: 2 }); assert(r.code === 40011 || r.code !== 0, 'later levels stay locked', r)
+  r = await call('mq', 'math.answer', { levelNo: 1, index: 0, answer: firstQuestions[0].answer }); assert(r.code === 40010, 'answering needs a started attempt', r)
+  const mathStamina = S.users.mq.items.stamina
+  r = await call('mq', 'math.start', { levelNo: 1 }); assert(r.code === 0 && r.data.items.stamina === mathStamina - 1 && r.data.attempt.attemptsLeft === 3 && r.data.index === 0, 'starting costs stamina, 3 chances', r.data)
+  r = await call('mq', 'math.start', { levelNo: 1 }); assert(r.code === 0 && S.users.mq.items.stamina === mathStamina - 1, 'resuming a running attempt is free', r.data)
+  r = await call('mq', 'math.answer', { levelNo: 1, index: 3, answer: '1' }); assert(r.code === 40000, 'only the current question can be answered', r)
+  r = await call('mq', 'math.answer', { levelNo: 1, index: 0, answer: String(Number(firstQuestions[0].answer) + 1) })
+  assert(r.code === 0 && !r.data.correct && r.data.index === 0 && r.data.attempt.attemptsLeft === 2, 'a wrong answer costs a chance and stays on the question', r.data)
+  const mathHints = S.users.mq.items.hint
+  r = await call('mq', 'math.hint', { levelNo: 1 }); assert(r.code === 0 && r.data.index === 0 && r.data.answer === firstQuestions[0].answer && S.users.mq.items.hint === mathHints - 1, 'a hint shows the current answer for one hint item', r.data)
+  r = await call('mq', 'math.hint', { levelNo: 1 }); assert(r.code === 0 && S.users.mq.items.hint === mathHints - 1, 'the same question shown again costs nothing', r.data)
+  r = await call('mq', 'math.level', { levelNo: 1 }); assert(r.data.shownAnswers[0] === firstQuestions[0].answer && Object.keys(r.data.shownAnswers).length === 1, 'a shown answer survives a reload', r.data.shownAnswers)
+  for (let index = 0; index < 9; index += 1) {
+    r = await call('mq', 'math.answer', { levelNo: 1, index, answer: firstQuestions[index].answer })
+    assert(r.code === 0 && r.data.correct && r.data.index === index + 1 && !r.data.passed, `right answer ${index + 1} moves on`, r.data)
+  }
+  r = await call('mq', 'math.answer', { levelNo: 1, index: 9, answer: firstQuestions[9].answer })
+  assert(r.code === 0 && r.data.passed && r.data.nextLevelNo === 2 && r.data.achievement.solvedCount === 1 && r.data.achievement.title.name === '口算小兵', 'the 10th right answer passes the level', r.data)
+  r = await call('mq', 'math.level', { levelNo: 1 }); assert(r.data.solved && Object.keys(r.data.shownAnswers).length === 10, 'a passed level shows every answer for review', r.data)
+  r = await call('mq', 'game.overview'); assert(r.data.games.find((summary) => summary.gameType === 'math').lastSolvedAt > 0 && r.data.games.find((summary) => summary.gameType === 'idiom').lastSolvedAt === 0, 'the overview says when each game was last played (the lobby picks from it)', r.data.games.map((summary) => [summary.gameType, summary.lastSolvedAt]))
+  r = await call('mq', 'math.start', { levelNo: 1 }); assert(r.code === 40008 || r.code !== 0, 'a passed level cannot be started again', r)
+  r = await call('mq', 'game.levelList', { gameType: 'math' }); assert(r.code === 0 && r.data.total === 999 && r.data.currentLevel === 2 && r.data.stages.length === 10 && r.data.stages[9].name === '全能挑战', 'the levels page sees 999 levels in 10 stages', r.data)
+  r = await call('mq', 'leaderboard.list', { gameType: 'math' }); assert(r.code === 0 && r.data.entries.some((entry) => entry.solvedCount === 1), '口算闯关 has its own leaderboard', r.data)
+  r = await call('mq', 'game.getLevel', { gameType: 'math', levelNo: 2 }); assert(r.code === 40000, 'the character-board handlers refuse 口算闯关', r)
+  await call('mq', 'math.start', { levelNo: 2 })
+  const secondQuestions = mathChallenge.levelQuestions(2)
+  for (let wrong = 0; wrong < 3; wrong += 1) r = await call('mq', 'math.answer', { levelNo: 2, index: 0, answer: String(Number(secondQuestions[0].answer) + 1) })
+  assert(r.data.attempt.failed && !r.data.attempt.active, 'three wrong answers end the attempt', r.data.attempt)
+  r = await call('mq', 'math.answer', { levelNo: 2, index: 0, answer: secondQuestions[0].answer }); assert(r.code === 40010, 'a failed attempt has to be started again', r)
+  // 口算竞速: stamina from 控制中心 (default 5), 60 seconds, score = right − wrong, weekly board unless switched off
+  await call('sp1', 'account.login'); await call('sp2', 'account.login')
+  r = await call('sp1', 'sprint.islands', {})
+  assert(r.code === 0 && r.data.islands.length === 5 && r.data.staminaCost === 5 && r.data.weekly === true && r.data.seconds === 60 && r.data.islands.every((island) => island.best === null), 'five islands, 5 stamina a run, weekly board', r.data)
+  r = await call('sp1', 'sprint.start', { islandId: 'nowhere' }); assert(r.code === 40000, 'an unknown island is refused', r)
+  const sprintStamina = S.users.sp1.items.stamina
+  r = await call('sp1', 'sprint.start', { islandId: 'make-ten' })
+  const sprintRun = r.data
+  assert(r.code === 0 && S.users.sp1.items.stamina === sprintStamina - 5 && sprintRun.questions.length === 150 && sprintRun.seconds === 60, 'a run costs 5 stamina and brings a paper', { stamina: S.users.sp1.items.stamina, size: sprintRun.questions.length })
+  const playRun = (run, rightCount, wrongCount) => run.questions.slice(0, rightCount + wrongCount).map((question, index) => ({ index, answer: index < rightCount ? question.answer : `${question.answer}9` }))
+  r = await call('sp1', 'sprint.finish', { runId: sprintRun.runId, answers: [{ index: 1, answer: '3' }] }); assert(r.code === 40000, 'answers must start from the first question, in order', r)
+  r = await call('sp1', 'sprint.start', { islandId: 'make-ten' })
+  const secondRun = r.data
+  r = await call('sp1', 'sprint.finish', { runId: sprintRun.runId, answers: [] }); assert(r.code === 40000, 'an old run cannot be handed in once a new one started', r)
+  r = await call('sp1', 'sprint.finish', { runId: secondRun.runId, answers: playRun(secondRun, 20, 3) })
+  assert(r.code === 0 && r.data.counted && r.data.score === 17 && r.data.correct === 20 && r.data.wrong === 3 && r.data.isNewBest && r.data.rank === 1, 'score is right minus wrong', r.data)
+  r = await call('sp1', 'sprint.finish', { runId: secondRun.runId, answers: [] }); assert(r.code === 40000, 'a run is handed in once', r)
+  await call('sp2', 'sprint.start', { islandId: 'make-ten' })
+  const otherRun = S.users.sp2.sprintRun
+  const otherPaper = mathChallenge.sprintPaper('make-ten', otherRun.runId)
+  r = await call('sp2', 'sprint.finish', { runId: otherRun.runId, answers: otherPaper.slice(0, 18).map((question, index) => ({ index, answer: question.answer })).concat([{ index: 18, answer: 'x' }]) })
+  assert(r.data.score === 17 && r.data.wrong === 1 && r.data.rank === 1, 'same score with fewer wrong answers ranks higher', r.data)
+  r = await call('sp1', 'sprint.board', { islandId: 'make-ten' })
+  assert(r.code === 0 && r.data.weekly && r.data.entries.length === 2 && r.data.entries[0].wrong === 1 && r.data.entries[1].isMe && r.data.me.rank === 2 && r.data.me.score === 17, 'the board ranks score, then fewer wrong', r.data)
+  await call('sp1', 'sprint.start', { islandId: 'make-ten' })
+  const worseRun = S.users.sp1.sprintRun
+  r = await call('sp1', 'sprint.finish', { runId: worseRun.runId, answers: [{ index: 0, answer: 'x' }] })
+  assert(r.data.score === 0 && !r.data.isNewBest && r.data.best === 17, 'a worse run keeps the best; the score never goes below 0', r.data)
+  await call('sp1', 'sprint.start', { islandId: 'hundred' })
+  S.users.sp1.sprintRun.startedAt -= 70 * 1000
+  r = await call('sp1', 'sprint.finish', { runId: S.users.sp1.sprintRun.runId, answers: [] }); assert(r.code === 0 && r.data.counted === false, 'a run handed in after 60 seconds (plus grace) is not counted', r.data)
+  S.app_config = { ...(S.app_config || {}), switches: { _id: 'switches', sprintWeeklyReset: false, sprintStaminaCost: 2 } }
+  const sprintStamina2 = S.users.sp1.items.stamina
+  await call('sp1', 'sprint.start', { islandId: 'make-ten' }); assert(S.users.sp1.items.stamina === sprintStamina2 - 2, '控制中心 sets the stamina a run costs', S.users.sp1.items.stamina)
+  r = await call('sp1', 'sprint.board', { islandId: 'make-ten' }); assert(r.data.weekly === false && r.data.entries.length === 2, 'weekly reset off: the all-time board (kept all along) is shown', r.data)
+  delete S.app_config.switches
   // per-game level rules
   S.app_config = {}
   await call('p1', 'account.login')
   r = await call('p1', 'game.startAttempt', { gameType: 'idiom', levelNo: 1 }); assert(r.data.attempt.maxWrongAttempts === 3, 'idiom keeps the shared 3 wrong attempts', r.data.attempt)
-  S.app_config = { game_rules: { _id: 'game_rules', levelByGame: { poetry: { staminaCost: 2, maxHints: 1 }, typo: { maxWrongAttempts: 2 } } } }
+  S.app_config = { game_rules: { _id: 'game_rules', levelByGame: { poetry: { staminaCost: 2 }, typo: { maxWrongAttempts: 2 } } } }
   const p1Stamina = S.users.p1.items.stamina
   r = await call('p1', 'game.startAttempt', { gameType: 'poetry', levelNo: 1 })
-  assert(r.data.items.stamina === p1Stamina - 2 && r.data.maxHints === 1 && r.data.staminaCost === 2, 'poetry override: stamina cost 2, max 1 hint', r.data)
+  assert(r.data.items.stamina === p1Stamina - 2 && r.data.staminaCost === 2 && r.data.maxHints === poetryLevels[0].answer.length, 'poetry override: stamina cost 2; hints can reveal the whole answer by default', r.data)
   r = await call('p1', 'game.startAttempt', { gameType: 'typo', levelNo: 1 }); assert(r.data.attempt.maxWrongAttempts === 2, 'configured typo override replaces the default', r.data.attempt)
   S.app_config = { game_rules: { _id: 'game_rules', levelByGame: { typo: { maxWrongAttempts: 0 }, chess: { maxHints: 9 } } } }
   S.app_config.game_rules.signupItems = { hint: 6 }
@@ -380,7 +480,7 @@ const startedAttempt = { active: true, wrongCount: 0 }
   S.app_config = {}
   r = await call('o1', 'game.overview', {})
   assert(r.code === 0 && r.data.session.isNewUser && r.data.session.items.stamina === 50 && r.data.games.length === ALL_GAME_TYPES.length, 'overview returns session and every game', r.data && r.data.games && r.data.games.map((g) => g.gameType))
-  assert(r.data.games.every((g) => g.total === LOADED_LEVEL_COUNT && g.solvedCount === 0 && g.achievement.title.name), 'overview game summaries', r.data.games[0])
+  assert(r.data.games.every((g) => g.total === (g.gameType === 'math' ? 999 : LOADED_LEVEL_COUNT) && g.solvedCount === 0 && g.achievement.title.name), 'overview game summaries (口算闯关 has 999 levels made on demand)', r.data.games.find((g) => g.total !== LOADED_LEVEL_COUNT))
   await call('o1', 'game.startAttempt', { gameType: 'poetry', levelNo: 1 })
   await call('o1', 'rescue.create', { gameType: 'poetry', levelNo: 1 })
   const o1Rescue = Object.values(S.rescues).find((x) => x.requesterOpenid === 'o1')
