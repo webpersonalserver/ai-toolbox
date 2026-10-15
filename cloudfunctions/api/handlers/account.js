@@ -13,7 +13,7 @@ const {
   changeItemsInTransaction
 } = require('../lib/items')
 const { ITEM_LOG_REASONS, writeItemLogs } = require('../lib/item-log')
-const { isAdmin } = require('./admin')
+const { isAdmin } = require('../lib/admins')
 const { issueDoubleOffer, claimDoubleOffer } = require('../lib/double-reward')
 const { recordAdView } = require('../lib/ad-stats')
 const { loadSwitches } = require('../lib/switches')
@@ -82,7 +82,7 @@ const login = async ({ openid }) => {
   return {
     isNewUser,
     openid,
-    isAdmin: isAdmin(rules, openid),
+    isAdmin: await isAdmin(openid, rules),
     profile: {
       nickname: user.nickname,
       avatarUrl: user.avatarUrl,

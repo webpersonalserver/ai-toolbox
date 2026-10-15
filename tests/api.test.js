@@ -246,6 +246,12 @@ const startedAttempt = { active: true, wrongCount: 0 }
   r = await call('c1', 'admin.stats', { gameType: 'idiom' }); assert(r.data.dailyHistory.length === 1 && r.data.dailyHistory[0].clearedUsers === clearedNow, 'admin sees daily history', r.data.dailyHistory)
   S.app_config = { game_rules: { _id: 'game_rules', admin: { openids: 'c1' } } }
   r = await call('c1', 'admin.stats', { gameType: 'idiom' }); assert(r.code === 40300, 'malformed admin list falls back to no admins', r)
+  S.app_config = { game_rules: { _id: 'game_rules' } }
+  S.admins = { c1: { _id: 'c1', name: '测试管理员' } }
+  r = await call('c1', 'account.login'); assert(r.data.isAdmin === true, 'an admin is a record in the admins collection (re-importing app_config cannot touch it)', r.data.isAdmin)
+  r = await call('c1', 'admin.stats', { gameType: 'idiom' }); assert(r.code === 0, 'the admins collection opens the admin pages', r)
+  r = await call('c2', 'admin.stats', { gameType: 'idiom' }); assert(r.code === 40300, 'only the listed openid is an admin', r)
+  S.admins = {}
   // leaderboard
   S.app_config = { game_rules: { _id: 'game_rules', leaderboard: { size: 2 } } }
   Object.values(S.progress).forEach((p) => { p.solvedCount = p.openid === 'c1' ? p.solved.length : 0 })

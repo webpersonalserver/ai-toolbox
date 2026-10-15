@@ -4,17 +4,16 @@ const { loadRules } = require('../lib/rules')
 const { computeClearStats } = require('../lib/stats')
 const { parseGameType } = require('../lib/games')
 const { recentAdStats } = require('../lib/ad-stats')
+const { isAdmin } = require('../lib/admins')
 const { DEFAULT_SWITCHES, NUMBER_RANGES, loadSwitches, parseSwitchPatch, saveSwitches } = require('../lib/switches')
 
 const RECENT_COMPLETION_LIMIT = 20
 const DAILY_HISTORY_LIMIT = 30
 const AD_STATS_DAYS = 7
 
-const isAdmin = (rules, openid) => rules.admin.openids.includes(openid)
-
 const assertAdmin = async (openid) => {
   const rules = await loadRules()
-  if (!isAdmin(rules, openid)) {
+  if (!(await isAdmin(openid, rules))) {
     throw new BusinessError(ERROR_CODES.FORBIDDEN, '没有权限')
   }
 }
@@ -64,4 +63,4 @@ const updateSwitches = async ({ openid, payload }) => {
   return switchesView(await saveSwitches(patch))
 }
 
-module.exports = { stats, switches, updateSwitches, isAdmin }
+module.exports = { stats, switches, updateSwitches }
