@@ -56,6 +56,12 @@
   text-decoration: underline wavy;
 }
 
+.book__category {
+  color: var(--game-color-deep);
+  font-weight: 800;
+  text-align: right;
+}
+
 .book__tags {
   display: flex;
   flex-wrap: wrap;

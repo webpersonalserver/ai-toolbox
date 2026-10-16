@@ -6,6 +6,10 @@ const GAME_TYPES = {
   XIEHOUYU: 'xiehouyu',
   TYPO: 'typo',
   HANZI: 'hanzi',
+  // 脑筋急转弯: read the question, spell the answer; the「为什么」shows after passing.
+  RIDDLE: 'riddle',
+  // 猜谜语: a riddle with its category (打一水果…); the explanation goes clue by clue.
+  MIYU: 'miyu',
   // 口算闯关: levels are made in the cloud (lib/math-challenge.js), not stored; played through handlers/math.js.
   MATH: 'math'
 }
@@ -33,7 +37,9 @@ const SOLUTION_FIELDS_BY_GAME = {
   [GAME_TYPES.POETRY]: ['verse', 'poemTitle', 'author', 'dynasty'],
   [GAME_TYPES.XIEHOUYU]: ['riddle', 'note', 'meaning'],
   [GAME_TYPES.TYPO]: ['idiom', 'wrongChar', 'wrongPosition', 'pinyin', 'explanation'],
-  [GAME_TYPES.HANZI]: ['char', 'pinyin', 'radical', 'radicalName', 'word']
+  [GAME_TYPES.HANZI]: ['char', 'pinyin', 'radical', 'radicalName', 'word'],
+  [GAME_TYPES.RIDDLE]: ['clue', 'why'],
+  [GAME_TYPES.MIYU]: ['clue', 'category', 'why']
 }
 
 // answerPinyin (拼音辅助) is not listed here: toPuzzle adds it only while the switch is on (lib/switches.js).
@@ -44,7 +50,9 @@ const PUZZLE_FIELDS_BY_GAME = {
   [GAME_TYPES.XIEHOUYU]: ['meaning'],
   [GAME_TYPES.TYPO]: ['wrongPosition', 'clueHint'],
   // kind: picture / pinyin / radical / word decides how the clue is shown; prompt is the question in words.
-  [GAME_TYPES.HANZI]: ['kind', 'prompt']
+  [GAME_TYPES.HANZI]: ['kind', 'prompt'],
+  [GAME_TYPES.RIDDLE]: [],
+  [GAME_TYPES.MIYU]: ['category']
 }
 
 // Boards are stored with 24 characters; children are shown 12 (3 rows of 4): every answer character plus the first

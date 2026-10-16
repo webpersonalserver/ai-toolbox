@@ -119,6 +119,8 @@ Page({
         meaning: detail.puzzle.meaning || '',
         answerPinyin: detail.puzzle.answerPinyin || [],
         hanziKind: detail.puzzle.kind || '',
+        category: detail.puzzle.category || '',
+        typesAnswer: detail.puzzle.inputMode === 'keyboard',
         clueLabel: clueLabelOf(gameConfigOf(detail.gameType), detail.puzzle),
         clueSegments: splitClue(detail.puzzle.clue),
         clueHintSegments: splitClue(detail.puzzle.clueHint),

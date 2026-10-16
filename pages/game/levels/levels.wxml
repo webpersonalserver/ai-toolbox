@@ -23,10 +23,11 @@
     </button>
   </view>
 
-  <scroll-view wx:if="{{stages.length}}" class="levels__stages" scroll-x enable-flex>
+  <scroll-view wx:if="{{stages.length}}" class="levels__stages" scroll-x enable-flex scroll-into-view="{{stageAnchor}}" scroll-with-animation>
     <view
       wx:for="{{stages}}"
       wx:key="name"
+      id="stage-{{index}}"
       class="levels__stage {{item.name === activeStageName ? 'levels__stage--active' : ''}}"
       data-first-level-no="{{item.firstLevelNo}}"
       bindtap="jumpToStage"

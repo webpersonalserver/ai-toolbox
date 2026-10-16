@@ -4,6 +4,10 @@ const THINKING_LINES = ['让我翻翻字典…', '嗯，有点意思…', '答�
 
 const pickThinkingLine = () => THINKING_LINES[Math.floor(Math.random() * THINKING_LINES.length)]
 
+// Keyboard mode (猜谜语 with 用键盘输入 on): only the Chinese characters typed count; pinyin letters while composing
+// do not.
+const CJK_CHAR = /[\u4e00-\u9fff]/
+
 const SLOT_SIZE_BY_LENGTH = [
   { maxLength: 4, sizeClass: '' },
   { maxLength: 5, sizeClass: 'char-puzzle__slots--medium' },
@@ -41,7 +45,10 @@ Component({
     answerPinyin: { type: Array, value: [] },
     columns: { type: Number, value: 6 },
     disabled: { type: Boolean, value: false },
-    checking: { type: Boolean, value: false }
+    checking: { type: Boolean, value: false },
+    // Type the answer with the phone's keyboard instead of picking from the board (the page passes it when the
+    // cloud sends inputMode 'keyboard'). The cells and their number stay the same.
+    keyboard: { type: Boolean, value: false }
   },
 
   data: {
@@ -50,7 +57,10 @@ Component({
     slotSizeClass: '',
     hasPinyin: false,
     thinkingLine: '',
-    isWrong: false
+    isWrong: false,
+    inputValue: '',
+    inputFocused: false,
+    freeCount: 0
   },
 
   observers: {
@@ -63,8 +73,10 @@ Component({
         slots: buildSlots(answerLength, revealed, answerPinyin),
         boardItems: buildBoardItems(board, revealed, eliminated),
         slotSizeClass: slotSizeClassOf(answerLength),
-        isWrong: false
+        isWrong: false,
+        freeCount: Math.max(answerLength - revealed.length, 0)
       })
+      this.resetTyping()
     }
   },
 
@@ -103,7 +115,52 @@ Component({
       })
     },
 
+    // Keyboard mode: every change of the hidden input fills the free cells, in order, with the characters typed.
+    handleInput(event) {
+      if (this.data.disabled) return
+      this.rawValue = event.detail.value
+      const typed = [...event.detail.value].filter((char) => CJK_CHAR.test(char))
+      const changes = {}
+      let next = 0
+      this.data.slots.forEach((slot, index) => {
+        if (slot.locked) return
+        changes[`slots[${index}].char`] = typed[next] || ''
+        next += 1
+      })
+      this.setData(changes)
+      if (this.data.slots.every((slot) => slot.char)) {
+        this.setData({ inputFocused: false })
+        this.triggerEvent('complete', { answer: this.data.slots.map((slot) => slot.char).join('') })
+      }
+    },
+
+    handleInputFocus() {
+      this.setData({ inputFocused: true })
+    },
+
+    handleInputBlur() {
+      this.setData({ inputFocused: false })
+    },
+
+    // Empties the hidden input. Its value is not kept in data while typing (that would upset the pinyin
+    // composition), so it is set to what was typed and then cleared, which the input does follow.
+    resetTyping() {
+      if (!this.data.keyboard || !this.rawValue) return
+      const typed = this.rawValue
+      this.rawValue = ''
+      this.setData({ inputValue: typed }, () => this.setData({ inputValue: '' }))
+    },
+
     clearAttempt() {
+      if (this.data.keyboard) {
+        const changes = {}
+        this.data.slots.forEach((slot, index) => {
+          if (!slot.locked) changes[`slots[${index}].char`] = ''
+        })
+        this.setData(changes)
+        this.resetTyping()
+        return
+      }
       const changes = {}
       this.data.slots.forEach((slot, index) => {
         if (slot.locked || !slot.char) return

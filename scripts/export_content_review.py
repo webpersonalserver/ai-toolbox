@@ -1,4 +1,4 @@
-"""Write docs/content-review.md: the level content that needs a human proofread (poetry, xiehouyu, typo, idiom wording, hanzi).
+"""Write docs/content-review.md: the level content that needs a human proofread (riddles, miyu, poetry, xiehouyu, typo, idiom wording, hanzi).
 
 Usage: python3 scripts/export_content_review.py
 """
@@ -30,12 +30,12 @@ def poetry_section(levels, supplement):
         flag = "⚠️ " if poem.get("needsReview") else ""
         lines.append(f"| {flag}{poem['title']} | {poem['author']} | {poem['text']} |")
     lines += ["", f"数据源统一替换的异体字：{'、'.join(f'{old}→{new}' for old, new in supplement['variantReplacements'])}", ""]
-    lines += ["### 2. 各学段关卡（课本学段，逐关核对答案是否与课本一致）", ""]
+    lines += ["### 2. 各档关卡（逐关核对答案是否与通行版本一致）", ""]
     by_stage = OrderedDict()
     for level in levels:
         by_stage.setdefault(level["stage"], []).append(level)
     for stage, stage_levels in by_stage.items():
-        if stage == "进阶":
+        if stage == "大师":
             lines += [f"#### {stage}（{len(stage_levels)} 关，第 {stage_levels[0]['levelNo']}–{stage_levels[-1]['levelNo']} 关，来自唐诗/宋词三百首，抽查即可）", ""]
             continue
         lines += [f"#### {stage}（{len(stage_levels)} 关，第 {stage_levels[0]['levelNo']}–{stage_levels[-1]['levelNo']} 关）", "",
@@ -43,6 +43,38 @@ def poetry_section(levels, supplement):
         for level in stage_levels:
             source = "补录" if (level["author"], level["poemTitle"]) in supplemented else ""
             lines.append(f"| {level['levelNo']} | {level['clue']} | {level['answer']} | {level['author']}《{level['poemTitle']}》{(' · ' + source) if source else ''} |")
+        lines.append("")
+    return lines
+
+
+def riddle_section(levels):
+    lines = ["## 脑筋急转弯（新增，请优先校对）", "",
+             "题目、答案、「为什么」都是自己写的（`scripts/data/riddles.txt`）。请看：答案是不是唯一说得通、「为什么」讲没讲清楚、",
+             "有没有不合适的内容；字盘上的 12 个字是从全部答案里随机挑的，过关只认表里这个答案。", ""]
+    by_stage = OrderedDict()
+    for level in levels:
+        by_stage.setdefault(level["stage"], []).append(level)
+    for stage, stage_levels in by_stage.items():
+        lines += [f"### {stage}（{len(stage_levels)} 关，第 {stage_levels[0]['levelNo']}–{stage_levels[-1]['levelNo']} 关）", "",
+                  "| 关 | 问题 | 答案 | 为什么 |", "|---|---|---|---|"]
+        for level in stage_levels:
+            lines.append(f"| {level['levelNo']} | {level['clue']} | {level['answer']} | {level['why']} |")
+        lines.append("")
+    return lines
+
+
+def miyu_section(levels):
+    lines = ["## 猜谜语（新增，请优先校对）", "",
+             "谜面、谜目、答案、「为什么」都是自己写的（`scripts/data/miyu.txt`，民间谜语改写过措辞）。请看：在谜目范围里答案是不是唯一的、",
+             "「为什么」每一句是否对得上；高手档是字谜，请顺手拼一拼部件对不对。", ""]
+    by_stage = OrderedDict()
+    for level in levels:
+        by_stage.setdefault(level["stage"], []).append(level)
+    for stage, stage_levels in by_stage.items():
+        lines += [f"### {stage}（{len(stage_levels)} 关，第 {stage_levels[0]['levelNo']}–{stage_levels[-1]['levelNo']} 关）", "",
+                  "| 关 | 谜面 | 谜目 | 答案 | 为什么 |", "|---|---|---|---|---|"]
+        for level in stage_levels:
+            lines.append(f"| {level['levelNo']} | {level['clue']} | {level['category']} | {level['answer']} | {level['why']} |")
         lines.append("")
     return lines
 
@@ -66,7 +98,7 @@ def typo_section(levels):
              "前面是人工整理的常见易错成语，其余由脚本按「同音常用字」自动替换生成。",
              "已自动排除：错误写法被词典收录为异形词的（如「莫明其妙」）、字盘里出现第二个正确写法的。",
              "请重点看自动生成的题：错字是否像真实会犯的笔误、有没有容易引起争议的写法。", "",
-             "| 关 | 学段 | 题面 | 正确 | 字盘 |", "|---|---|---|---|---|"]
+             "| 关 | 分档 | 题面 | 正确 | 字盘 |", "|---|---|---|---|---|"]
     for level in levels:
         lines.append(f"| {level['levelNo']} | {level['stage']} | {level['clue']} | {level['idiom']} | {''.join(level['board'])} |")
     lines.append("")
@@ -124,6 +156,8 @@ def main():
         "> 成语释义例外：改 `scripts/data/idiom_explanations.json` 后用 `scripts/apply_idiom_explanations.py` 原地替换，上线后也可以改。",
         "",
     ]
+    lines += riddle_section(read_levels("riddle"))
+    lines += miyu_section(read_levels("miyu"))
     lines += poetry_section(read_levels("poetry"), supplement)
     lines += xiehouyu_section(read_levels("xiehouyu"))
     lines += typo_section(read_levels("typo"))

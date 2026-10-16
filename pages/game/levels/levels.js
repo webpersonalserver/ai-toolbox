@@ -14,17 +14,33 @@ const LEVEL_STATUS = {
   LOCKED: 'locked'
 }
 
-const pageIndexOf = (levelNo) => Math.floor((levelNo - 1) / LEVELS_PER_PAGE)
-
-const activeStageNameOf = (stages, levelNo) => {
-  const stage = stages.find((item) => levelNo >= item.firstLevelNo && levelNo <= item.lastLevelNo)
-  return stage ? stage.name : ''
+// Pages follow the stages (入门, 进阶 …): a page never mixes two of them, so the stage tabs always match the levels
+// below. A stage longer than LEVELS_PER_PAGE is split into several pages; a game without stages pages by 50.
+const chunksOf = (firstLevelNo, lastLevelNo, stageName) => {
+  const chunks = []
+  for (let first = firstLevelNo; first <= lastLevelNo; first += LEVELS_PER_PAGE) {
+    chunks.push({ firstLevelNo: first, lastLevelNo: Math.min(first + LEVELS_PER_PAGE - 1, lastLevelNo), stageName })
+  }
+  return chunks
 }
 
-const buildPageLevels = ({ total, currentLevel, solved }, pageIndex) => {
+const pagesOf = (total, stages) => {
+  const ranges = stages.map((stage) => ({ first: stage.firstLevelNo, last: Math.min(stage.lastLevelNo, total), name: stage.name }))
+  // Stages must cover 1 … total without gaps; otherwise (or with none) the plain 50-level pages are used.
+  const covers = ranges.length && ranges.every((range, index) => range.first === (index ? ranges[index - 1].last + 1 : 1)) && ranges[ranges.length - 1].last === total
+  if (!covers) return chunksOf(1, total, '')
+  return ranges.flatMap((range) => chunksOf(range.first, range.last, range.name))
+}
+
+// The page holding the level; past the last level (all passed) the last page.
+const pageIndexOf = (pages, levelNo) => {
+  const index = pages.findIndex((page) => levelNo >= page.firstLevelNo && levelNo <= page.lastLevelNo)
+  if (index >= 0) return index
+  return pages.length && levelNo > pages[pages.length - 1].lastLevelNo ? pages.length - 1 : 0
+}
+
+const buildPageLevels = ({ currentLevel, solved }, { firstLevelNo, lastLevelNo }) => {
   const solvedSet = new Set(solved)
-  const firstLevelNo = pageIndex * LEVELS_PER_PAGE + 1
-  const lastLevelNo = Math.min(firstLevelNo + LEVELS_PER_PAGE - 1, total)
   const levels = []
   for (let levelNo = firstLevelNo; levelNo <= lastLevelNo; levelNo += 1) {
     let status = LEVEL_STATUS.LOCKED
@@ -44,6 +60,7 @@ Page({
     game: null,
     stages: [],
     activeStageName: '',
+    stageAnchor: '',
     levels: [],
     pageIndex: 0,
     pageCount: 0,
@@ -73,10 +90,11 @@ Page({
       const levelList = await game.levelList(this.data.gameType)
       const isFirstLoad = this.data.loading
       this.levelList = levelList
+      this.pages = pagesOf(levelList.total, levelList.stages)
       this.setData({
         loading: false,
         loadFailed: false,
-        pageCount: Math.ceil(levelList.total / LEVELS_PER_PAGE),
+        pageCount: this.pages.length,
         solvedCount: levelList.solved.length,
         total: levelList.total,
         allSolved: levelList.allCleared,
@@ -85,7 +103,7 @@ Page({
         pendingChests: levelList.achievement.milestone.pendingChests,
         stages: levelList.stages
       })
-      this.showPage(isFirstLoad ? pageIndexOf(levelList.currentLevel) : this.data.pageIndex)
+      this.showPage(isFirstLoad ? pageIndexOf(this.pages, levelList.currentLevel) : this.data.pageIndex)
       showRescueNotices(levelList.rescueNotices.map((notice) => ({ ...notice, gameName: this.data.game.name })))
     } catch (error) {
       // A failed background refresh keeps the list already on screen; only an empty page needs the retry card.
@@ -101,17 +119,21 @@ Page({
 
   showPage(pageIndex) {
     if (!this.levelList) return
-    const safeIndex = Math.min(Math.max(pageIndex, 0), Math.max(this.data.pageCount - 1, 0))
-    const pageLevels = buildPageLevels(this.levelList, safeIndex)
+    if (!this.pages.length) return
+    const safeIndex = Math.min(Math.max(pageIndex, 0), this.pages.length - 1)
+    const page = this.pages[safeIndex]
+    const stageIndex = this.data.stages.findIndex((stage) => stage.name === page.stageName)
     this.setData({
       pageIndex: safeIndex,
-      ...pageLevels,
-      activeStageName: activeStageNameOf(this.data.stages, pageLevels.firstLevelNo)
+      ...buildPageLevels(this.levelList, page),
+      activeStageName: page.stageName,
+      // Keeps the active tab in view when the row of stages is wider than the screen.
+      stageAnchor: stageIndex >= 0 ? `stage-${stageIndex}` : ''
     })
   },
 
   jumpToStage(event) {
-    this.showPage(pageIndexOf(event.currentTarget.dataset.firstLevelNo))
+    this.showPage(pageIndexOf(this.pages, event.currentTarget.dataset.firstLevelNo))
   },
 
   handleOpenChests() {

@@ -59,6 +59,7 @@
         <text wx:for="{{clueChars}}" wx:key="index" class="rescue__typo-char {{item.wrong ? 'rescue__typo-char--wrong' : ''}}">{{item.char}}</text>
       </view>
       <view wx:else class="rescue__clue"><text wx:for="{{clueSegments}}" wx:key="index" class="{{item.masked ? 'clue-mask' : ''}}">{{item.text}}</text></view>
+      <view wx:if="{{category}}" class="rescue__category">【{{category}}】</view>
       <view wx:if="{{clueHint}}" class="rescue__hint">释义：<text wx:for="{{clueHintSegments}}" wx:key="index" class="{{item.masked ? 'clue-mask clue-mask--small' : ''}}">{{item.text}}</text></view>
       <view wx:if="{{poemSource}}" class="rescue__hint">{{poemSource}}</view>
       <view wx:if="{{meaning}}" class="rescue__hint">💡 意思：{{meaning}}</view>
@@ -70,6 +71,7 @@
       answer-length="{{answerLength}}"
       answer-pinyin="{{answerPinyin}}"
       columns="{{game.boardColumns}}"
+      keyboard="{{typesAnswer}}"
       disabled="{{submitting}}"
       checking="{{submitting}}"
       bind:complete="handleComplete"

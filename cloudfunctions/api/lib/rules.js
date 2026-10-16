@@ -71,7 +71,7 @@ const HANZI_BASELINE_TITLES = [
   { name: '识字小状元', minSolved: 320 },
   { name: '汉字小字典', minSolved: 400 },
   { name: '汉字小书法家', minSolved: 550 },
-  { name: '识字小学者', minSolved: 700 },
+  { name: '识字小行家', minSolved: 700 },
   { name: '汉字大侦探', minSolved: 850 },
   { name: '汉字小宗师', minSolved: 1000 },
   { name: '识字大将军', minSolved: 1200 },
@@ -96,10 +96,30 @@ const MATH_BASELINE_TITLES = [
   { name: '口算状元郎', minSolved: 999 }
 ]
 
+const RIDDLE_BASELINE_TITLES = [
+  { name: '小机灵', minSolved: 0 },
+  { name: '点子多', minSolved: 10 },
+  { name: '转得快', minSolved: 30 },
+  { name: '鬼点子', minSolved: 60 },
+  { name: '脑洞大', minSolved: 100 },
+  { name: '智多星', minSolved: 150 },
+  { name: '奇思王', minSolved: 210 },
+  { name: '妙想大师', minSolved: 280 }
+]
+const MIYU_BASELINE_TITLES = [
+  { name: '小谜童', minSolved: 0 },
+  { name: '猜谜手', minSolved: 10 },
+  { name: '谜语通', minSolved: 40 },
+  { name: '谜语大王', minSolved: 100 },
+  { name: '谜中高手', minSolved: 180 },
+  { name: '谜坛宗师', minSolved: 260 }
+]
 const BASELINE_TITLES_BY_GAME = {
   idiom: IDIOM_BASELINE_TITLES,
   poetry: POETRY_BASELINE_TITLES,
   xiehouyu: XIEHOUYU_BASELINE_TITLES,
+  riddle: RIDDLE_BASELINE_TITLES,
+  miyu: MIYU_BASELINE_TITLES,
   typo: TYPO_BASELINE_TITLES,
   hanzi: HANZI_BASELINE_TITLES,
   math: MATH_BASELINE_TITLES

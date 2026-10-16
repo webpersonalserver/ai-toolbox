@@ -329,7 +329,7 @@ const parseExamReport = (payload) => {
     EXAM_LEVELS.includes(level) &&
     isIntegerBetween(correct, 0, EXAM_QUESTION_COUNT) &&
     isIntegerBetween(seconds, 1, MAX_EXAM_SECONDS)
-  if (!isValid) throw new BusinessError(ERROR_CODES.BAD_REQUEST, '考试成绩数据不正确')
+  if (!isValid) throw new BusinessError(ERROR_CODES.BAD_REQUEST, '挑战成绩数据不正确')
   return { practiceId, unitId, level, correct, seconds }
 }
 
@@ -347,7 +347,7 @@ const reportExam = async ({ openid, payload }) => {
     const unitExams = unit.exams || {}
     const levelView = toExamView(unitExams).find((view) => view.level === level)
     if (!levelView.unlocked) {
-      return { failure: { code: ERROR_CODES.BAD_REQUEST, message: '这一级还没解锁，先把前面的考过吧' } }
+      return { failure: { code: ERROR_CODES.BAD_REQUEST, message: '这一级还没解锁，先把前面的过了吧' } }
     }
     const previous = unitExams[levelKeyOf(level)] || { best: 0, bestSeconds: 0, attempts: 0 }
     const isNewBest = score > previous.best || (score === previous.best && (!previous.bestSeconds || seconds < previous.bestSeconds))
@@ -375,7 +375,7 @@ const honors = ({ openid }) => describeHonors(openid)
 const mistakes = async ({ openid, payload }) => {
   const practiceId = parsePracticeId(payload)
   const unitId = practiceId === MATH_SUBJECT ? parseUnitId(payload) : null
-  if (!unitId) throw new BusinessError(ERROR_CODES.BAD_REQUEST, '未知练习单元')
+  if (!unitId) throw new BusinessError(ERROR_CODES.BAD_REQUEST, '找不到这个练习')
   const storedStats = await readStats(openid, practiceId)
   const unit = (storedStats && storedStats.units[unitId]) || emptyUnit()
   return { unitId, mistakes: (unit.mistakes || []).map(({ key, data, correctStreak }) => ({ key, data, correctStreak })) }

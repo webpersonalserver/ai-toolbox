@@ -10,10 +10,10 @@ const check = (condition, label, detail) => {
 }
 
 const card = (gameType, extra = {}) => ({ gameType, name: gameType, solvedCount: 0, currentLevel: 1, allCleared: false, lastSolvedAt: 0, ...extra })
-const fresh = ['hanzi', 'math', 'idiom', 'typo', 'poetry', 'xiehouyu'].map((gameType) => card(gameType))
+const fresh = ['hanzi', 'math', 'idiom', 'typo', 'poetry', 'xiehouyu', 'riddle'].map((gameType) => card(gameType))
 
 let picks = lobby.recommendationsOf(fresh)
-check(picks.length === 2 && picks[0].card.gameType === 'hanzi' && picks[1].card.gameType === 'math' && picks.every((pick) => pick.levelNo === 1 && pick.reason === '新手从这里开始'), 'a new player: one beginner game per subject', picks)
+check(picks.length === 3 && picks[0].card.gameType === 'hanzi' && picks[1].card.gameType === 'math' && picks[2].card.gameType === 'riddle' && picks.every((pick) => pick.levelNo === 1 && pick.reason === '新手从这里开始'), 'a new player: one beginner game per subject', picks)
 
 const played = fresh.map((item) => {
   if (item.gameType === 'idiom') return { ...item, solvedCount: 12, currentLevel: 13, lastSolvedAt: 200 }

@@ -138,6 +138,14 @@
   font-size: var(--font-sm);
 }
 
+/* 猜谜语: the category (打一水果…) sits at the bottom right of the riddle, apart from its text. */
+.play__category {
+  margin-top: var(--space-sm);
+  color: var(--game-color-deep);
+  font-weight: 800;
+  text-align: right;
+}
+
 .play__clue-label {
   margin-bottom: var(--space-xs);
   color: var(--color-primary);

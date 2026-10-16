@@ -56,7 +56,7 @@ const toUnitView = (unit, unitStats, kungfu) => {
     lastPracticed: stats.lastPracticed || '',
     mistakeCount,
     bestStreakText: stats.bestStreak ? `最多连对 ${stats.bestStreak} 题` : '',
-    bestExamText: bestExam ? `考试最高 ${bestExam.best} 分` : '',
+    bestExamText: bestExam ? `挑战最高 ${bestExam.best} 分` : '',
     // Badges on the unit card: three stars, a full-score exam, and every caught monster gone from 小怪兽藏身洞.
     badges: {
       stars: stars === MAX_STARS,

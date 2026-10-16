@@ -55,3 +55,8 @@
   color: var(--color-ink-soft);
   font-size: var(--font-sm);
 }
+
+.game-solution__why-line {
+  text-align: left;
+  line-height: 1.7;
+}

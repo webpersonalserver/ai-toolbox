@@ -147,7 +147,7 @@ Page({
     const seconds = this.elapsedSeconds()
     const { firstPass, fasterPass } = saveExamResult({ passed, correct: this.correctCount, seconds })
     const actions = [
-      { key: 'again', text: passed ? '再考一次，刷新纪录' : '再来一次', primary: true },
+      { key: 'again', text: passed ? '再来一次，刷新纪录' : '再来一次', primary: true },
       { key: 'back', text: passed ? '返回秘籍' : '回去修炼', primary: false }
     ]
     if (!passed) {

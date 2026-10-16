@@ -23,9 +23,11 @@ const poetryLevels = readLevels('poetry')
 const xiehouyuLevels = readLevels('xiehouyu')
 const typoLevels = readLevels('typo')
 const hanziLevels = readLevels('hanzi')
+const riddleLevels = readLevels('riddle')
+const miyuLevels = readLevels('miyu')
 const S = sdk.testing.store
 S.levels = Object.fromEntries(
-  [levels, poetryLevels, xiehouyuLevels, typoLevels, hanziLevels].flatMap((gameLevels) => gameLevels.slice(0, LOADED_LEVEL_COUNT)).map((level) => [level._id, level])
+  [levels, poetryLevels, xiehouyuLevels, typoLevels, hanziLevels, riddleLevels, miyuLevels].flatMap((gameLevels) => gameLevels.slice(0, LOADED_LEVEL_COUNT)).map((level) => [level._id, level])
 )
 
 let passed = 0
@@ -299,14 +301,14 @@ const startedAttempt = { active: true, wrongCount: 0 }
   r = await call('g1', 'game.levelList', { gameType: 'chess' }); assert(r.code === 40000, 'unknown game type rejected', r)
   r = await call('g1', 'game.levelList', {}); assert(r.code === 40000, 'missing game type rejected', r)
   r = await call('g1', 'game.levelList', { gameType: 'poetry' })
-  assert(r.code === 0 && r.data.total === LOADED_LEVEL_COUNT && r.data.stages.length >= 1 && r.data.stages[0].name === '幼儿园' && r.data.stages[0].firstLevelNo === 1, 'poetry stages from level data', r.data.stages)
+  assert(r.code === 0 && r.data.total === LOADED_LEVEL_COUNT && r.data.stages.length >= 1 && r.data.stages[0].name === '入门' && r.data.stages[0].firstLevelNo === 1, 'poetry stages from level data', r.data.stages)
   r = await call('g1', 'game.levelList', { gameType: 'idiom' }); assert(Array.isArray(r.data.stages) && r.data.stages.length === 0, 'idiom has no stages', r.data.stages)
   r = await call('g1', 'game.levelList', { gameType: 'poetry' }); assert(r.data.achievement.title.name === '学童' && r.data.achievement.title.nextName === '诗童', 'poetry has its own titles', r.data.achievement.title)
   r = await call('g1', 'game.levelList', { gameType: 'xiehouyu' }); assert(r.data.achievement.title.name === '听众', 'xiehouyu has its own titles', r.data.achievement.title)
   const staminaBeforePoetry = S.users.g1.items.stamina
   r = await call('g1', 'game.startAttempt', { gameType: 'poetry', levelNo: 1 })
   const poetry1 = poetryLevels[0]
-  assert(r.code === 0 && r.data.puzzle.clue === poetry1.clue && r.data.puzzle.poemTitle === poetry1.poemTitle && r.data.puzzle.answerLength === poetry1.answer.length && r.data.puzzle.stage === '幼儿园', 'poetry puzzle carries poem info and stage', r.data.puzzle)
+  assert(r.code === 0 && r.data.puzzle.clue === poetry1.clue && r.data.puzzle.poemTitle === poetry1.poemTitle && r.data.puzzle.answerLength === poetry1.answer.length && r.data.puzzle.stage === '入门', 'poetry puzzle carries poem info and stage', r.data.puzzle)
   assert(r.data.items.stamina === staminaBeforePoetry - 1, 'stamina shared across games', r.data.items)
   r = await call('g1', 'game.useHint', { gameType: 'poetry', levelNo: 1 }); assert(r.code === 0 && r.data.revealed.join('') === poetry1.answer[0], 'poetry hint reveals first blank char', r.data)
   r = await call('g1', 'game.submit', { gameType: 'poetry', levelNo: 1, answer: poetry1.answer })
@@ -513,6 +515,26 @@ const startedAttempt = { active: true, wrongCount: 0 }
   await call('sp1', 'sprint.start', { islandId: 'make-ten' }); assert(S.users.sp1.items.stamina === sprintStamina2 - 2, '控制中心 sets the stamina a run costs', S.users.sp1.items.stamina)
   r = await call('sp1', 'sprint.board', { islandId: 'make-ten' }); assert(r.data.weekly === false && r.data.entries.length === 2, 'weekly reset off: the all-time board (kept all along) is shown', r.data)
   delete S.app_config.switches
+  // 脑筋急转弯: a level game like the others; the「为什么」comes with the answer
+  await call('rd1', 'account.login')
+  r = await call('rd1', 'game.startAttempt', { gameType: 'riddle', levelNo: 1 })
+  assert(r.code === 0 && r.data.puzzle.clue === riddleLevels[0].clue && r.data.puzzle.board.length === 12 && !r.data.puzzle.answer && r.data.puzzle.stage === '入门', 'riddle: the question and a 12-character board, no answer', r.data.puzzle)
+  r = await call('rd1', 'game.submit', { gameType: 'riddle', levelNo: 1, answer: riddleLevels[0].answer })
+  assert(r.code === 0 && r.data.correct && r.data.solution.why === riddleLevels[0].why && r.data.solution.clue === riddleLevels[0].clue, 'riddle: passing shows the answer and why', r.data.solution)
+  r = await call('rd1', 'game.levelList', { gameType: 'riddle' }); assert(r.data.achievement.title.name === '小机灵' && r.data.stages[0].name === '入门', 'riddle has its own titles and stages', r.data.achievement.title)
+  // 猜谜语: the riddle with its category on the card; the explanation comes clue by clue after passing
+  r = await call('rd1', 'game.startAttempt', { gameType: 'miyu', levelNo: 1 })
+  assert(r.code === 0 && r.data.puzzle.clue === miyuLevels[0].clue && r.data.puzzle.category === miyuLevels[0].category && !r.data.puzzle.answer, 'miyu: the riddle and its category (打一…), no answer', r.data.puzzle)
+  r = await call('rd1', 'game.submit', { gameType: 'miyu', levelNo: 1, answer: miyuLevels[0].answer })
+  assert(r.code === 0 && r.data.correct && r.data.solution.why === miyuLevels[0].why && r.data.solution.category === miyuLevels[0].category, 'miyu: passing shows the answer and why', r.data.solution)
+  r = await call('rd1', 'game.levelList', { gameType: 'miyu' }); assert(r.data.achievement.title.name === '小谜童', 'miyu has its own titles', r.data.achievement.title)
+  S.app_config = { ...(S.app_config || {}), switches: { _id: 'switches', miyuKeyboard: true } }
+  r = await call('rd1', 'game.startAttempt', { gameType: 'miyu', levelNo: 2 })
+  assert(r.code === 0 && r.data.puzzle.inputMode === 'keyboard' && r.data.puzzle.board.length === 0 && r.data.puzzle.answerLength === miyuLevels[1].answer.length, '用键盘输入 on: no board is sent, the same number of cells, typed on the keyboard', r.data.puzzle)
+  r = await call('rd1', 'game.submit', { gameType: 'miyu', levelNo: 2, answer: miyuLevels[1].answer }); assert(r.code === 0 && r.data.correct, 'a typed answer is judged the same way', r.data)
+  await call('rd1', 'game.startAttempt', { gameType: 'riddle', levelNo: 2 })
+  r = await call('rd1', 'game.getLevel', { gameType: 'riddle', levelNo: 2 }); assert(r.data.puzzle.board.length === 12 && !r.data.puzzle.inputMode, 'the switch only changes 猜谜语', r.data.puzzle)
+  delete S.app_config.switches
   // 识字竞速: the same rules on the 汉字闯关 questions, one board per grade; no hints, no friends
   await call('hz1', 'account.login')
   r = await call('hz1', 'sprint.islands', { subject: 'chinese' })
@@ -521,15 +543,15 @@ const startedAttempt = { active: true, wrongCount: 0 }
   r = await call('hz1', 'sprint.start', { islandId: 'hanzi-grade1' })
   const hanziRun = r.data
   const hanziPool = require(path.join(API_ROOT, 'data', 'hanzi-sprint-pool.json'))
-  const firstGradeChars = new Set(hanziPool['一年级'].map((question) => question[4]))
+  const firstGradeChars = new Set(hanziPool['初级'].map((question) => question[4]))
   assert(r.code === 0 && hanziRun.questions.length === 150 && hanziRun.questions.every((question) => question.type === 'hanzi' && question.choices.length === 4 && question.choices.includes(question.answer) && question.prompt && question.clue && firstGradeChars.has(question.answer)), 'a 识字 run: 150 four-choice questions of the grade, with answers', hanziRun.questions.slice(0, 2))
   assert(new Set(hanziRun.questions.map((question) => `${question.prompt}${question.clue}${question.answer}`)).size === 150, 'no question twice in a run', null)
   playFullMinute('hz1')
   r = await call('hz1', 'sprint.finish', { runId: hanziRun.runId, answers: hanziRun.questions.slice(0, 30).map((question, index) => ({ index, answer: index < 25 ? question.answer : question.choices.find((choice) => choice !== question.answer) })) })
   assert(r.code === 0 && r.data.counted && r.data.score === 20 && r.data.correct === 25 && r.data.wrong === 5 && r.data.rank === 1, '识字 score is right minus wrong too', r.data)
-  r = await call('hz1', 'sprint.board', { islandId: 'hanzi-grade1' }); assert(r.code === 0 && r.data.islandName === '一年级识字' && r.data.entries[0].isMe, 'each grade has its own board', r.data)
+  r = await call('hz1', 'sprint.board', { islandId: 'hanzi-grade1' }); assert(r.code === 0 && r.data.islandName === '识字 · 初级' && r.data.entries[0].isMe, 'each grade has its own board', r.data)
   r = await call('hz1', 'sprint.board', { islandId: 'make-ten' }); assert(!r.data.entries.some((entry) => entry.isMe), 'a 识字 score is not on the 口算 boards', r.data)
-  r = await call('hz1', 'leaderboard.summary', {}); assert(r.data.sprints.chinese.best.islandName === '一年级识字' && r.data.sprints.chinese.best.score === 20 && r.data.sprints.math.played === 0, 'the 识字竞速 card has its own best', r.data.sprints)
+  r = await call('hz1', 'leaderboard.summary', {}); assert(r.data.sprints.chinese.best.islandName === '识字 · 初级' && r.data.sprints.chinese.best.score === 20 && r.data.sprints.math.played === 0, 'the 识字竞速 card has its own best', r.data.sprints)
   // per-game level rules
   S.app_config = {}
   await call('p1', 'account.login')

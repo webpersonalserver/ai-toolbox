@@ -11,6 +11,25 @@
     <view wx:if="{{solution.note}}" class="game-solution__note">原文：{{solution.note}}</view>
   </block>
 
+  <block wx:elif="{{gameType === 'riddle'}}">
+    <view class="game-solution__riddle">{{solution.clue}}</view>
+    <view class="game-solution__answer">{{solution.answer}}</view>
+    <view wx:if="{{solution.why}}" class="game-solution__section">
+      <view class="game-solution__label">为什么</view>
+      <view>{{solution.why}}</view>
+    </view>
+  </block>
+
+  <block wx:elif="{{gameType === 'miyu'}}">
+    <view class="game-solution__riddle">{{solution.clue}}</view>
+    <view class="game-solution__note">（{{solution.category}}）</view>
+    <view class="game-solution__answer">{{solution.answer}}</view>
+    <view class="game-solution__section">
+      <view class="game-solution__label">为什么</view>
+      <view wx:for="{{whyLines}}" wx:key="index" class="game-solution__why-line">· {{item}}</view>
+    </view>
+  </block>
+
   <block wx:elif="{{gameType === 'hanzi'}}">
     <view class="game-solution__answer">{{solution.char}}</view>
     <view class="game-solution__pinyin">{{solution.pinyin}}</view>

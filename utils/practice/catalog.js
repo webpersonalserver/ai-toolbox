@@ -9,11 +9,11 @@ const SUBJECTS = [
 
 // Islands in the suggested learning order (top to bottom on the map). Nothing is locked.
 const ISLANDS = [
-  { id: 'counting', subject: 'math', name: '数数岛', fitFor: '适合一年级上', intro: '点点糖果排排队，10 以内的数都住在这里喵～', units: ['split-10', 'add-sub-10'] },
-  { id: 'make-ten', subject: 'math', name: '凑十岛', fitFor: '适合一年级', intro: '这里的小伙伴最爱凑成 10，凑满就能跳过去！', units: ['add-sub-20', 'chain-add-sub', 'compare'] },
-  { id: 'hundred', subject: 'math', name: '百数岛', fitFor: '适合一年级下', intro: '竹子十根捆一捆，几捆几根就是几十几～', units: ['add-sub-100'] },
-  { id: 'times-table', subject: 'math', name: '口诀岛', fitFor: '适合二年级', intro: '九九口诀是武功秘籍，练成就是小侠客！', units: ['multiplication', 'division-table'] },
-  { id: 'ten-thousand', subject: 'math', name: '万数岛', fitFor: '适合二年级下', intro: '城堡里的数又大又多，等你来闯关～', units: ['add-sub-10000'] }
+  { id: 'counting', subject: 'math', name: '数数岛', fitFor: '难度 ★', intro: '点点糖果排排队，10 以内的数都住在这里喵～', units: ['split-10', 'add-sub-10'] },
+  { id: 'make-ten', subject: 'math', name: '凑十岛', fitFor: '难度 ★★', intro: '这里的小伙伴最爱凑成 10，凑满就能跳过去！', units: ['add-sub-20', 'chain-add-sub', 'compare'] },
+  { id: 'hundred', subject: 'math', name: '百数岛', fitFor: '难度 ★★★', intro: '竹子十根捆一捆，几捆几根就是几十几～', units: ['add-sub-100'] },
+  { id: 'times-table', subject: 'math', name: '口诀岛', fitFor: '难度 ★★★★', intro: '九九口诀是武功秘籍，练成就是小侠客！', units: ['multiplication', 'division-table'] },
+  { id: 'ten-thousand', subject: 'math', name: '万数岛', fitFor: '难度 ★★★★★', intro: '城堡里的数又大又多，等你来闯关～', units: ['add-sub-10000'] }
 ]
 
 const ADD_SUB_EXAM_SECONDS = {

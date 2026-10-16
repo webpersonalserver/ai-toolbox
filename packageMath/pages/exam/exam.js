@@ -43,8 +43,8 @@ const buildLevelCards = (unit, cloudExams) =>
       ...level,
       timeText: describeSeconds(unit.examSeconds[level.level]),
       unlocked,
-      bestText: cloud && cloud.best !== null ? `最高 ${cloud.best} 分` : '还没考过',
-      lockText: `${previousName}考到 ${UNLOCK_SCORE} 分解锁`
+      bestText: cloud && cloud.best !== null ? `最高 ${cloud.best} 分` : '还没挑战过',
+      lockText: `${previousName}拿到 ${UNLOCK_SCORE} 分解锁`
     }
   })
 
@@ -76,7 +76,7 @@ Page({
     this.timers = []
     this.soundPlayer = createSoundPlayer()
     this.honorPresenter = createHonorPresenter(this)
-    wx.setNavigationBarTitle({ title: `${this.unit.name} · 限时考试` })
+    wx.setNavigationBarTitle({ title: `${this.unit.name} · 限时挑战` })
     this.setData({ unitName: this.unit.name, levels: buildLevelCards(this.unit, null) })
     this.loadLevels()
   },
@@ -236,7 +236,7 @@ Page({
   },
 
   async showCertificate() {
-    let nickname = '小同学'
+    let nickname = '小伙伴'
     try {
       const session = await ensureLogin()
       nickname = session.profile.nickname || nickname
@@ -248,7 +248,7 @@ Page({
       certificate: {
         visible: true,
         nickname,
-        achievement: `${this.unit.name}${this.data.level.name}考试`,
+        achievement: `${this.unit.name}${this.data.level.name}挑战`,
         dateText: todayText()
       }
     })
@@ -278,7 +278,7 @@ Page({
       // Under the unlock score, name the next goal so the child knows what one more try can win.
       const lockedLevelName = hasHigherLevel && !nextLevel && score < UNLOCK_SCORE ? levelOf(level + 1).name : ''
       this.setData({
-        'result.unlockHint': lockedLevelName ? `再考到 ${UNLOCK_SCORE} 分就能解锁${lockedLevelName}！` : '',
+        'result.unlockHint': lockedLevelName ? `再拿到 ${UNLOCK_SCORE} 分就能解锁${lockedLevelName}！` : '',
         'result.newBest': outcome.isNewBest && outcome.previousBest !== null,
         'result.unlockedLevelName': outcome.unlockedLevel ? levelOf(outcome.unlockedLevel).name : '',
         'result.nextLevel': nextLevel,

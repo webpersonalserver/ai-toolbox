@@ -78,9 +78,9 @@ const MEDALS = [
   { id: 'arith-solved-100', group: 'arithmetic', name: '小小计算家', icon: '🧮', metric: 'arithmeticSolved', target: 100, praise: '答对 100 道题，越算越厉害！' },
   { id: 'arith-solved-1000', group: 'arithmetic', name: '计算大师', icon: '🎓', metric: 'arithmeticSolved', target: 1000, praise: '答对 1000 道题，真正的计算大师！' },
   { id: 'arith-all-tiers', group: 'arithmetic', name: '三档全能', icon: '🌈', metric: 'arithmeticTiersReached', target: 3, praise: '三个档位都答对 20 题，样样都行！' },
-  { id: 'exam-full-score', group: 'arithmetic', name: '满分小状元', icon: '💯', metric: 'arithmeticFullScoreExams', target: 1, praise: '考试拿到 100 分，你是小状元！' },
-  { id: 'exam-all-tiers', group: 'arithmetic', name: '三档满分', icon: '🏆', metric: 'arithmeticFullScoreTiers', target: 3, praise: '三个档位都考过 100 分，太棒了！' },
-  { id: 'exam-lightning', group: 'arithmetic', name: '闪电手', icon: '⚡', metric: 'arithmeticHardestFullScore', target: 1, praise: '高级考试拿到满分，快如闪电！' },
+  { id: 'exam-full-score', group: 'arithmetic', name: '满分小状元', icon: '💯', metric: 'arithmeticFullScoreExams', target: 1, praise: '限时挑战拿到 100 分，你是小状元！' },
+  { id: 'exam-all-tiers', group: 'arithmetic', name: '三档满分', icon: '🏆', metric: 'arithmeticFullScoreTiers', target: 3, praise: '三个档位都拿过 100 分，太棒了！' },
+  { id: 'exam-lightning', group: 'arithmetic', name: '闪电手', icon: '⚡', metric: 'arithmeticHardestFullScore', target: 1, praise: '最难的限时挑战拿到满分，快如闪电！' },
   { id: 'kungfu-row-1', group: 'multiplication', name: '入门弟子', icon: '🥋', metric: 'kungfuMasteredRows', target: 1, praise: '练成第一重，正式拜入师门！' },
   { id: 'kungfu-row-5', group: 'multiplication', name: '半部秘籍', icon: '📖', metric: 'kungfuMasteredRows', target: 5, praise: '已经练成五重，秘籍过半啦！' },
   { id: 'kungfu-row-9', group: 'multiplication', name: '九重全通', icon: '🏯', metric: 'kungfuMasteredRows', target: 9, praise: '九重秘籍全部练成，了不起！' },
@@ -95,7 +95,7 @@ const MEDALS = [
     icon: island.icon,
     metric: islandMetricOf(island),
     target: 1,
-    praise: island.needsKungfu ? `${island.name}全部三星、九九神功大成，你是${island.name}的小岛主！` : `${island.name}的单元全部三星，你是${island.name}的小岛主！`
+    praise: island.needsKungfu ? `${island.name}全部三星、九九神功大成，你是${island.name}的小岛主！` : `${island.name}的每一站都拿到三星，你是${island.name}的小岛主！`
   }))
 ]
 

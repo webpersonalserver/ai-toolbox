@@ -60,6 +60,7 @@
       <view wx:if="{{clueHint}}" class="play__clue-hint">释义：<text wx:for="{{clueHintSegments}}" wx:key="index" class="{{item.masked ? 'clue-mask clue-mask--small' : ''}}">{{item.text}}</text></view>
       <view wx:if="{{poemSource}}" class="play__clue-source">{{poemSource}}</view>
       <view wx:if="{{meaning}}" class="play__meaning">💡 意思：{{meaning}}</view>
+      <view wx:if="{{category}}" class="play__category">【{{category}}】</view>
     </view>
 
     <char-puzzle
@@ -70,6 +71,7 @@
       eliminated="{{eliminated}}"
       answer-pinyin="{{answerPinyin}}"
       columns="{{game.boardColumns}}"
+      keyboard="{{typesAnswer}}"
       disabled="{{submitting}}"
       checking="{{submitting}}"
       bind:complete="handleComplete"

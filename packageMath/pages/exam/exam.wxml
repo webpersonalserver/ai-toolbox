@@ -1,6 +1,6 @@
 <view wx:if="{{stage === 'select'}}" class="page exam-select">
   <view class="exam-select__intro">
-    <view class="exam-select__title">{{unitName}} · 限时考试</view>
+    <view class="exam-select__title">{{unitName}} · 限时挑战</view>
     <view class="exam-select__rules">
       <view class="exam-select__rule">📝 {{questionCount}} 道题</view>
       <view class="exam-select__rule">⭐ 第一次答对才得分</view>
@@ -21,7 +21,7 @@
       <view class="exam-select__time">限时 {{item.timeText}}</view>
       <view class="exam-select__best">{{item.unlocked ? item.bestText : item.lockText}}</view>
     </view>
-    <view wx:if="{{item.unlocked}}" class="exam-select__go">开考 ›</view>
+    <view wx:if="{{item.unlocked}}" class="exam-select__go">开始 ›</view>
   </view>
 </view>
 
@@ -54,7 +54,7 @@
     <view wx:if="{{result.newBest}}" class="exam-result__badge">新纪录！</view>
     <view class="exam-result__line">{{result.correctText}}</view>
     <view class="exam-result__line">{{result.timeText}}</view>
-    <view wx:if="{{result.unlockedLevelName}}" class="exam-result__unlock">🔓 解锁了{{result.unlockedLevelName}}考试！</view>
+    <view wx:if="{{result.unlockedLevelName}}" class="exam-result__unlock">🔓 解锁了{{result.unlockedLevelName}}挑战！</view>
     <view wx:if="{{result.unlockHint}}" class="exam-result__goal">{{result.unlockHint}}</view>
   </view>
 
@@ -68,7 +68,7 @@
 
   <view class="exam-result__actions">
     <button wx:if="{{result.nextLevel}}" class="btn btn--primary" bindtap="goNextLevel">挑战{{result.nextLevelName}}</button>
-    <button class="btn {{result.nextLevel ? 'btn--ghost' : 'btn--primary'}}" bindtap="retry">再考一次</button>
+    <button class="btn {{result.nextLevel ? 'btn--ghost' : 'btn--primary'}}" bindtap="retry">再来一次</button>
     <button class="btn btn--muted" bindtap="backToLevels">选择等级</button>
   </view>
 </view>

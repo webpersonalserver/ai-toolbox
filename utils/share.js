@@ -37,7 +37,7 @@ const buildMedalShare = (medal) => ({
 })
 
 const buildCertificateShare = (nickname, achievement) => ({
-  title: `${nickname}在${achievement}中考了 100 分，获得一张奖状！`,
+  title: `${nickname}在${achievement}中拿了 100 分，获得一张奖状！`,
   path: PRACTICE_TAB_PATH,
   imageUrl: imageOf(SHARE_IMAGES.certificate)
 })
@@ -58,7 +58,7 @@ const buildWeeklyShare = ({ practicedDays, solved, stars }) => ({
 const ARITHMETIC_SHARE = fixedShare({ title: '跟着喵算算去数理乐园冒险，看谁连对得多！', path: PRACTICE_TAB_PATH }, 'arithmetic')
 
 const buildExamShare = (unitName) => ({
-  title: `来挑战「${unitName}」限时考试，看看你能考几分！`,
+  title: `来挑战「${unitName}」，看看你能拿几分！`,
   path: PRACTICE_TAB_PATH,
   imageUrl: imageOf(SHARE_IMAGES.exam)
 })

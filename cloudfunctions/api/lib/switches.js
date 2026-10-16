@@ -15,6 +15,9 @@ const DEFAULT_SWITCHES = {
   // 提示不能直接给出答案: on, hints stop before the last character / the last two choices. Off (default): hints are
   // the player's own items, so they may reveal the whole answer (the level is then handed in for them).
   hintKeepLastStep: false,
+  // 猜谜语：用键盘输入. On: no board of characters to pick from; the player types the answer with the phone's
+  // keyboard into the same number of cells (the board is then not sent at all). Off (default): pick from the board.
+  miyuKeyboard: false,
   // 口算竞速: rankings start again every Monday (Beijing). Off: one ranking for all time.
   sprintWeeklyReset: true,
   // 口算竞速: stamina one run costs. A number, not a switch (see NUMBER_RANGES).

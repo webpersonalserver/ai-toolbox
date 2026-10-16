@@ -199,8 +199,8 @@ const reviewList = async ({ openid, payload }) => {
   const entries = data
     .sort((left, right) => left.levelNo - right.levelNo)
     .map((level) => {
-      const { clue, stage, kind, prompt, wrongPosition } = toPuzzle(level, switches)
-      return { levelNo: level.levelNo, clue, stage, kind, prompt, wrongPosition, ...reviewReasonsOf(progress, level.levelNo) }
+      const { clue, stage, kind, prompt, wrongPosition, category } = toPuzzle(level, switches)
+      return { levelNo: level.levelNo, clue, stage, kind, prompt, wrongPosition, category, ...reviewReasonsOf(progress, level.levelNo) }
     })
   return { total: levelNos.length, page, entries, hasMore: page * BOOK_PAGE_SIZE < levelNos.length }
 }

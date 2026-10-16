@@ -4,7 +4,9 @@ const GAME_TYPES = {
   XIEHOUYU: 'xiehouyu',
   TYPO: 'typo',
   HANZI: 'hanzi',
-  MATH: 'math'
+  MATH: 'math',
+  RIDDLE: 'riddle',
+  MIYU: 'miyu'
 }
 
 // Boards show 12 characters (see shownBoardOf in the cloud), in 3 rows of 4 big cells.
@@ -12,7 +14,7 @@ const DEFAULT_BOARD_COLUMNS = 4
 const TYPO_BOARD_COLUMNS = 4
 
 // 汉字闯关 first: most players are in grades 1-2.
-const GAME_ORDER = [GAME_TYPES.HANZI, GAME_TYPES.MATH, GAME_TYPES.IDIOM, GAME_TYPES.TYPO, GAME_TYPES.POETRY, GAME_TYPES.XIEHOUYU]
+const GAME_ORDER = [GAME_TYPES.HANZI, GAME_TYPES.MATH, GAME_TYPES.IDIOM, GAME_TYPES.TYPO, GAME_TYPES.POETRY, GAME_TYPES.XIEHOUYU, GAME_TYPES.RIDDLE, GAME_TYPES.MIYU]
 
 const GAME_CONFIGS = {
   // 口算闯关: 10 questions a level on its own page (pages/game/math); no 复习本.
@@ -55,7 +57,7 @@ const GAME_CONFIGS = {
     name: '诗词填空',
     shortName: '诗词',
     icon: '诗',
-    intro: '从幼儿园到高中，补全经典诗句',
+    intro: '由浅入深，补全经典诗句',
     clueLabel: '补全诗句',
     hasReviewBook: true,
     boardColumns: DEFAULT_BOARD_COLUMNS
@@ -67,6 +69,26 @@ const GAME_CONFIGS = {
     icon: '歇',
     intro: '看前半句和意思，猜出后半句',
     clueLabel: '歇后语',
+    hasReviewBook: true,
+    boardColumns: DEFAULT_BOARD_COLUMNS
+  },
+  [GAME_TYPES.RIDDLE]: {
+    gameType: GAME_TYPES.RIDDLE,
+    name: '脑筋急转弯',
+    shortName: '急转弯',
+    icon: '转',
+    intro: '换个角度想一想，由易到难',
+    clueLabel: '想一想',
+    hasReviewBook: true,
+    boardColumns: DEFAULT_BOARD_COLUMNS
+  },
+  [GAME_TYPES.MIYU]: {
+    gameType: GAME_TYPES.MIYU,
+    name: '猜谜语',
+    shortName: '猜谜语',
+    icon: '谜',
+    intro: '看谜面，猜猜打一个什么',
+    clueLabel: '谜面',
     hasReviewBook: true,
     boardColumns: DEFAULT_BOARD_COLUMNS
   },

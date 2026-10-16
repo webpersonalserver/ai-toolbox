@@ -151,6 +151,8 @@ Page({
       meaning: puzzle.meaning || '',
       answerPinyin: puzzle.answerPinyin || [],
       hanziKind: puzzle.kind || '',
+      category: puzzle.category || '',
+      typesAnswer: puzzle.inputMode === 'keyboard',
       clueLabel: clueLabelOf(this.data.game, puzzle),
       clueSegments: splitClue(puzzle.clue),
       clueHintSegments: splitClue(puzzle.clueHint),

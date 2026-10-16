@@ -1,7 +1,7 @@
 """Idiom typo levels: an idiom is shown with one character swapped for a common look/sound-alike;
 pick the correct character from an 8-character board of homophones.
 
-- Stages reuse the idiom tiers (idioms.txt) mapped to school stages; primary-school levels also
+- Stages reuse the idiom tiers (idioms.txt) mapped to difficulty stages (初级 → 大师); 初级 levels also
   show the masked explanation as an extra clue.
 - scripts/data/typo_common.txt lists well-known real-world mistakes, placed first in each stage.
 - A swap is rejected whenever the "wrong" form is itself listed in the idiom dictionary
@@ -22,9 +22,9 @@ GAME_TYPE = "typo"
 BOARD_SIZE = 8
 WRONG_CHAR_RANK_LIMIT = 2500
 DISTRACTOR_RANK_LIMIT = 2000
-STAGE_BY_IDIOM_TIER = ["小学", "初中", "高中", "进阶", "进阶"]
-STAGE_ORDER = ["小学", "初中", "高中", "进阶"]
-CLUE_HINT_STAGES = {"小学"}
+STAGE_BY_IDIOM_TIER = ["初级", "中级", "高级", "大师", "大师"]
+STAGE_ORDER = ["初级", "中级", "高级", "大师"]
+CLUE_HINT_STAGES = {"初级"}
 CURATED_FIRST, AUTO_GENERATED = 0, 1
 
 

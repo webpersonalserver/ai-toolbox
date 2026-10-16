@@ -3,7 +3,7 @@
 Usage:
     python3 scripts/build_levels.py <game> <target_total_levels> [--data-dir .cache]
 
-Games: idiom | poetry | xiehouyu | typo | hanzi. Output: database/levels/<game>.json.
+Games: idiom | poetry | xiehouyu | typo | hanzi | riddle | miyu (riddle and miyu need no downloaded data: they are all ours). Output: database/levels/<game>.json.
 poetry needs OpenCC, so run it with .cache/venv/bin/python.
 
 Source data (downloaded into --data-dir, not committed; dictionary text is only used to look meanings up — shipped explanations come from scripts/data/idiom_explanations.json):
@@ -17,7 +17,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from level_builders import hanzi, idiom, poetry, typo, xiehouyu  # noqa: E402
+from level_builders import hanzi, idiom, miyu, poetry, riddle, typo, xiehouyu  # noqa: E402
 from level_builders.common import ROOT, append_levels, build_char_stats  # noqa: E402
 
 BUILDERS = {
@@ -26,6 +26,8 @@ BUILDERS = {
     "xiehouyu": (xiehouyu, True),
     "typo": (typo, True),
     "hanzi": (hanzi, True),
+    "riddle": (riddle, True),
+    "miyu": (miyu, True),
 }
 
 
@@ -37,7 +39,9 @@ def main():
     args = parser.parse_args()
 
     module, include_source_key = BUILDERS[args.game]
-    char_rarity, is_common_char = build_char_stats(Path(args.data_dir) / "xinhua" / "idiom.json")
+    # The character statistics come from the downloaded idiom dictionary; riddles do not use them.
+    stats_source = Path(args.data_dir) / "xinhua" / "idiom.json"
+    char_rarity, is_common_char = build_char_stats(stats_source) if args.game not in ("riddle", "miyu") else (None, None)
     candidates = module.build_candidates(args.data_dir, char_rarity, is_common_char)
     print(f"[{args.game}] {len(candidates)} candidates")
     append_levels(

@@ -1,7 +1,7 @@
 # 诗词填空学段清单（由易到难）。格式：标题@作者#首句开头（首句开头可省略，省略时按标题匹配）。
 # 标题以本清单为准显示（课本标题）；正文优先取 poetry_supplement.json 的课本版本，其次取数据源。
 # 档头参数：blank=每关挖掉的字数（full 表示挖掉整句），couplets=每首诗最多出几关，auto=自动纳入语料中其余作品
-# stage 幼儿园 blank=2 couplets=2
+# stage 入门 blank=2 couplets=2
 咏鹅@骆宾王
 悯农@李绅#锄禾
 春晓@孟浩然
@@ -19,7 +19,7 @@
 小池@杨万里
 夜宿山寺@李白
 梅花@王安石
-# stage 小学 blank=3 couplets=2
+# stage 初级 blank=3 couplets=2
 悯农@李绅#春种
 赠汪伦@李白
 画鸡@唐寅
@@ -69,7 +69,7 @@
 宿建德江@孟浩然
 登幽州台歌@陈子昂
 逢雪宿芙蓉山主人@刘长卿
-# stage 初中 blank=4 couplets=2
+# stage 中级 blank=4 couplets=2
 闻王昌龄左迁龙标遥有此寄@李白
 次北固山下@王湾
 峨眉山月歌@李白
@@ -106,7 +106,7 @@
 月夜忆舍弟@杜甫
 长沙过贾谊宅@刘长卿
 左迁至蓝关示侄孙湘@韩愈
-# stage 高中 blank=full couplets=3
+# stage 高级 blank=full couplets=3
 将进酒@李白
 蜀道难@李白
 梦游天姥吟留别@李白
@@ -134,4 +134,4 @@
 虞美人@李煜#春花秋月
 青玉案@辛弃疾#东风夜放
 苏幕遮@周邦彦#燎沉香
-# stage 进阶 blank=full couplets=1 auto
+# stage 大师 blank=full couplets=1 auto

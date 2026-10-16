@@ -398,7 +398,7 @@ page {
 }
 
 /* A full-width row under the unit name: every action is a real button, spaced apart so small
-   fingers do not hit 考试 when they meant 出发冒险. */
+   fingers do not hit 挑战 when they meant 出发冒险. */
 .unit__actions {
   display: flex;
   gap: var(--space-sm);

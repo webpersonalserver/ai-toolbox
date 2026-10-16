@@ -1,7 +1,7 @@
 """Hanzi levels (汉字闯关) for grades 1-2: one question per level, pick the right one of four big choices.
 
 Character pool: 字表一 (2500 characters) of 义务教育语文课程常用字表 (Ministry of Education, 2022). The 1600 most
-common and simplest are kept and split into four bands of 400, labelled 一年级 (bands 1-2) and 二年级 (bands 3-4).
+common and simplest are kept and split into four bands of 400, labelled 初级 (bands 1-2) and 中级 (bands 3-4).
 This follows how common and how simple a character is, not any textbook's lesson order. Frequency comes from
 dictionary text, which undercounts children's everyday words (猫, 跑, 糖), so every character in our own picture and
 word lists counts as most common.
@@ -34,7 +34,7 @@ from .common import DATA_DIR, Candidate
 GAME_TYPE = "hanzi"
 POOL_SIZE = 1600
 BAND_SIZE = 400
-BAND_STAGES = ["一年级", "一年级", "二年级", "二年级"]
+BAND_STAGES = ["初级", "初级", "中级", "中级"]
 CHOICES = 4
 # Only the most frequent part of 字表一 is considered at all, so a very simple but rare character never slips in.
 FREQUENT_LIMIT = 2000

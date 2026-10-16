@@ -103,10 +103,14 @@ const solveLevelInTransaction = async (transaction, openid, gameType, levelNo, {
 // 成语找错字 leaves out where the wrong character is, so children have to spot it.
 const hiddenPuzzleFields = (switches) => (switches.typoMarkWrong === false ? ['wrongPosition'] : [])
 
+// 猜谜语 with 用键盘输入 on (控制中心): typed on the phone's keyboard, so there is no board to send.
+const typesAnswer = (level, switches) => level.gameType === 'miyu' && switches.miyuKeyboard === true
+
 const toPuzzle = (level, switches = {}) => ({
   levelNo: level.levelNo,
   clue: level.clue,
-  board: shownBoardOf(level),
+  board: typesAnswer(level, switches) ? [] : shownBoardOf(level),
+  ...(typesAnswer(level, switches) ? { inputMode: 'keyboard' } : {}),
   answerLength: level.answer.length,
   stage: level.stage || '',
   ...pickFields(level, (PUZZLE_FIELDS_BY_GAME[level.gameType] || []).filter((field) => !hiddenPuzzleFields(switches).includes(field))),

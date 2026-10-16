@@ -1,5 +1,6 @@
 <view class="char-puzzle">
-  <view class="char-puzzle__slots {{slotSizeClass}} {{isWrong ? 'char-puzzle__slots--wrong' : ''}} {{checking ? 'char-puzzle__slots--checking' : ''}}">
+  <view class="char-puzzle__answer">
+  <view class="char-puzzle__slots {{slotSizeClass}} {{isWrong ? 'char-puzzle__slots--wrong' : ''}} {{checking ? 'char-puzzle__slots--checking' : ''}} {{keyboard && inputFocused ? 'char-puzzle__slots--typing' : ''}}">
     <view wx:for="{{slots}}" wx:key="index" class="char-puzzle__cell">
       <text wx:if="{{hasPinyin}}" class="char-puzzle__pinyin">{{item.pinyin}}</text>
       <view
@@ -9,6 +10,22 @@
       >{{item.char}}</view>
     </view>
   </view>
+  <!-- Keyboard mode: a see-through input over the cells, so tapping a cell brings up the phone's keyboard. -->
+  <input
+    wx:if="{{keyboard}}"
+    class="char-puzzle__input"
+    type="text"
+    value="{{inputValue}}"
+    focus="{{inputFocused}}"
+    disabled="{{disabled}}"
+    maxlength="-1"
+    confirm-type="done"
+    bindinput="handleInput"
+    bindfocus="handleInputFocus"
+    bindblur="handleInputBlur"
+  />
+  </view>
+  <view wx:if="{{keyboard}}" class="char-puzzle__keyboard-tip">点格子用键盘输入，填满 {{freeCount}} 个字自动提交</view>
   <view class="char-puzzle__thinking {{checking ? 'char-puzzle__thinking--visible' : ''}}" aria-live="polite">
     <image class="char-puzzle__thinking-avatar" src="/assets/icons/default-avatar.png" mode="aspectFill" />
     <view class="char-puzzle__thinking-bubble">
@@ -17,7 +34,7 @@
     </view>
   </view>
 
-  <view class="char-puzzle__board char-puzzle__board--cols-{{columns}}">
+  <view wx:if="{{!keyboard}}" class="char-puzzle__board char-puzzle__board--cols-{{columns}}">
     <view
       wx:for="{{boardItems}}"
       wx:key="index"

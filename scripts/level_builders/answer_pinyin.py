@@ -9,8 +9,10 @@ Needs pypinyin (.cache/venv).
 """
 import json
 import re
+from pathlib import Path
 
-from .common import DATA_DIR
+# Not imported from .common: common imports this module first, so that would be a circular import.
+DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 
 GAMES = ("idiom", "poetry", "xiehouyu")
 SYLLABLE = re.compile(r"^[a-zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜü]+$")

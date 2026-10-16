@@ -17,15 +17,15 @@ const SPRINT_SUBJECTS = {
   chinese: {
     id: 'chinese',
     name: '识字竞速',
-    intro: '选一个年级，60 秒看谁认的字多，每周排行',
-    trackWord: '年级',
-    chooseText: '选一个年级',
-    thisTrack: '这个年级',
+    intro: '选一个难度，60 秒看谁认的字多，每周排行',
+    trackWord: '难度',
+    chooseText: '选一个难度',
+    thisTrack: '这个难度',
     trackIcon: '📚',
     themeGame: 'hanzi',
     tracks: [
-      { id: 'hanzi-grade1', name: '一年级识字' },
-      { id: 'hanzi-grade2', name: '二年级识字' }
+      { id: 'hanzi-grade1', name: '识字 · 初级' },
+      { id: 'hanzi-grade2', name: '识字 · 中级' }
     ]
   }
 }

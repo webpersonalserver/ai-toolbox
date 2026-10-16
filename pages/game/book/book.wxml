@@ -25,6 +25,7 @@
         <text wx:for="{{item.clueChars}}" wx:for-item="char" wx:key="index" class="{{char.wrong ? 'book__clue-wrong' : ''}}">{{char.char}}</text>
       </view>
       <view wx:else class="book__clue"><text wx:for="{{item.clueSegments}}" wx:for-item="segment" wx:key="index" class="{{segment.masked ? 'clue-mask' : ''}}">{{segment.text}}</text></view>
+      <view wx:if="{{item.category}}" class="book__category">【{{item.category}}】</view>
       <view class="book__tags">
         <text wx:for="{{item.tags}}" wx:for-item="tag" wx:key="*this" class="book__tag">{{tag}}</text>
       </view>

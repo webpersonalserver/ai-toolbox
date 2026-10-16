@@ -80,6 +80,18 @@ page {
   --game-color-soft: #DCEEFF;
 }
 
+.game-theme--miyu {
+  --game-color: #2EB5B0;
+  --game-color-deep: #1E8F8B;
+  --game-color-soft: #D6F3F1;
+}
+
+.game-theme--riddle {
+  --game-color: #F2A93B;
+  --game-color-deep: #C98419;
+  --game-color-soft: #FFF0D4;
+}
+
 .page {
   padding: var(--space-lg) var(--space-lg) calc(var(--space-xl) + env(safe-area-inset-bottom));
 }

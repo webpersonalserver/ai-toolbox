@@ -1,7 +1,6 @@
 """Poetry levels: complete a line of a classical poem.
 
-Stages follow the school curriculum (scripts/data/poetry_stages.txt): kindergarten → primary →
-junior → senior → advanced. Later stages blank out more characters. Texts come from
+Stages go from easy to hard (scripts/data/poetry_stages.txt): 入门 → 初级 → 中级 → 高级 → 大师. Later stages blank out more characters. Texts come from
 scripts/data/poetry_supplement.json (school editions, hand-entered) first, then the
 chinese-poetry dataset, preferring the anthologies whose wording matches textbooks.
 

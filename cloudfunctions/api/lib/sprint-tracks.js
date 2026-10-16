@@ -1,6 +1,6 @@
 // The 60-second challenges and their tracks (each track has its own board):
 // - 口算竞速 (math): one track per 数理乐园 island, sums from that island's units (lib/math-challenge.js);
-// - 识字竞速 (chinese): one track per grade, four-choice questions taken from the 汉字闯关 levels
+// - 识字竞速 (chinese): one track per 汉字闯关 stage (初级 / 中级), four-choice questions taken from its levels
 //   (data/hanzi-sprint-pool.json, built by scripts/build_hanzi_sprint.js).
 // No hints and no friends here: the score is the child's own.
 const { SPRINT_ISLANDS, sprintPaper } = require('./math-challenge')
@@ -11,8 +11,9 @@ const PAPER_SIZE = 150
 const SUBJECTS = { MATH: 'math', CHINESE: 'chinese' }
 
 const HANZI_TRACKS = [
-  { id: 'hanzi-grade1', name: '一年级识字', stage: '一年级', scope: '看图、读拼音、找偏旁、组词选字 · 一年级的字' },
-  { id: 'hanzi-grade2', name: '二年级识字', stage: '二年级', scope: '看图、读拼音、找偏旁、组词选字 · 二年级的字' }
+  // Track ids keep their first names (scores are stored under them); the names shown are by difficulty.
+  { id: 'hanzi-grade1', name: '识字 · 初级', stage: '初级', scope: '看图、读拼音、找偏旁、组词选字 · 最常用的字' },
+  { id: 'hanzi-grade2', name: '识字 · 中级', stage: '中级', scope: '看图、读拼音、找偏旁、组词选字 · 常用字' }
 ]
 
 const pickIndex = (rng, length) => Math.floor(rng() * length)

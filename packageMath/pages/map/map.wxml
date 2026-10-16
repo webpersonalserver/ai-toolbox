@@ -71,7 +71,7 @@
       <view wx:if="{{!item.comingSoon}}" class="unit__actions">
         <view class="unit__go" hover-class="unit__go--pressed" data-unit-id="{{item.id}}" data-target="practice" catchtap="openUnit">{{copy.start}}</view>
         <block wx:if="{{!item.hasOwnPages}}">
-          <view class="unit__minor" hover-class="unit__minor--pressed" data-unit-id="{{item.id}}" data-target="exam" catchtap="openUnit">⏱ 考试</view>
+          <view class="unit__minor" hover-class="unit__minor--pressed" data-unit-id="{{item.id}}" data-target="exam" catchtap="openUnit">⏱ 挑战</view>
           <view wx:if="{{item.mistakeCount > 0}}" class="unit__minor" hover-class="unit__minor--pressed" data-unit-id="{{item.id}}" data-target="monsters" catchtap="openUnit">🐾 抓怪兽 {{item.mistakeCount}}</view>
         </block>
       </view>

@@ -7,6 +7,8 @@ const SUBJECTS = [
   // sits in the tab as an extra card (see the lobby page).
   { id: 'chinese', name: '汉字城堡', icon: '🏰', gameTypes: ['hanzi', 'idiom', 'typo', 'poetry', 'xiehouyu'], beginner: 'hanzi', hasSprint: true },
   { id: 'math', name: '数字星球', icon: '🪐', gameTypes: ['math'], beginner: 'math', hasSprint: true },
+  // 益智: brain teasers now; riddles, logic puzzles and the like later.
+  { id: 'puzzle', name: '智慧森林', icon: '🌲', gameTypes: ['riddle', 'miyu'], beginner: 'riddle' },
   { id: 'english', name: '字母乐园', icon: '🎠', gameTypes: [], comingSoon: true }
 ]
 const DEFAULT_SUBJECT = 'chinese'

@@ -37,6 +37,20 @@ const GAME_CHECKS = {
       return shared.size * 2 > new Set(answer).size ? `meaning uses too many answer characters (${[...shared].join('')})` : ''
     }
   },
+  riddle: {
+    answerLength: (length) => length >= 1 && length <= 5,
+    requiredFields: ['clue', 'why', 'stage'],
+    clueProblem: (level) => (level.why.length < 6 ? 'the「为什么」is too short to explain anything' : '')
+  },
+  miyu: {
+    answerLength: (length) => length >= 1 && length <= 4,
+    requiredFields: ['clue', 'category', 'why', 'stage'],
+    clueProblem: (level) => {
+      if (!/^打一[\u4e00-\u9fff]{1,4}$/.test(level.category)) return `odd category ${level.category}`
+      if (level.category !== '打一字' && [...level.answer].some((char) => level.clue.includes(char))) return 'the riddle uses a character of the answer'
+      return level.why.length < 8 ? 'the explanation is too short' : ''
+    }
+  },
   hanzi: {
     boardSize: 4,
     answerLength: (length) => length === 1,

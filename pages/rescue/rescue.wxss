@@ -115,3 +115,10 @@
   font-size: var(--font-lg);
   font-weight: 800;
 }
+
+.rescue__category {
+  margin-top: var(--space-sm);
+  color: var(--game-color-deep);
+  font-weight: 800;
+  text-align: right;
+}
