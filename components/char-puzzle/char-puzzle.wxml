@@ -1,16 +1,16 @@
 <view class="char-puzzle">
-  <view class="char-puzzle__answer">
-  <view class="char-puzzle__slots {{slotSizeClass}} {{isWrong ? 'char-puzzle__slots--wrong' : ''}} {{checking ? 'char-puzzle__slots--checking' : ''}} {{keyboard && inputFocused ? 'char-puzzle__slots--typing' : ''}}">
+  <view class="char-puzzle__answer" bindtap="handleAnswerTap">
+  <view class="char-puzzle__slots {{slotSizeClass}} {{isWrong ? 'char-puzzle__slots--wrong' : ''}} {{checking ? 'char-puzzle__slots--checking' : ''}}">
     <view wx:for="{{slots}}" wx:key="index" class="char-puzzle__cell">
       <text wx:if="{{hasPinyin}}" class="char-puzzle__pinyin">{{item.pinyin}}</text>
       <view
-        class="char-puzzle__slot {{item.locked ? 'char-puzzle__slot--locked' : ''}} {{item.char ? 'char-puzzle__slot--filled' : ''}}"
+        class="char-puzzle__slot {{item.locked ? 'char-puzzle__slot--locked' : ''}} {{item.char ? 'char-puzzle__slot--filled' : ''}} {{keyboard && inputFocused && index === activeIndex ? 'char-puzzle__slot--active' : ''}}"
         data-index="{{index}}"
         bindtap="handleSlotTap"
       >{{item.char}}</view>
     </view>
   </view>
-  <!-- Keyboard mode: a see-through input over the cells, so tapping a cell brings up the phone's keyboard. -->
+  <!-- Keyboard mode: a tiny input kept off screen (so its own caret never shows); tapping the cells focuses it. -->
   <input
     wx:if="{{keyboard}}"
     class="char-puzzle__input"

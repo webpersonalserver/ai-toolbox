@@ -198,7 +198,8 @@
   30% { opacity: 1; transform: translateY(-6rpx); }
 }
 
-/* Keyboard mode: the input lies over the cells, invisible, so a tap on any cell opens the keyboard. */
+/* Keyboard mode: the real input is a 1px box just left of the screen, level with the cells (so the page still
+   lifts them above the keyboard), and never shows its own caret; the cell to type into is highlighted instead. */
 .char-puzzle__answer {
   position: relative;
 }
@@ -206,18 +207,19 @@
 .char-puzzle__input {
   position: absolute;
   top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  z-index: 2;
-  width: 100%;
-  height: 100%;
+  left: -1500rpx;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
   color: transparent;
+  caret-color: transparent;
   opacity: 0;
 }
 
-.char-puzzle__slots--typing .char-puzzle__slot {
+.char-puzzle__slot--active {
+  border-style: solid;
   border-color: var(--game-color, var(--color-primary));
+  box-shadow: 0 0 0 6rpx var(--color-primary-soft);
 }
 
 .char-puzzle__keyboard-tip {

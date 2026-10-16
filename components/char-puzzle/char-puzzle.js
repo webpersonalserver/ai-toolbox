@@ -60,6 +60,8 @@ Component({
     isWrong: false,
     inputValue: '',
     inputFocused: false,
+    // Keyboard mode: the highlighted cell the next character goes into (the first free empty one), -1 when all are full.
+    activeIndex: -1,
     freeCount: 0
   },
 
@@ -76,6 +78,7 @@ Component({
         isWrong: false,
         freeCount: Math.max(answerLength - revealed.length, 0)
       })
+      this.refreshActiveCell()
       this.resetTyping()
     }
   },
@@ -107,7 +110,7 @@ Component({
     handleSlotTap(event) {
       const slotIndex = event.currentTarget.dataset.index
       const slot = this.data.slots[slotIndex]
-      if (this.data.disabled || slot.locked || !slot.char) return
+      if (this.data.keyboard || this.data.disabled || slot.locked || !slot.char) return
       this.setData({
         [`slots[${slotIndex}].char`]: '',
         [`slots[${slotIndex}].boardIndex`]: -1,
@@ -128,14 +131,28 @@ Component({
         next += 1
       })
       this.setData(changes)
+      this.refreshActiveCell()
       if (this.data.slots.every((slot) => slot.char)) {
         this.setData({ inputFocused: false })
         this.triggerEvent('complete', { answer: this.data.slots.map((slot) => slot.char).join('') })
       }
     },
 
+    // Keyboard mode: a tap anywhere on the cells opens the keyboard.
+    handleAnswerTap() {
+      if (!this.data.keyboard || this.data.disabled || this.data.inputFocused) return
+      this.setData({ inputFocused: true })
+    },
+
     handleInputFocus() {
       this.setData({ inputFocused: true })
+      this.refreshActiveCell()
+    },
+
+    // The real input is off screen, so the cell the next character goes into is highlighted instead of a caret.
+    refreshActiveCell() {
+      const activeIndex = this.data.slots.findIndex((slot) => !slot.locked && !slot.char)
+      if (activeIndex !== this.data.activeIndex) this.setData({ activeIndex })
     },
 
     handleInputBlur() {
@@ -158,6 +175,7 @@ Component({
           if (!slot.locked) changes[`slots[${index}].char`] = ''
         })
         this.setData(changes)
+        this.refreshActiveCell()
         this.resetTyping()
         return
       }
