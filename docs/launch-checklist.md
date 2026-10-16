@@ -92,7 +92,7 @@
 - [x] `levels` ← `database/levels/typo.json`（500 关）。同上，要用 Upsert 重新导入一次
 - [x] `levels` ← `database/levels/idiom.json`、`poetry.json`、`xiehouyu.json` 再用 Upsert 导入一次：2026-10 每关加了答案拼音（`answerPinyin`，拼音辅助）；歇后语第 183 关原文错字已改
 - [x] `levels` ← `database/levels/hanzi.json`（1600 关，汉字闯关）。2026-10 从 400 关追加到 1600 关，要用 Upsert 再导入一次
-- [ ] `levels` ← `database/levels/riddle.json`（294 关，脑筋急转弯，新增）、`database/levels/miyu.json`（319 关，猜谜语，新增）。另外 2026-10-16 起所有关卡的分档名改成了「入门 / 初级 / 中级 / 高级 / 大师」，**poetry、xiehouyu、typo、hanzi 四个文件都要用 Upsert 重新导入一次**，否则答题页还会显示原来的分档名
+- [x] `levels` ← `database/levels/riddle.json`（332 关，脑筋急转弯）、`database/levels/miyu.json`（385 关，猜谜语）。2026-10-16 复检后两个题库整体重新生成，**要用 Upsert 重新导入**（关卡号变了，测试时在这两个玩法里的进度也要清掉）。另外 2026-10-16 起所有关卡的分档名改成了「入门 / 初级 / 中级 / 高级 / 大师」，**poetry、xiehouyu、typo、hanzi 四个文件都要用 Upsert 重新导入一次**，否则答题页还会显示原来的分档名
 - [x] `app_config` ← `database/app_config.json`（游戏规则配置，文档 `_id` 为 `game_rules`）
 
 ### 4.4 部署云函数
